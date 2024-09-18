@@ -241,4 +241,62 @@ fun bf :: "bool \<Rightarrow> bool \<Rightarrow> bool" where
 fun nf :: "int \<Rightarrow> int \<Rightarrow> bool" where
   "nf n1 n2 = (n1 - n2 \<ge> n1 \<or> n2 \<le> n1 + n2)"
 
+(* Nested record patterns *)
+record 'MessageType MessagePacket =
+  target :: nat
+  mailbox :: "nat option"
+  message :: 'MessageType
+
+record 'MessageType EnvelopedMessage =
+  sender :: "nat option"
+  packet :: "'MessageType MessagePacket"
+
+record 'HandleType Timer =
+  time :: nat
+  handle :: 'HandleType
+
+datatype ('MessageType, 'HandleType) Trigger
+  = MessageArrived "'MessageType EnvelopedMessage" |
+    Elapsed "('HandleType Timer) list"
+
+fun target :: "'MessageType MessagePacket \<Rightarrow> nat" where
+  "target (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    target'"
+
+fun mailbox :: "'MessageType MessagePacket \<Rightarrow> nat option" where
+  "mailbox (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    mailbox'"
+
+fun message :: "'MessageType MessagePacket \<Rightarrow> 'MessageType" where
+  "message (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    message'"
+
+fun sender :: "'MessageType EnvelopedMessage \<Rightarrow> nat option" where
+  "sender (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) = sender'"
+
+fun packet :: "'MessageType EnvelopedMessage \<Rightarrow> 'MessageType MessagePacket" where
+  "packet (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) = packet'"
+
+fun time :: "'HandleType Timer \<Rightarrow> nat" where
+  "time (| Timer.time = time', Timer.handle = handle' |) = time'"
+
+fun handle :: "'HandleType Timer \<Rightarrow> 'HandleType" where
+  "handle (| Timer.time = time', Timer.handle = handle' |) = handle'"
+
+fun getMessageFromTrigger :: "('M, 'H) Trigger \<Rightarrow> 'M option" where
+  "getMessageFromTrigger v_0 =
+    (case (v_0) of
+       (MessageArrived v') \<Rightarrow>
+         (case (EnvelopedMessage.packet v') of
+            (v'0) \<Rightarrow> Some (MessagePacket.message v'0)) |
+       v'1 \<Rightarrow> None)"
+
+fun getMessageFromTrigger' :: "('M, 'H) Trigger \<Rightarrow> 'M option" where
+  "getMessageFromTrigger' t =
+    (case t of
+       (MessageArrived v') \<Rightarrow>
+         (case (EnvelopedMessage.packet v') of
+            (v'0) \<Rightarrow> Some (MessagePacket.message v'0)) |
+       v'2 \<Rightarrow> None)"
+
 end
