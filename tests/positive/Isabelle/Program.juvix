@@ -234,3 +234,17 @@ getMessageFromTrigger' {M H} (t : Trigger M H) : Maybe M :=
               message := m })})})
               := just m
       | _ := nothing;
+
+-- Syntax aliases
+
+Name : Type := Nat;
+
+syntax alias T := Name;
+
+idT (x : T) : T := x;
+
+t : T := 0;
+
+type RR := mkRR {
+  x : T
+};
