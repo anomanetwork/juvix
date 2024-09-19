@@ -313,7 +313,44 @@ definition t :: Name where
 record RR =
   x :: nat
 
+(* Type constructor identifiers *)
+record ('A, 'L, 'X) GuardOutput =
+  args :: "'A list"
+  label :: 'L
+  other :: 'X
+
+datatype GuardReturnLabel
+  = doIncrement |
+    doRespond nat
+
+datatype GuardReturnOther
+  = nuthing
+
+datatype GuardReturnArgs
+  = ReplyTo nat
+
 fun x :: "RR \<Rightarrow> Name" where
   "x (| RR.x = x' |) = x'"
+
+fun args :: "('A, 'L, 'X) GuardOutput \<Rightarrow> 'A list" where
+  "args (| GuardOutput.args = args', GuardOutput.label = label', GuardOutput.other = other' |) =
+    args'"
+
+fun label :: "('A, 'L, 'X) GuardOutput \<Rightarrow> 'L" where
+  "label (| GuardOutput.args = args', GuardOutput.label = label', GuardOutput.other = other' |) =
+    label'"
+
+fun other :: "('A, 'L, 'X) GuardOutput \<Rightarrow> 'X" where
+  "other (| GuardOutput.args = args', GuardOutput.label = label', GuardOutput.other = other' |) =
+    other'"
+
+fun ifIncrement :: "(nat, nat) Trigger \<Rightarrow> ((GuardReturnArgs, GuardReturnLabel, GuardReturnOther) GuardOutput) option" where
+  "ifIncrement (MessageArrived m) =
+    (Some (let
+             args' = [];
+             label' = doIncrement;
+             other' = nuthing
+           in (| GuardOutput.args = args', GuardOutput.label = label', GuardOutput.other = other' |)))" |
+  "ifIncrement (Elapsed ts) = None"
 
 end

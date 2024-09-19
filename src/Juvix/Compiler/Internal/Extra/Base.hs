@@ -445,6 +445,15 @@ unfoldExpressionApp = swap . run . runAccumListReverse . go
 unfoldApplication :: Application -> (Expression, NonEmpty Expression)
 unfoldApplication = fmap (fmap (^. appArg)) . unfoldApplication'
 
+unfoldExplicitApplication :: Application -> (Expression, [Expression])
+unfoldExplicitApplication =
+  fmap
+    ( fmap (^. appArg)
+        . filter (\x -> x ^. appArgIsImplicit == Explicit)
+        . toList
+    )
+    . unfoldApplication'
+
 -- | A fold over all transitive children, including self
 patternCosmos :: SimpleFold Pattern Pattern
 patternCosmos f p = case p of

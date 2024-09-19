@@ -470,7 +470,11 @@ goModule onlyTypes infoTable Internal.Module {..} =
 
     goRecordFields :: [Internal.FunctionParameter] -> [a] -> [(Name, a)]
     goRecordFields argtys args = case (argtys, args) of
-      (ty : argtys', arg' : args') -> (fromMaybe (defaultName (getLoc ty) "_") (ty ^. Internal.paramName), arg') : goRecordFields argtys' args'
+      (param : argtys', arg' : args')
+        | param ^. Internal.paramImplicit == Internal.Explicit ->
+            (fromMaybe (defaultName (getLoc param) "_") (param ^. Internal.paramName), arg') : goRecordFields argtys' args'
+        | otherwise ->
+            goRecordFields argtys' args'
       _ -> []
 
     goExpression' :: Internal.Expression -> Expression
@@ -560,6 +564,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
               fn' <- goExpression fn
               args' <- mapM goExpression args
               return $ mkApp fn' args'
+          | _appImplicit /= Internal.Explicit =
+              goExpression _appLeft
           | otherwise = do
               l <- goExpression _appLeft
               r <- goExpression _appRight
@@ -722,7 +728,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
               _ -> Nothing
           _ -> Nothing
           where
-            (fn, args) = Internal.unfoldApplication app
+            (fn, args) = Internal.unfoldExplicitApplication app
 
         getRecordUpdate :: Internal.Application -> Maybe (Name, [Name], Internal.Expression, [(Name, Internal.Expression)])
         getRecordUpdate Internal.Application {..} = case _appLeft of
@@ -745,7 +751,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
                                 _ -> Nothing
                         _ -> Nothing
                         where
-                          (fn, args) = Internal.unfoldApplication app
+                          (fn, args) = Internal.unfoldExplicitApplication app
                       _ -> Nothing
               _ -> Nothing
             _ -> Nothing
@@ -792,7 +798,11 @@ goModule onlyTypes infoTable Internal.Module {..} =
 
         goLet :: Internal.Let -> Sem r Expression
         goLet Internal.Let {..} = do
-          let fdefs = concatMap toFunDefs (toList _letClauses)
+          let fdefs =
+                filter (not . Internal.isTypeConstructor . (^. Internal.funDefType))
+                  . concatMap toFunDefs
+                  . toList
+                  $ _letClauses
           cls <- mapM goFunDef fdefs
           let ns = zipExact (map (^. Internal.funDefName) fdefs) (map (^. letClauseName) cls)
           expr <- localNames ns $ goExpression _letExpression
