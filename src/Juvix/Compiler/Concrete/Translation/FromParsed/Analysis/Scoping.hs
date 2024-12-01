@@ -850,7 +850,7 @@ entryToScopedIden name e = do
       return
         ScopedIden
           { _scopedIdenAlias = Just scopedName',
-            _scopedIdenFinal = helper (e' ^. symbolEntry)
+            _scopedIdenFinal = e' ^. symbolEntry
           }
   registerScopedIden si
   return si

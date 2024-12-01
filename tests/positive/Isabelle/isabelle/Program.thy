@@ -1,5 +1,8 @@
 theory Program
 imports Main
+        N
+        M_N
+        M_Main
 begin
 
 definition id0 :: "nat \<Rightarrow> nat" where
@@ -15,25 +18,25 @@ definition id2 :: "'A \<Rightarrow> 'A" where
 fun add_one :: "nat list \<Rightarrow> nat list" where
   "add_one [] = []" |
   (* hello! *)
-  "add_one (x # xs) = ((x + 1) # add_one xs)"
+  "add_one (x' # xs) = ((x' + 1) # add_one xs)"
 
 fun sum :: "nat list \<Rightarrow> nat" where
   "sum [] = 0" |
-  "sum (x # xs) = (x + sum xs)"
+  "sum (x' # xs) = (x' + sum xs)"
 
 fun f :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat" where
-  "f x y z = ((z + 1) * x + y)"
+  "f x' y z = ((z + 1) * x' + y)"
 
 fun g :: "nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "g x y = (if x = y then False else True)"
+  "g x' y = (if x' = f x' (N.g y) (M_N.g (M_Main.f y)) then False else True)"
 
 fun inc :: "nat \<Rightarrow> nat" where
-  "inc x = (Suc x)"
+  "inc x' = (Suc x')"
 
 (* dec function *)
 fun dec :: "nat \<Rightarrow> nat" where
   "dec 0 = 0" |
-  "dec (Suc x) = x"
+  "dec (Suc x') = x'"
 
 (* dec' function *)
 fun dec' :: "nat \<Rightarrow> nat" where
@@ -42,23 +45,23 @@ fun dec' :: "nat \<Rightarrow> nat" where
   (* the zero case  *)
   (* return zero  *)
   (* the suc case  *)
-  "dec' x =
-    (case x of
+  "dec' x' =
+    (case x' of
        0 \<Rightarrow> 0 |
        (Suc y) \<Rightarrow> y)"
 
 fun optmap :: "('A \<Rightarrow> 'A) \<Rightarrow> 'A option \<Rightarrow> 'A option" where
   "optmap f' None = None" |
-  "optmap f' (Some x) = (Some (f' x))"
+  "optmap f' (Some x') = (Some (f' x'))"
 
 fun pboth :: "('A \<Rightarrow> 'A') \<Rightarrow> ('B \<Rightarrow> 'B') \<Rightarrow> 'A \<times> 'B \<Rightarrow> 'A' \<times> 'B'" where
-  "pboth f' g' (x, y) = (f' x, g' y)"
+  "pboth f' g' (x', y) = (f' x', g' y)"
 
 fun bool_fun :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool" where
-  "bool_fun x y z = (x \<and> (y \<or> z))"
+  "bool_fun x' y z = (x' \<and> (y \<or> z))"
 
 fun bool_fun' :: "bool \<Rightarrow> bool \<Rightarrow> bool \<Rightarrow> bool" where
-  "bool_fun' x y z = (x \<and> y \<or> z)"
+  "bool_fun' x' y z = (x' \<and> y \<or> z)"
 
 (* Queues *)
 text \<open>
@@ -68,7 +71,7 @@ datatype 'A Queue
   = queue "'A list" "'A list"
 
 fun qfst :: "'A Queue \<Rightarrow> 'A list" where
-  "qfst (queue x v') = x"
+  "qfst (queue x' v') = x'"
 
 fun qsnd :: "'A Queue \<Rightarrow> 'A list" where
   "qsnd (queue v' v'0) = v'0"
@@ -82,10 +85,10 @@ fun pop_front :: "'A Queue \<Rightarrow> 'A Queue" where
           v' \<Rightarrow> q')"
 
 fun push_back :: "'A Queue \<Rightarrow> 'A \<Rightarrow> 'A Queue" where
-  "push_back q x =
+  "push_back q x' =
     (case qfst q of
-       [] \<Rightarrow> queue [x] (qsnd q) |
-       q' \<Rightarrow> queue q' (x # qsnd q))"
+       [] \<Rightarrow> queue [x'] (qsnd q) |
+       q' \<Rightarrow> queue q' (x' # qsnd q))"
 
 text \<open>
 Checks if the queue is empty
@@ -237,5 +240,80 @@ fun bf :: "bool \<Rightarrow> bool \<Rightarrow> bool" where
 
 fun nf :: "int \<Rightarrow> int \<Rightarrow> bool" where
   "nf n1 n2 = (n1 - n2 \<ge> n1 \<or> n2 \<le> n1 + n2)"
+
+(* Nested record patterns *)
+record 'MessageType MessagePacket =
+  target :: nat
+  mailbox :: "nat option"
+  message :: 'MessageType
+
+record 'MessageType EnvelopedMessage =
+  sender :: "nat option"
+  packet :: "'MessageType MessagePacket"
+
+record 'HandleType Timer =
+  time :: nat
+  handle :: 'HandleType
+
+datatype ('MessageType, 'HandleType) Trigger
+  = MessageArrived "'MessageType EnvelopedMessage" |
+    Elapsed "('HandleType Timer) list"
+
+fun target :: "'MessageType MessagePacket \<Rightarrow> nat" where
+  "target (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    target'"
+
+fun mailbox :: "'MessageType MessagePacket \<Rightarrow> nat option" where
+  "mailbox (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    mailbox'"
+
+fun message :: "'MessageType MessagePacket \<Rightarrow> 'MessageType" where
+  "message (| MessagePacket.target = target', MessagePacket.mailbox = mailbox', MessagePacket.message = message' |) =
+    message'"
+
+fun sender :: "'MessageType EnvelopedMessage \<Rightarrow> nat option" where
+  "sender (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) =
+    sender'"
+
+fun packet :: "'MessageType EnvelopedMessage \<Rightarrow> 'MessageType MessagePacket" where
+  "packet (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) =
+    packet'"
+
+fun time :: "'HandleType Timer \<Rightarrow> nat" where
+  "time (| Timer.time = time', Timer.handle = handle' |) = time'"
+
+fun handle :: "'HandleType Timer \<Rightarrow> 'HandleType" where
+  "handle (| Timer.time = time', Timer.handle = handle' |) = handle'"
+
+fun getMessageFromTrigger :: "('M, 'H) Trigger \<Rightarrow> 'M option" where
+  "getMessageFromTrigger v_0 =
+    (case (v_0) of
+       (MessageArrived v') \<Rightarrow>
+         (case (EnvelopedMessage.packet v') of
+            (v'0) \<Rightarrow> Some (MessagePacket.message v'0)) |
+       v'1 \<Rightarrow> None)"
+
+fun getMessageFromTrigger' :: "('M, 'H) Trigger \<Rightarrow> 'M option" where
+  "getMessageFromTrigger' t' =
+    (case t' of
+       (MessageArrived v') \<Rightarrow>
+         (case (EnvelopedMessage.packet v') of
+            (v'0) \<Rightarrow> Some (MessagePacket.message v'0)) |
+       v'2 \<Rightarrow> None)"
+
+(* Syntax aliases *)
+type_synonym Name = nat
+
+fun idT :: "nat \<Rightarrow> Name" where
+  "idT x' = x'"
+
+definition t :: Name where
+  "t = 0"
+
+record RR =
+  x :: nat
+
+fun x :: "RR \<Rightarrow> Name" where
+  "x (| RR.x = x' |) = x'"
 
 end
