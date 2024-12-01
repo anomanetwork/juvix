@@ -178,7 +178,7 @@ instance ToGenericError StdinOrFileError where
   genericError StdinOrFileError =
     return
       GenericError
-        { _genericErrorLoc = singletonInterval (mkInitialLoc formatStdinPath),
+        { _genericErrorLoc = singletonInterval (mkInitialLoc noFile),
           _genericErrorMessage = prettyError "Neither JUVIX_FILE_OR_PROJECT nor --stdin option is chosen",
           _genericErrorIntervals = []
         }

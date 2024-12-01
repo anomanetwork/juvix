@@ -1,0 +1,5 @@
+module N;
+
+import Stdlib.Prelude open;
+
+g (a : Nat) : Nat := a * 2;
