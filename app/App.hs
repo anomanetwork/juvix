@@ -261,19 +261,37 @@ runPipeline opts input_ =
   runPipelineLogger opts input_
     . inject
 
+runPipelineUpTo ::
+  (Members '[App, EmbedIO, Logger, TaggedLock] r, EntryPointOptions opts) =>
+  Bool ->
+  opts ->
+  Maybe (AppPath File) ->
+  Sem (PipelineEff r) a ->
+  Sem r (a, [a])
+runPipelineUpTo bNonRecursive opts input_ a
+  | bNonRecursive = do
+      r <- runPipeline opts input_ a
+      return (r, [])
+  | otherwise = runPipelineUpToRecursive opts input_ a
+
 runPipelineHtml ::
   (Members '[App, EmbedIO, Logger, TaggedLock] r) =>
   Bool ->
   Maybe (AppPath File) ->
   Sem r (InternalTypedResult, [InternalTypedResult])
-runPipelineHtml bNonRecursive input_
-  | bNonRecursive = do
-      r <- runPipelineNoOptions input_ upToInternalTyped
-      return (r, [])
-  | otherwise = do
-      args <- askArgs
-      entry <- getEntryPoint' args input_
-      runReader defaultPipelineOptions (runPipelineHtmlEither entry) >>= fromRightJuvixError
+runPipelineHtml bNonRecursive input_ = runPipelineUpTo bNonRecursive () input_ upToInternalTyped
+
+runPipelineUpToRecursive ::
+  (Members '[App, EmbedIO, Logger, TaggedLock] r, EntryPointOptions opts) =>
+  opts ->
+  Maybe (AppPath File) ->
+  Sem (PipelineEff r) a ->
+  Sem r (a, [a])
+runPipelineUpToRecursive opts input_ a = do
+  args <- askArgs
+  entry <- getEntryPoint' args input_
+  let entry' = applyOptions opts entry
+  runReader defaultPipelineOptions (runPipelineRecursiveEither entry' (inject a)) >>= fromRightJuvixError
 
 runPipelineOptions :: (Members '[App] r) => Sem (Reader PipelineOptions ': r) a -> Sem r a
 runPipelineOptions m = do

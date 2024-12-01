@@ -28,7 +28,7 @@ env:
   RISC0_VM_VERSION: v1.0.1
   ANOMA_VERSION: f52cd44235f35a907c22c428ce1fdf3237c97927
   JUST_ARGS: runtimeCcArg=$CC runtimeLibtoolArg=$LIBTOOL
-  STACK_BUILD_ARGS: --pedantic -j4 --ghc-options=-j
+  STACK_BUILD_ARGS: --pedantic -j4 --ghc-options=-j --stack-yaml=stack.yaml
 
 jobs:
   pre-commit:

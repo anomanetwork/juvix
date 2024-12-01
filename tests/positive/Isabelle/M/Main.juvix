@@ -1,0 +1,6 @@
+module M.Main;
+
+import Stdlib.Prelude open;
+import M.N open;
+
+f (a : Nat) : Nat := g a;

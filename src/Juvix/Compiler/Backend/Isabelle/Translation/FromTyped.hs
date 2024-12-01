@@ -2,7 +2,6 @@ module Juvix.Compiler.Backend.Isabelle.Translation.FromTyped where
 
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.List.NonEmpty.Extra qualified as NonEmpty
 import Data.Text qualified as T
 import Data.Text qualified as Text
 import Juvix.Compiler.Backend.Isabelle.Data.Result
@@ -69,17 +68,19 @@ fromInternal res@Internal.InternalTypedResult {..} = do
 goModule :: Bool -> Internal.InfoTable -> Internal.Module -> Theory
 goModule onlyTypes infoTable Internal.Module {..} =
   Theory
-    { _theoryName = overNameText toIsabelleName _moduleName,
-      _theoryImports = map (^. Internal.importModuleName) (_moduleBody ^. Internal.moduleImports),
+    { _theoryName = overNameText toIsabelleTheoryName _moduleName,
+      _theoryImports =
+        map
+          (overNameText toIsabelleTheoryName . (^. Internal.importModuleName))
+          (_moduleBody ^. Internal.moduleImports),
       _theoryStatements = case _modulePragmas ^. pragmasIsabelleIgnore of
         Just (PragmaIsabelleIgnore True) -> []
         _ -> concatMap goMutualBlock (_moduleBody ^. Internal.moduleStatements)
     }
   where
-    toIsabelleName :: Text -> Text
-    toIsabelleName name = case reverse $ filter (/= "") $ T.splitOn "." name of
-      h : _ -> h
-      [] -> impossible
+    toIsabelleTheoryName :: Text -> Text
+    toIsabelleTheoryName name =
+      quote . Text.intercalate "_" $ filter (/= "") $ T.splitOn "." name
 
     isTypeDef :: Statement -> Bool
     isTypeDef = \case
@@ -93,19 +94,33 @@ goModule onlyTypes infoTable Internal.Module {..} =
     mkExprCase c@Case {..} = case _caseValue of
       ExprIden v ->
         case _caseBranches of
-          CaseBranch {..} :| [] ->
+          CaseBranch {..} :| _ ->
             case _caseBranchPattern of
               PatVar v' -> substVar v' v _caseBranchBody
               _ -> ExprCase c
-          _ -> ExprCase c
       ExprTuple (Tuple (ExprIden v :| [])) ->
         case _caseBranches of
-          CaseBranch {..} :| [] ->
+          CaseBranch {..} :| _ ->
             case _caseBranchPattern of
               PatTuple (Tuple (PatVar v' :| [])) -> substVar v' v _caseBranchBody
               _ -> ExprCase c
-          _ -> ExprCase c
-      _ -> ExprCase c
+      _ ->
+        case _caseBranches of
+          br@CaseBranch {..} :| _ ->
+            case _caseBranchPattern of
+              PatVar _ ->
+                ExprCase
+                  Case
+                    { _caseValue = _caseValue,
+                      _caseBranches = br :| []
+                    }
+              PatTuple (Tuple (PatVar _ :| [])) ->
+                ExprCase
+                  Case
+                    { _caseValue = _caseValue,
+                      _caseBranches = br :| []
+                    }
+              _ -> ExprCase c
 
     goMutualBlock :: Internal.MutualBlock -> [Statement]
     goMutualBlock Internal.MutualBlock {..} =
@@ -195,8 +210,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
                 }
       where
         argnames =
-          map (overNameText quote) $ filterTypeArgs 0 ty $ map (fromMaybe (defaultName (getLoc name) "_") . (^. Internal.argInfoName)) argsInfo
-        name' = overNameText quote name
+          map quoteName $ filterTypeArgs 0 ty $ map (fromMaybe (defaultName (getLoc name) "_") . (^. Internal.argInfoName)) argsInfo
+        name' = quoteName name
         loc = getLoc name
 
     isFunction :: [Name] -> Internal.Expression -> Maybe Internal.Expression -> Bool
@@ -241,24 +256,25 @@ goModule onlyTypes infoTable Internal.Module {..} =
                   : goClauses cls
               Nested pats npats ->
                 let rhs = goExpression'' nset' nmap' _lambdaBody
-                    argnames' = fmap getPatternArgName _lambdaPatterns
+                    argnames' = fmap getPatternArgName lambdaPats
                     vnames =
-                      fmap
-                        ( \(idx :: Int, mname) ->
-                            maybe
-                              ( defaultName
-                                  (getLoc cl)
-                                  ( disambiguate
-                                      (nset' ^. nameSet)
-                                      ("v_" <> show idx)
-                                  )
-                              )
-                              (overNameText (disambiguate (nset' ^. nameSet)))
-                              mname
-                        )
-                        (NonEmpty.zip (nonEmpty' [0 ..]) argnames')
+                      nonEmpty' $
+                        fmap
+                          ( \(idx :: Int, mname) ->
+                              maybe
+                                ( defaultName
+                                    (getLoc cl)
+                                    ( disambiguate
+                                        (nset' ^. nameSet)
+                                        ("v_" <> show idx)
+                                    )
+                                )
+                                (overNameText (disambiguate (nset' ^. nameSet)))
+                                mname
+                          )
+                          (zip [0 ..] argnames')
                     nset'' = foldl' (flip (over nameSet . HashSet.insert . (^. namePretty))) nset' vnames
-                    remainingBranches = goLambdaClauses'' nset'' nmap' cls
+                    remainingBranches = goLambdaClauses'' nset'' nmap' (Just ty) cls
                     valTuple = ExprTuple (Tuple (fmap ExprIden vnames))
                     patTuple = PatTuple (Tuple (nonEmpty' pats))
                     brs = goNestedBranches (getLoc cl) valTuple rhs remainingBranches patTuple (nonEmpty' npats)
@@ -273,7 +289,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
                         }
                     ]
             where
-              (npats0, nset', nmap') = goPatternArgsTop (filterTypeArgs 0 ty (toList _lambdaPatterns))
+              lambdaPats = filterTypeArgs 0 ty (toList _lambdaPatterns)
+              (npats0, nset', nmap') = goPatternArgsTop lambdaPats
           [] -> []
 
     goNestedBranches :: Interval -> Expression -> Expression -> [CaseBranch] -> Pattern -> NonEmpty (Expression, Nested Pattern) -> NonEmpty CaseBranch
@@ -376,18 +393,18 @@ goModule onlyTypes infoTable Internal.Module {..} =
 
     goTypeIden :: Internal.Iden -> Type
     goTypeIden = \case
-      Internal.IdenFunction name -> mkIndType (overNameText quote name) []
+      Internal.IdenFunction name -> mkIndType (quoteName name) []
       Internal.IdenConstructor name -> error ("unsupported type: constructor " <> Internal.ppTrace name)
-      Internal.IdenVar name -> TyVar $ TypeVar (overNameText quote name)
-      Internal.IdenAxiom name -> mkIndType (overNameText quote name) []
-      Internal.IdenInductive name -> mkIndType (overNameText quote name) []
+      Internal.IdenVar name -> TyVar $ TypeVar (quoteName name)
+      Internal.IdenAxiom name -> mkIndType (quoteName name) []
+      Internal.IdenInductive name -> mkIndType (quoteName name) []
 
     goTypeApp :: Internal.Application -> Type
     goTypeApp app = mkIndType name params
       where
         (ind, args) = Internal.unfoldApplication app
         params = map goType (toList args)
-        name = overNameText quote $ case ind of
+        name = quoteName $ case ind of
           Internal.ExpressionIden (Internal.IdenFunction n) -> n
           Internal.ExpressionIden (Internal.IdenAxiom n) -> n
           Internal.ExpressionIden (Internal.IdenInductive n) -> n
@@ -416,8 +433,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
               setNameText "None" name
             Just Internal.BuiltinMaybeJust ->
               setNameText "Some" name
-            _ -> overNameText quote name
-        Nothing -> overNameText quote name
+            _ -> quoteName name
+        Nothing -> quoteName name
 
     getArgtys :: Internal.ConstructorInfo -> [Internal.FunctionParameter]
     getArgtys ctrInfo = fst $ Internal.unfoldFunType $ ctrInfo ^. Internal.constructorInfoType
@@ -430,8 +447,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
             Just funInfo ->
               case funInfo ^. Internal.functionInfoPragmas . pragmasIsabelleFunction of
                 Just PragmaIsabelleFunction {..} -> setNameText _pragmaIsabelleFunctionName name
-                Nothing -> overNameText quote name
-            Nothing -> overNameText quote name
+                Nothing -> quoteName name
+            Nothing -> quoteName name
       x -> x
 
     lookupName :: forall r. (Member (Reader NameMap) r) => Name -> Sem r Expression
@@ -490,8 +507,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
               Nothing -> return $ ExprIden (goConstrName name)
           Internal.IdenVar name -> do
             lookupName name
-          Internal.IdenAxiom name -> return $ ExprIden (overNameText quote name)
-          Internal.IdenInductive name -> return $ ExprIden (overNameText quote name)
+          Internal.IdenAxiom name -> return $ ExprIden (quoteName name)
+          Internal.IdenInductive name -> return $ ExprIden (quoteName name)
 
         goApplication :: Internal.Application -> Sem r Expression
         goApplication app@Internal.Application {..}
@@ -826,18 +843,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
           | patsNum == 0 = goExpression (head _lambdaClauses ^. Internal.lambdaBody)
           | otherwise = goLams vars
           where
-            patsNum =
-              case _lambdaType of
-                Just ty ->
-                  length
-                    . filterTypeArgs 0 ty
-                    . toList
-                    $ head _lambdaClauses ^. Internal.lambdaPatterns
-                Nothing ->
-                  length
-                    . filter ((/= Internal.Implicit) . (^. Internal.patternArgIsImplicit))
-                    . toList
-                    $ head _lambdaClauses ^. Internal.lambdaPatterns
+            patsNum = length $ filterLambdaPatternArgs _lambdaType $ head _lambdaClauses ^. Internal.lambdaPatterns
             vars = map (\i -> defaultName (getLoc lam) ("x" <> show i)) [0 .. patsNum - 1]
 
             goLams :: [Name] -> Sem r Expression
@@ -867,7 +873,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
                           Tuple
                             { _tupleComponents = nonEmpty' vars'
                             }
-                brs <- goLambdaClauses (toList _lambdaClauses)
+                brs <- goLambdaClauses _lambdaType (toList _lambdaClauses)
                 return $
                   mkExprCase
                     Case
@@ -924,17 +930,29 @@ goModule onlyTypes infoTable Internal.Module {..} =
           Internal.CaseBranchRhsExpression e -> goExpression e
           Internal.CaseBranchRhsIf {} -> error "unsupported: side conditions"
 
-    goLambdaClauses'' :: NameSet -> NameMap -> [Internal.LambdaClause] -> [CaseBranch]
-    goLambdaClauses'' nset nmap cls =
-      run $ runReader nset $ runReader nmap $ goLambdaClauses cls
+    filterLambdaPatternArgs :: Maybe Internal.Expression -> NonEmpty Internal.PatternArg -> [Internal.PatternArg]
+    filterLambdaPatternArgs mty cls = case mty of
+      Just ty ->
+        filterTypeArgs 0 ty
+          . toList
+          $ cls
+      Nothing ->
+        filter ((/= Internal.Implicit) . (^. Internal.patternArgIsImplicit))
+          . toList
+          $ cls
 
-    goLambdaClauses :: forall r. (Members '[Reader NameSet, Reader NameMap] r) => [Internal.LambdaClause] -> Sem r [CaseBranch]
-    goLambdaClauses = \case
+    goLambdaClauses'' :: NameSet -> NameMap -> Maybe Internal.Expression -> [Internal.LambdaClause] -> [CaseBranch]
+    goLambdaClauses'' nset nmap mty cls =
+      run $ runReader nset $ runReader nmap $ goLambdaClauses mty cls
+
+    goLambdaClauses :: forall r. (Members '[Reader NameSet, Reader NameMap] r) => Maybe Internal.Expression -> [Internal.LambdaClause] -> Sem r [CaseBranch]
+    goLambdaClauses mty = \case
       cl@Internal.LambdaClause {..} : cls -> do
-        (npat, nset, nmap) <- case _lambdaPatterns of
-          p :| [] -> goPatternArgCase p
+        let lambdaPats = filterLambdaPatternArgs mty _lambdaPatterns
+        (npat, nset, nmap) <- case lambdaPats of
+          [p] -> goPatternArgCase p
           _ -> do
-            (npats, nset, nmap) <- goPatternArgsCase (toList _lambdaPatterns)
+            (npats, nset, nmap) <- goPatternArgsCase lambdaPats
             let npat =
                   fmap
                     ( \pats ->
@@ -948,7 +966,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
         case npat of
           Nested pat [] -> do
             body <- withLocalNames nset nmap $ goExpression _lambdaBody
-            brs <- goLambdaClauses cls
+            brs <- goLambdaClauses mty cls
             return $
               CaseBranch
                 { _caseBranchPattern = pat,
@@ -959,7 +977,7 @@ goModule onlyTypes infoTable Internal.Module {..} =
             let vname = defaultName (getLoc cl) (disambiguate (nset ^. nameSet) "v")
                 nset' = over nameSet (HashSet.insert (vname ^. namePretty)) nset
             rhs <- withLocalNames nset' nmap $ goExpression _lambdaBody
-            remainingBranches <- withLocalNames nset' nmap $ goLambdaClauses cls
+            remainingBranches <- withLocalNames nset' nmap $ goLambdaClauses mty cls
             let brs' = goNestedBranches (getLoc vname) (ExprIden vname) rhs remainingBranches pat (nonEmpty' npats)
             return
               [ CaseBranch
@@ -1131,7 +1149,11 @@ goModule onlyTypes infoTable Internal.Module {..} =
           case HashMap.lookup name (infoTable ^. Internal.infoConstructors) of
             Just ctrInfo
               | ctrInfo ^. Internal.constructorInfoRecord ->
-                  Just (indName, goRecordFields (getArgtys ctrInfo) args)
+                  case HashMap.lookup indName (infoTable ^. Internal.infoInductives) of
+                    Just indInfo
+                      | length (indInfo ^. Internal.inductiveInfoConstructors) == 1 ->
+                          Just (indName, goRecordFields (getArgtys ctrInfo) args)
+                    _ -> Nothing
               where
                 indName = ctrInfo ^. Internal.constructorInfoInductive
             _ -> Nothing
@@ -1217,9 +1239,40 @@ goModule onlyTypes infoTable Internal.Module {..} =
                 ++ map (^. Internal.inductiveInfoName . namePretty) (HashMap.elems (infoTable ^. Internal.infoInductives))
                 ++ map (^. Internal.axiomInfoDef . Internal.axiomName . namePretty) (HashMap.elems (infoTable ^. Internal.infoAxioms))
 
-    quote :: Text -> Text
-    quote = quote' . Text.filter isLatin1 . Text.filter (isLetter .||. isDigit .||. (== '_') .||. (== '\''))
+    quoteName :: Name -> Name
+    quoteName name = overNameText goNameText name
       where
+        goNameText :: Text -> Text
+        goNameText txt
+          | Text.elem '.' txt =
+              let idenName = snd $ Text.breakOnEnd "." txt
+                  modulePath = name ^. nameId . nameIdModuleId . moduleIdPath
+                  modulePathText = Text.intercalate "." (modulePath ^. modulePathKeyDir ++ [modulePath ^. modulePathKeyName])
+                  moduleName' = toIsabelleTheoryName modulePathText
+                  idenName' = quote idenName
+               in moduleName' <> "." <> idenName'
+          | otherwise = quote txt
+
+    quote :: Text -> Text
+    quote txt0
+      | Text.elem '.' txt0 = moduleName' <> "." <> idenName'
+      | otherwise = quote'' txt0
+      where
+        (moduleName, idenName) = Text.breakOnEnd "." txt0
+        moduleName' = toIsabelleTheoryName (removeLastDot moduleName)
+        idenName' = quote'' idenName
+
+        removeLastDot :: Text -> Text
+        removeLastDot txt
+          | Text.last txt == '.' = Text.init txt
+          | otherwise = txt
+
+        quote'' :: Text -> Text
+        quote'' =
+          quote'
+            . Text.filter isLatin1
+            . Text.filter (isLetter .||. isDigit .||. (== '_') .||. (== '\''))
+
         quote' :: Text -> Text
         quote' txt
           | HashSet.member txt reservedNames = quote' (prime txt)

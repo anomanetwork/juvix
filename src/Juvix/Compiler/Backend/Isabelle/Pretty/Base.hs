@@ -315,7 +315,7 @@ instance PrettyCode RecordField where
 
 ppImports :: [Name] -> Sem r [Doc Ann]
 ppImports ns =
-  return $ map (dquotes . pretty) $ filter (not . Text.isPrefixOf "Stdlib/") $ map (Text.replace "." "/" . (^. namePretty)) ns
+  return $ map pretty $ filter (not . Text.isPrefixOf "Stdlib_" . (^. namePretty)) ns
 
 instance PrettyCode Theory where
   ppCode Theory {..} = do

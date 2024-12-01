@@ -1,6 +1,9 @@
 module Program;
 
 import Stdlib.Prelude open;
+import N;
+import M.N;
+import M.Main as Main;
 
 id0 : Nat -> Nat := id;
 
@@ -23,7 +26,7 @@ f (x y : Nat) : Nat -> Nat
 
 g (x y : Nat) : Bool :=
   if
-    | x == y := false
+    | x == f x (N.g y) (M.N.g (Main.f y)) := false
     | else := true;
 
 inc (x : Nat) : Nat := suc x;
@@ -190,3 +193,44 @@ funR4 : R -> R
 bf (b1 b2 : Bool) : Bool := not (b1 && b2);
 
 nf (n1 n2 : Int) : Bool := n1 - n2 >= n1 || n2 <= n1 + n2;
+
+-- Nested record patterns
+
+type MessagePacket (MessageType : Type) : Type := mkMessagePacket {
+  target : Nat;
+  mailbox : Maybe Nat;
+  message : MessageType;
+};
+
+type EnvelopedMessage (MessageType : Type) : Type :=
+  mkEnvelopedMessage {
+    sender : Maybe Nat;
+    packet : MessagePacket MessageType;
+  };
+
+type Timer (HandleType : Type): Type := mkTimer {
+  time : Nat;
+  handle : HandleType;
+};
+
+type Trigger (MessageType : Type) (HandleType : Type) :=
+  | MessageArrived { envelope : EnvelopedMessage MessageType; }
+  | Elapsed { timers : List (Timer HandleType) };
+
+getMessageFromTrigger : {M H : Type} -> Trigger M H -> Maybe M
+      | (MessageArrived@{
+          envelope := (mkEnvelopedMessage@{
+            packet := (mkMessagePacket@{
+              message := m })})})
+              := just m
+      | _ := nothing;
+
+
+getMessageFromTrigger' {M H} (t : Trigger M H) : Maybe M :=
+     case t of
+      | (MessageArrived@{
+          envelope := (mkEnvelopedMessage@{
+            packet := (mkMessagePacket@{
+              message := m })})})
+              := just m
+      | _ := nothing;

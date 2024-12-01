@@ -1,14 +1,46 @@
 ghc-options:
   "$locals": -optP-Wno-nonportable-include-path
 resolver: nightly-2024-05-31
+compiler: ghc-9.10.1
+compiler-check: match-exact
 extra-deps:
   - git: https://github.com/haskell-effectful/effectful.git
-    commit: 2037be9a4f4e8f8fd280d9359b1bc7feff9b29b9
+    commit: 2a8f0b3a0536c578ee1ff83311863a27e9d3e2e1
     subdirs:
       - effectful-th
   - git: https://github.com/Vekhir/aeson-better-errors.git
     commit: 1ec49ab7d1472046b680b5a64ae2930515b47714
+  - Cabal-syntax-3.10.3.0@sha256:c2ca36499bf9365726968b1e11a757e6d846c47cdf0c2c26a003698fd3c300fe,7431
+  - directory-1.3.8.5@sha256:fbeec9ec346e5272167f63dcb86af513b457a7b9fc36dc818e4c7b81608d612b,3166
+  - filepath-1.4.300.2@sha256:345cbb1afe414a09e47737e4d14cbd51891a734e67c0ef3d77a1439518bb81e8,5900
+  - haskeline-0.8.2.1@sha256:40096f75591b5391aa99c5ed87148da0e9288ca4be302dd9e5c4326f814089ba,6117
+  - process-1.6.21.0@sha256:685bc68759da31b5f152092fe664e1644e84f6dc0ae7a6c143e8564a1d6dafe8,2644
+  - unix-2.8.5.1@sha256:3f702a252a313a7bcb56e3908a14e7f9f1b40e41b7bdc8ae8a9605a1a8686f06,9808
+  - containers-0.6.8@sha256:bb2bec1bbc6b39a7c97cd95e056a5698ec45beb5d8feb6caae12af64e4bd823c,2670
+  - binary-0.8.9.2@sha256:03381e511429c44d13990c6d76281c4fc2468371cede4fe684b0c98d9b7d5f5a,6611
+  - parsec-3.1.17.0@sha256:8407cbd428d7f640a0fff8891bd2f7aca13cebe70a5e654856f8abec9a648b56,5149
+  - text-2.1.1@sha256:78c3fb91055d0607a80453327f087b9dc82168d41d0dca3ff410d21033b5e87d,10653
+  - th-abstraction-0.6.0.0@sha256:313760d630851a0eba6bdcb1a1eb543c4c9c583072d704067fa3248a5252a8ae,2303
+  - bytestring-0.12.1.0@sha256:98e79e1c97117143e4012983509ec95f7e5e4f6adff6914d07812a39f83404b9,9473
+  - exceptions-0.10.8@sha256:c31fd9b35d36196cbb14ffa5fca4de49868fd39acfeddd601fb77e742554aa67,2892
+  - template-haskell-2.22.0.0@sha256:463e87c76794859c861c95517329483282af8b079c02084755cc4bd1ae41d5ae,2151
+  - th-desugar-1.17
+  - polysemy-1.9.2.0
+  - singletons-th-3.4
+  - singletons-base-3.4
+  - lens-5.3.2
 allow-newer: true
 allow-newer-deps:
   - aeson-better-errors
   - effectful-th
+  - juvix
+  - cborg
+  - palette
+  - serialise
+  - string-interpolate
+  - tasty-hedgehog
+  - unicode-data
+  - unicode-transforms
+  - unliftio-core
+  - uuid-types
+  - versions
