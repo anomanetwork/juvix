@@ -272,10 +272,12 @@ fun message :: "'MessageType MessagePacket \<Rightarrow> 'MessageType" where
     message'"
 
 fun sender :: "'MessageType EnvelopedMessage \<Rightarrow> nat option" where
-  "sender (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) = sender'"
+  "sender (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) =
+    sender'"
 
 fun packet :: "'MessageType EnvelopedMessage \<Rightarrow> 'MessageType MessagePacket" where
-  "packet (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) = packet'"
+  "packet (| EnvelopedMessage.sender = sender', EnvelopedMessage.packet = packet' |) =
+    packet'"
 
 fun time :: "'HandleType Timer \<Rightarrow> nat" where
   "time (| Timer.time = time', Timer.handle = handle' |) = time'"
