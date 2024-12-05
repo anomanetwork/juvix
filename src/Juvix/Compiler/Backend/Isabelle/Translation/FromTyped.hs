@@ -69,17 +69,19 @@ fromInternal res@Internal.InternalTypedResult {..} = do
 goModule :: Bool -> Internal.InfoTable -> Internal.Module -> Theory
 goModule onlyTypes infoTable Internal.Module {..} =
   Theory
-    { _theoryName = overNameText toIsabelleName _moduleName,
-      _theoryImports = map (^. Internal.importModuleName) (_moduleBody ^. Internal.moduleImports),
+    { _theoryName = overNameText toIsabelleTheoryName _moduleName,
+      _theoryImports =
+        map
+          (overNameText toIsabelleTheoryName . (^. Internal.importModuleName))
+          (_moduleBody ^. Internal.moduleImports),
       _theoryStatements = case _modulePragmas ^. pragmasIsabelleIgnore of
         Just (PragmaIsabelleIgnore True) -> []
         _ -> concatMap goMutualBlock (_moduleBody ^. Internal.moduleStatements)
     }
   where
-    toIsabelleName :: Text -> Text
-    toIsabelleName name = case reverse $ filter (/= "") $ T.splitOn "." name of
-      h : _ -> h
-      [] -> impossible
+    toIsabelleTheoryName :: Text -> Text
+    toIsabelleTheoryName name =
+      quote . Text.intercalate "_" $ filter (/= "") $ T.splitOn "." name
 
     isTypeDef :: Statement -> Bool
     isTypeDef = \case
@@ -195,8 +197,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
                 }
       where
         argnames =
-          map (overNameText quote) $ filterTypeArgs 0 ty $ map (fromMaybe (defaultName (getLoc name) "_") . (^. Internal.argInfoName)) argsInfo
-        name' = overNameText quote name
+          map quoteName $ filterTypeArgs 0 ty $ map (fromMaybe (defaultName (getLoc name) "_") . (^. Internal.argInfoName)) argsInfo
+        name' = quoteName name
         loc = getLoc name
 
     isFunction :: [Name] -> Internal.Expression -> Maybe Internal.Expression -> Bool
@@ -376,18 +378,18 @@ goModule onlyTypes infoTable Internal.Module {..} =
 
     goTypeIden :: Internal.Iden -> Type
     goTypeIden = \case
-      Internal.IdenFunction name -> mkIndType (overNameText quote name) []
+      Internal.IdenFunction name -> mkIndType (quoteName name) []
       Internal.IdenConstructor name -> error ("unsupported type: constructor " <> Internal.ppTrace name)
-      Internal.IdenVar name -> TyVar $ TypeVar (overNameText quote name)
-      Internal.IdenAxiom name -> mkIndType (overNameText quote name) []
-      Internal.IdenInductive name -> mkIndType (overNameText quote name) []
+      Internal.IdenVar name -> TyVar $ TypeVar (quoteName name)
+      Internal.IdenAxiom name -> mkIndType (quoteName name) []
+      Internal.IdenInductive name -> mkIndType (quoteName name) []
 
     goTypeApp :: Internal.Application -> Type
     goTypeApp app = mkIndType name params
       where
         (ind, args) = Internal.unfoldApplication app
         params = map goType (toList args)
-        name = overNameText quote $ case ind of
+        name = quoteName $ case ind of
           Internal.ExpressionIden (Internal.IdenFunction n) -> n
           Internal.ExpressionIden (Internal.IdenAxiom n) -> n
           Internal.ExpressionIden (Internal.IdenInductive n) -> n
@@ -416,8 +418,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
               setNameText "None" name
             Just Internal.BuiltinMaybeJust ->
               setNameText "Some" name
-            _ -> overNameText quote name
-        Nothing -> overNameText quote name
+            _ -> quoteName name
+        Nothing -> quoteName name
 
     getArgtys :: Internal.ConstructorInfo -> [Internal.FunctionParameter]
     getArgtys ctrInfo = fst $ Internal.unfoldFunType $ ctrInfo ^. Internal.constructorInfoType
@@ -430,8 +432,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
             Just funInfo ->
               case funInfo ^. Internal.functionInfoPragmas . pragmasIsabelleFunction of
                 Just PragmaIsabelleFunction {..} -> setNameText _pragmaIsabelleFunctionName name
-                Nothing -> overNameText quote name
-            Nothing -> overNameText quote name
+                Nothing -> quoteName name
+            Nothing -> quoteName name
       x -> x
 
     lookupName :: forall r. (Member (Reader NameMap) r) => Name -> Sem r Expression
@@ -490,8 +492,8 @@ goModule onlyTypes infoTable Internal.Module {..} =
               Nothing -> return $ ExprIden (goConstrName name)
           Internal.IdenVar name -> do
             lookupName name
-          Internal.IdenAxiom name -> return $ ExprIden (overNameText quote name)
-          Internal.IdenInductive name -> return $ ExprIden (overNameText quote name)
+          Internal.IdenAxiom name -> return $ ExprIden (quoteName name)
+          Internal.IdenInductive name -> return $ ExprIden (quoteName name)
 
         goApplication :: Internal.Application -> Sem r Expression
         goApplication app@Internal.Application {..}
@@ -1217,9 +1219,40 @@ goModule onlyTypes infoTable Internal.Module {..} =
                 ++ map (^. Internal.inductiveInfoName . namePretty) (HashMap.elems (infoTable ^. Internal.infoInductives))
                 ++ map (^. Internal.axiomInfoDef . Internal.axiomName . namePretty) (HashMap.elems (infoTable ^. Internal.infoAxioms))
 
-    quote :: Text -> Text
-    quote = quote' . Text.filter isLatin1 . Text.filter (isLetter .||. isDigit .||. (== '_') .||. (== '\''))
+    quoteName :: Name -> Name
+    quoteName name = overNameText goNameText name
       where
+        goNameText :: Text -> Text
+        goNameText txt
+          | Text.elem '.' txt =
+              let idenName = snd $ Text.breakOnEnd "." txt
+                  modulePath = name ^. nameId . nameIdModuleId . moduleIdPath
+                  modulePathText = Text.intercalate "." (modulePath ^. modulePathKeyDir ++ [modulePath ^. modulePathKeyName])
+                  moduleName' = toIsabelleTheoryName modulePathText
+                  idenName' = quote idenName
+               in moduleName' <> "." <> idenName'
+          | otherwise = quote txt
+
+    quote :: Text -> Text
+    quote txt0
+      | Text.elem '.' txt0 = moduleName' <> "." <> idenName'
+      | otherwise = quote'' txt0
+      where
+        (moduleName, idenName) = Text.breakOnEnd "." txt0
+        moduleName' = toIsabelleTheoryName (removeLastDot moduleName)
+        idenName' = quote'' idenName
+
+        removeLastDot :: Text -> Text
+        removeLastDot txt
+          | Text.last txt == '.' = Text.init txt
+          | otherwise = txt
+
+        quote'' :: Text -> Text
+        quote'' =
+          quote'
+            . Text.filter isLatin1
+            . Text.filter (isLetter .||. isDigit .||. (== '_') .||. (== '\''))
+
         quote' :: Text -> Text
         quote' txt
           | HashSet.member txt reservedNames = quote' (prime txt)

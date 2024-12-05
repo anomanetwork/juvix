@@ -1,5 +1,8 @@
 theory Program
 imports Main
+        N
+        M_N
+        M_Main
 begin
 
 definition id0 :: "nat \<Rightarrow> nat" where
@@ -25,7 +28,7 @@ fun f :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat" where
   "f x y z = ((z + 1) * x + y)"
 
 fun g :: "nat \<Rightarrow> nat \<Rightarrow> bool" where
-  "g x y = (if x = y then False else True)"
+  "g x y = (if x = f x (N.g y) (M_N.g (M_Main.f y)) then False else True)"
 
 fun inc :: "nat \<Rightarrow> nat" where
   "inc x = (Suc x)"
