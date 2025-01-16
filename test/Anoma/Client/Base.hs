@@ -16,7 +16,7 @@ pollForOutput :: forall r a. (Members '[Error SimpleError, EmbedIO] r) => Int ->
 pollForOutput timeoutMillis isDataAvailable action = runConcurrent $ do
   raceResult <- race timeoutAction go
   case raceResult of
-    Left {} -> throw (SimpleError (mkAnsiText @Text "Operation timed out"))
+    Left {} -> throw (SimpleError (mkAnsiText @Text "pollForOutput: Operation timed out"))
     Right xs -> return xs
   where
     go :: Sem (Concurrent ': r) a

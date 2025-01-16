@@ -26,9 +26,9 @@ env:
   SKIP: ormolu,format-juvix-files,typecheck-juvix-examples
   CAIRO_VM_VERSION: 6c324e0d761013f38b8b743e515a65ac1a380206
   RISC0_VM_VERSION: v1.0.1
-  # This is the top commit hash in the branch lukasz/juvix-integration-tracking
+  # This is the top commit hash in the branch paul/juvix-ci-stable
   # of the anoma repository.
-  ANOMA_VERSION: 7fdd77377317ff0e29676a403b384cb1f2dc4729
+  ANOMA_VERSION: 8cc25d3fd64ad20623c8135eaa0a6d2096016549
   JUST_ARGS: runtimeCcArg=$CC runtimeLibtoolArg=$LIBTOOL
   STACK_BUILD_ARGS: --pedantic -j4 --ghc-options=-j
 

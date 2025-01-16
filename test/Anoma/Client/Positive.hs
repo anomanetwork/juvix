@@ -67,7 +67,7 @@ clientTests =
         _clientAssertion = \program -> do
           proveTraces <- proveAndSubmit program []
           step "fetching unrevealed commits"
-          resList <- pollForOutput 2000 isListUnrevealedCommitsAvailable listUnrevealedCommits
+          resList <- pollForOutput 10000 isListUnrevealedCommitsAvailable listUnrevealedCommits
           case (proveTraces, resList ^. listUnrevealedCommitsResultCommits) of
             ([proveCommitment], [listCommitment]) ->
               liftIO $
