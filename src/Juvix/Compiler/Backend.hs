@@ -1,6 +1,7 @@
 module Juvix.Compiler.Backend where
 
 import GHC.Base (maxInt)
+import Juvix.Extra.Serialize
 import Juvix.Prelude
 
 data Target
@@ -13,7 +14,11 @@ data Target
   | TargetRust
   | TargetAnoma
   | TargetCairo
-  deriving stock (Data, Eq, Show)
+  deriving stock (Data, Eq, Show, Generic)
+
+instance Serialize Target
+
+instance NFData Target
 
 data Limits = Limits
   { _limitsMaxConstrs :: Int,
@@ -137,3 +142,15 @@ defaultLimits =
       _limitsBuiltinUIDsNum = maxInt,
       _limitsSpecialisedApply = 0
     }
+
+getTargetSubdir :: Target -> Path Rel Dir
+getTargetSubdir = \case
+  TargetCWasm32Wasi -> $(mkRelDir "wasm32-wasi")
+  TargetCNative64 -> $(mkRelDir "native64")
+  TargetCore -> $(mkRelDir "default")
+  TargetAsm -> $(mkRelDir "default")
+  TargetReg -> $(mkRelDir "default")
+  TargetTree -> $(mkRelDir "tree")
+  TargetRust -> $(mkRelDir "rust")
+  TargetAnoma -> $(mkRelDir "anoma")
+  TargetCairo -> $(mkRelDir "cairo")

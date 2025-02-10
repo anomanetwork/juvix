@@ -1,6 +1,8 @@
 module Juvix.Compiler.Core.Data.Module.Base where
 
-import Juvix.Compiler.Core.Language
+import Juvix.Data.ModuleId
+import Juvix.Extra.Serialize
+import Juvix.Prelude
 
 data Module' t = Module
   { _moduleId :: ModuleId,
