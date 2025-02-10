@@ -98,7 +98,7 @@ evalUnop tab op v = case op of
     goIntToField :: Value -> Either ErrorMsg Value
     goIntToField = \case
       ValInteger i ->
-        Right $ ValField $ fieldFromInteger (tab ^. infoFieldSize) i
+        Right $ ValField $ fieldFromInteger defaultFieldSize i
       _ ->
         Left "expected an integer"
 

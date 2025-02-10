@@ -17,8 +17,7 @@ fromCore tab =
     { _infoMainFunction = tab ^. Core.infoMain,
       _infoFunctions = genCode tab <$> tab ^. Core.infoFunctions,
       _infoInductives = translateInductiveInfo <$> tab ^. Core.infoInductives,
-      _infoConstrs = translateConstructorInfo <$> tab ^. Core.infoConstructors,
-      _infoFieldSize = tab ^. Core.infoFieldSize
+      _infoConstrs = translateConstructorInfo <$> tab ^. Core.infoConstructors
     }
 
 toTreeOp :: Core.BuiltinOp -> TreeOp

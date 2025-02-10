@@ -23,8 +23,7 @@ fromAsm tab = do
       { _infoMainFunction = tab ^. Asm.infoMainFunction,
         _infoFunctions = fns,
         _infoInductives = tab ^. Asm.infoInductives,
-        _infoConstrs = tab ^. Asm.infoConstrs,
-        _infoFieldSize = tab ^. Asm.infoFieldSize
+        _infoConstrs = tab ^. Asm.infoConstrs
       }
 
 goFunction :: (Member (Error TreeError) r') => Asm.InfoTable -> Asm.FunctionInfo -> Sem r' FunctionInfo
