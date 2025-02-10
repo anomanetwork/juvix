@@ -230,9 +230,8 @@ storedCoreToTree ::
   Core.Module ->
   Sem r Tree.InfoTable
 storedCoreToTree checkId md = do
-  fsize <- asks (^. entryPointFieldSize)
   Tree.fromCore
-    . Stripped.fromCore fsize
+    . Stripped.fromCore
     . Core.computeCombinedInfoTable
     <$> Core.toStripped checkId md
 

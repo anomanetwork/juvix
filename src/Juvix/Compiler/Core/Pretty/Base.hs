@@ -710,7 +710,7 @@ instance PrettyCode Stripped.InfoTable where
           ppInductive :: Stripped.InductiveInfo -> Sem r (Doc Ann)
           ppInductive ii = do
             name <- ppName KNameInductive (ii ^. Stripped.inductiveName)
-            ctrs <- mapM (fmap (<> semi) . ppCode . Stripped.lookupConstructorInfo tbl) (ii ^. Stripped.inductiveConstructors)
+            ctrs <- mapM (fmap (<> semi) . ppCode . Stripped.lookupTabConstructorInfo tbl) (ii ^. Stripped.inductiveConstructors)
             return (kwInductive <+> name <+> braces (line <> indent' (vsep ctrs) <> line))
 
 instance (PrettyCode a) => PrettyCode (NonEmpty a) where

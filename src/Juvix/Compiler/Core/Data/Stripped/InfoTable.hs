@@ -7,9 +7,7 @@ data InfoTable = InfoTable
   { _infoMain :: Maybe Symbol,
     _infoFunctions :: HashMap Symbol FunctionInfo,
     _infoInductives :: HashMap Symbol InductiveInfo,
-    _infoConstructors :: HashMap Tag ConstructorInfo,
-    -- Used only by the JuvixTree evaluator
-    _infoFieldSize :: Natural
+    _infoConstructors :: HashMap Tag ConstructorInfo
   }
 
 data FunctionInfo = FunctionInfo
@@ -67,5 +65,8 @@ makeLenses ''InductiveInfo
 makeLenses ''ConstructorInfo
 makeLenses ''ParameterInfo
 
-lookupConstructorInfo :: InfoTable -> Tag -> ConstructorInfo
-lookupConstructorInfo tab tag = fromJust $ HashMap.lookup tag (tab ^. infoConstructors)
+lookupTabConstructorInfo' :: InfoTable -> Tag -> Maybe ConstructorInfo
+lookupTabConstructorInfo' tab tag = HashMap.lookup tag (tab ^. infoConstructors)
+
+lookupTabConstructorInfo :: InfoTable -> Tag -> ConstructorInfo
+lookupTabConstructorInfo tab tag = fromJust $ HashMap.lookup tag (tab ^. infoConstructors)

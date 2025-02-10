@@ -9,14 +9,13 @@ import Juvix.Compiler.Core.Info.NameInfo
 import Juvix.Compiler.Core.Language.Stripped qualified as Stripped
 import Juvix.Compiler.Core.Pretty
 
-fromCore :: Natural -> InfoTable -> Stripped.InfoTable
-fromCore fsize tab =
+fromCore :: InfoTable -> Stripped.InfoTable
+fromCore tab =
   Stripped.InfoTable
     { _infoMain = tab ^. infoMain,
       _infoFunctions = fmap (translateFunctionInfo tab) (tab' ^. infoIdentifiers),
       _infoInductives = fmap translateInductiveInfo (tab' ^. infoInductives),
-      _infoConstructors = fmap translateConstructorInfo (tab' ^. infoConstructors),
-      _infoFieldSize = fsize
+      _infoConstructors = fmap translateConstructorInfo (tab' ^. infoConstructors)
     }
   where
     tab' =

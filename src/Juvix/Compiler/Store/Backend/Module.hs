@@ -1,4 +1,4 @@
-module Juvix.Compiler.Store.Backend.Module.Base where
+module Juvix.Compiler.Store.Backend.Module where
 
 import Juvix.Compiler.Store.Backend.Options
 import Juvix.Data.ModuleId

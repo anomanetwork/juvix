@@ -92,8 +92,8 @@ fromInternal i = mapError (JuvixError . ErrBadScope) $ do
           reserveLiteralIntToIntSymbol
         let resultModule = i ^. InternalTyped.resultModule
             resultTable =
-              Internal.computeCombinedInfoTable importTab
-                <> i ^. InternalTyped.resultInternalModule . Internal.internalModuleInfoTable
+              i ^. InternalTyped.resultInternalModule . Internal.internalModuleInfoTable
+                <> Internal.computeCombinedInfoTable importTab
         runReader resultTable $
           goModule resultModule
         md' <- getModule
