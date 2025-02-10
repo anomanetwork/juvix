@@ -70,10 +70,12 @@ fromInternal ::
 fromInternal i = mapError (JuvixError . ErrBadScope) $ do
   importTab <- asks Store.getInternalModuleTable
   coreImportsTab <- asks Store.computeCombinedCoreInfoTable
-  let md =
+  let imd = i ^. InternalTyped.resultInternalModule
+      md =
         Module
-          { _moduleId = i ^. InternalTyped.resultInternalModule . Internal.internalModuleId,
+          { _moduleId = imd ^. Internal.internalModuleId,
             _moduleInfoTable = mempty,
+            _moduleImports = imd ^. Internal.internalModuleImports,
             _moduleImportsTable = coreImportsTab
           }
       tabs = i ^. InternalTyped.resultTypeCheckingTables

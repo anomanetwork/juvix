@@ -18,7 +18,7 @@ import Juvix.Prelude
 data InternalModule = InternalModule
   { _internalModuleId :: ModuleId,
     _internalModuleName :: Name,
-    _internalModuleImports :: [Import],
+    _internalModuleImports :: [ModuleId],
     _internalModuleInfoTable :: InfoTable,
     _internalModuleTypeCheckingTables :: TypeCheckingTables
   }

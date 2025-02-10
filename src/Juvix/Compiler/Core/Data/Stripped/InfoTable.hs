@@ -8,6 +8,7 @@ data InfoTable = InfoTable
     _infoFunctions :: HashMap Symbol FunctionInfo,
     _infoInductives :: HashMap Symbol InductiveInfo,
     _infoConstructors :: HashMap Tag ConstructorInfo,
+    -- Used only by the JuvixTree evaluator
     _infoFieldSize :: Natural
   }
 

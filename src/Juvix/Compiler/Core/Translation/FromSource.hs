@@ -33,7 +33,7 @@ runParser :: Path Abs File -> ModuleId -> InfoTable -> Text -> Either JuvixError
 runParser fileName mid tab input_ =
   case run $
     runError @CoreError $
-      runInfoTableBuilder (Module mid tab mempty) $
+      runInfoTableBuilder (Module mid tab mempty mempty) $
         P.runParserT parseToplevel (fromAbsFile fileName) input_ of
     Left err -> Left (JuvixError err)
     Right (_, Left err) -> Left (JuvixError (MegaparsecError err))
