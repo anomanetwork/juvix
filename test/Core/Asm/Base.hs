@@ -12,7 +12,6 @@ import Juvix.Compiler.Core.Translation.FromSource
 import Juvix.Compiler.Core.Translation.Stripped.FromCore qualified as Stripped
 import Juvix.Compiler.Pipeline.EntryPoint qualified as EntryPoint
 import Juvix.Compiler.Tree.Translation.FromCore qualified as Tree
-import Juvix.Data.Field
 import Juvix.Data.PPOutput
 
 newtype Test = Test
@@ -68,6 +67,6 @@ coreAsmAssertion root' mainFile expectedFile step = do
           let tab =
                 Asm.fromTree
                   . Tree.fromCore
-                  . Stripped.fromCore (maximum allowedFieldSizes)
+                  . Stripped.fromCore
                   $ computeCombinedInfoTable m
           Asm.asmRunAssertion' tab expectedFile step
