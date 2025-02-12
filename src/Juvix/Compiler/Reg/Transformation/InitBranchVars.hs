@@ -76,8 +76,8 @@ initBranchVars = mapT (const goFun)
                 _instrAssignValue = ValConst ConstVoid
               }
 
-checkInitialized :: InfoTable -> Bool
-checkInitialized tab = all (goFun . (^. functionCode)) (tab ^. infoFunctions)
+checkInitialized :: Module -> Bool
+checkInitialized md = all (goFun . (^. functionCode)) (md ^. moduleInfoTable . infoFunctions)
   where
     goFun :: Code -> Bool
     goFun = snd . ifoldB go (mempty, True)

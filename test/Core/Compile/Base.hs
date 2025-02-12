@@ -55,9 +55,9 @@ coreCompileAssertion' entryPoint optLevel tab mainFile expectedFile stdinText st
     Right m -> do
       let tab0 = computeCombinedInfoTable m
       assertBool "Check info table" (checkInfoTable tab0)
-      let tab' = Asm.fromTree . Tree.fromCore $ Stripped.fromCore tab0
-      length (fromText (Asm.ppPrint tab' tab') :: String) `seq`
-        Asm.asmCompileAssertion' entryPoint' optLevel tab' mainFile expectedFile stdinText step
+      let md' = Asm.fromTree . Tree.fromCore $ Stripped.fromCore m
+      length (fromText (Asm.ppPrint md' (computeCombinedInfoTable md')) :: String) `seq`
+        Asm.asmCompileAssertion' entryPoint' optLevel md' mainFile expectedFile stdinText step
   where
     entryPoint' = entryPoint {_entryPointOptimizationLevel = optLevel}
 

@@ -6,14 +6,14 @@ import Data.Aeson
 import Juvix.Compiler.Casm.Data.Result
 import Juvix.Compiler.Casm.Error
 import Juvix.Compiler.Casm.Interpreter
-import Juvix.Compiler.Reg.Data.InfoTable qualified as Reg
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Data.PPOutput
 import Reg.Run.Base qualified as Reg
 
-compileAssertion' :: EntryPoint -> Maybe (Path Abs File) -> Path Abs Dir -> Path Abs File -> Symbol -> Reg.InfoTable -> (String -> IO ()) -> Assertion
-compileAssertion' entryPoint inputFile _ outputFile _ tab step = do
+compileAssertion' :: EntryPoint -> Maybe (Path Abs File) -> Path Abs Dir -> Path Abs File -> Symbol -> Reg.Module -> (String -> IO ()) -> Assertion
+compileAssertion' entryPoint inputFile _ outputFile _ md step = do
   step "Translate to CASM"
-  case run . runError @JuvixError . runReader entryPoint $ regToCasm tab of
+  case run . runError @JuvixError . runReader entryPoint $ regToCasm md of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
     Right Result {..} -> do
       step "Interpret"
@@ -27,10 +27,10 @@ compileAssertion' entryPoint inputFile _ outputFile _ tab step = do
           hPrint hout v
           hClose hout
 
-cairoAssertion' :: EntryPoint -> Maybe (Path Abs File) -> Path Abs Dir -> Path Abs File -> Symbol -> Reg.InfoTable -> (String -> IO ()) -> Assertion
-cairoAssertion' entryPoint inputFile dirPath outputFile _ tab step = do
+cairoAssertion' :: EntryPoint -> Maybe (Path Abs File) -> Path Abs Dir -> Path Abs File -> Symbol -> Reg.Module -> (String -> IO ()) -> Assertion
+cairoAssertion' entryPoint inputFile dirPath outputFile _ md step = do
   step "Translate to Cairo"
-  case run . runError @JuvixError . runReader entryPoint $ regToCairo tab of
+  case run . runError @JuvixError . runReader entryPoint $ regToCairo md of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
     Right res -> do
       step "Serialize to Cairo bytecode"

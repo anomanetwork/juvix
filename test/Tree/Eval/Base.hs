@@ -1,7 +1,7 @@
 module Tree.Eval.Base where
 
 import Base
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Data.TransformationId
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Evaluator
@@ -17,17 +17,17 @@ treeEvalAssertion ::
   Path Abs File ->
   Path Abs File ->
   [TransformationId] ->
-  (InfoTable -> Assertion) ->
+  (Module -> Assertion) ->
   (String -> IO ()) ->
   Assertion
 treeEvalAssertion = treeEvalAssertionParam evalAssertion
 
 treeEvalAssertionParam ::
-  (Handle -> Symbol -> InfoTable -> IO ()) ->
+  (Handle -> Symbol -> Module -> IO ()) ->
   Path Abs File ->
   Path Abs File ->
   [TransformationId] ->
-  (InfoTable -> Assertion) ->
+  (Module -> Assertion) ->
   (String -> IO ()) ->
   Assertion
 treeEvalAssertionParam evalParam mainFile expectedFile trans testTrans step = do
@@ -35,26 +35,26 @@ treeEvalAssertionParam evalParam mainFile expectedFile trans testTrans step = do
   s <- readFile mainFile
   case runParser mainFile s of
     Left err -> assertFailure (prettyString err)
-    Right tab0 -> do
+    Right md0 -> do
       step "Validate"
       let opts = Tree.defaultOptions
-      case run $ runReader opts $ runError @JuvixError $ applyTransformations [Validate] tab0 of
+      case run $ runReader opts $ runError @JuvixError $ applyTransformations [Validate] md0 of
         Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
-        Right tab1 -> do
+        Right md1 -> do
           unless (null trans) $
             step "Transform"
-          case run $ runReader opts $ runError @JuvixError $ applyTransformations trans tab1 of
+          case run $ runReader opts $ runError @JuvixError $ applyTransformations trans md1 of
             Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
-            Right tab -> do
-              testTrans tab
-              case tab ^. infoMainFunction of
+            Right md -> do
+              testTrans md
+              case md ^. moduleInfoTable . infoMainFunction of
                 Just sym -> do
                   withTempDir'
                     ( \dirPath -> do
                         let outputFile = dirPath <//> $(mkRelFile "out.out")
                         hout <- openFile (toFilePath outputFile) WriteMode
                         step "Evaluate"
-                        evalParam hout sym tab
+                        evalParam hout sym md
                         hClose hout
                         actualOutput <- readFile outputFile
                         step "Compare expected and actual program output"
@@ -63,9 +63,9 @@ treeEvalAssertionParam evalParam mainFile expectedFile trans testTrans step = do
                     )
                 Nothing -> assertFailure "no 'main' function"
 
-evalAssertion :: Handle -> Symbol -> InfoTable -> IO ()
-evalAssertion hout sym tab = do
-  r' <- doEval hout tab (lookupFunInfo tab sym)
+evalAssertion :: Handle -> Symbol -> Module -> IO ()
+evalAssertion hout sym md = do
+  r' <- doEval hout md (lookupFunInfo md sym)
   case r' of
     Left err -> do
       hClose hout
@@ -73,14 +73,14 @@ evalAssertion hout sym tab = do
     Right value' -> do
       case value' of
         ValVoid -> return ()
-        _ -> hPutStrLn hout (ppPrint tab value')
+        _ -> hPutStrLn hout (ppPrint md value')
 
 doEval ::
   Handle ->
-  InfoTable ->
+  Module ->
   FunctionInfo ->
   IO (Either TreeError Value)
-doEval hout tab funInfo = catchEvalErrorIO (hEvalIO stdin hout tab funInfo)
+doEval hout md funInfo = catchEvalErrorIO (hEvalIO stdin hout md funInfo)
 
 treeEvalErrorAssertion :: Path Abs File -> (String -> IO ()) -> Assertion
 treeEvalErrorAssertion mainFile step = do
@@ -88,15 +88,15 @@ treeEvalErrorAssertion mainFile step = do
   s <- readFile mainFile
   case runParser mainFile s of
     Left err -> assertFailure (prettyString err)
-    Right tab ->
-      case tab ^. infoMainFunction of
+    Right md ->
+      case md ^. moduleInfoTable . infoMainFunction of
         Just sym -> do
           withTempDir'
             ( \dirPath -> do
                 let outputFile = dirPath <//> $(mkRelFile "out.out")
                 hout <- openFile (toFilePath outputFile) WriteMode
                 step "Evaluate"
-                r' <- doEval hout tab (lookupFunInfo tab sym)
+                r' <- doEval hout md (lookupFunInfo md sym)
                 hClose hout
                 case r' of
                   Left _ -> assertBool "" True
