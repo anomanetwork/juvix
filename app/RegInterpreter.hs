@@ -2,28 +2,28 @@ module RegInterpreter where
 
 import App
 import CommonOptions
-import Juvix.Compiler.Reg.Data.InfoTable qualified as Reg
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Compiler.Reg.Interpreter qualified as Reg
 import Juvix.Compiler.Reg.Pretty qualified as Reg
 
-runReg :: forall r. (Members '[EmbedIO, App] r) => Reg.InfoTable -> Sem r ()
-runReg tab =
-  case tab ^. Reg.infoMainFunction of
+runReg :: forall r. (Members '[EmbedIO, App] r) => Reg.Module -> Sem r ()
+runReg md =
+  case md ^. Reg.moduleInfoTable . Reg.infoMainFunction of
     Just sym -> do
-      r <- doRun tab (Reg.lookupFunInfo tab sym)
+      r <- doRun md (Reg.lookupFunInfo md sym)
       case r of
         Left err ->
           exitJuvixError (JuvixError err)
         Right Reg.ValVoid ->
           return ()
         Right val -> do
-          renderStdOut (Reg.ppOut (Reg.defaultOptions tab) val)
+          renderStdOut (Reg.ppOut (Reg.defaultOptions md) val)
           putStrLn ""
     Nothing ->
       exitMsg (ExitFailure 1) "no 'main' function"
   where
     doRun ::
-      Reg.InfoTable ->
+      Reg.Module ->
       Reg.FunctionInfo ->
       Sem r (Either Reg.RegError Reg.Val)
-    doRun tab' funInfo = runError $ Reg.runFunctionIO stdin stdout tab' [] funInfo
+    doRun md' funInfo = runError $ Reg.runFunctionIO stdin stdout md' [] funInfo

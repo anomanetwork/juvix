@@ -4,10 +4,10 @@ import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Asm.Options
 import Juvix.Compiler.Asm.Transformation.Base
 
-computeMaxArgsNum :: InfoTable -> Int
-computeMaxArgsNum tab = maximum (map (^. functionArgsNum) (HashMap.elems (tab ^. infoFunctions)))
+computeMaxArgsNum :: Module -> Int
+computeMaxArgsNum md = maximum (map (^. functionArgsNum) (HashMap.elems (md ^. moduleInfoTable . infoFunctions)))
 
-computeCodePrealloc :: forall r. (Members '[Error AsmError, Reader Options] r) => Int -> InfoTable -> Code -> Sem r Code
+computeCodePrealloc :: forall r. (Members '[Error AsmError, Reader Options] r) => Int -> Module -> Code -> Sem r Code
 computeCodePrealloc maxArgsNum tab code = prealloc <$> foldS sig code (0, [])
   where
     -- returns the maximum memory use and the mapping result (Code with the
@@ -15,7 +15,7 @@ computeCodePrealloc maxArgsNum tab code = prealloc <$> foldS sig code (0, [])
     sig :: FoldSig StackInfo r (Int, Code)
     sig =
       FoldSig
-        { _foldInfoTable = tab,
+        { _foldModule = tab,
           _foldAdjust = second (const []),
           _foldInstr = const goInstr,
           _foldBranch = const goBranch,
@@ -91,22 +91,22 @@ computeCodePrealloc maxArgsNum tab code = prealloc <$> foldS sig code (0, [])
     prealloc (0, c) = c
     prealloc (n, c) = mkInstr (Prealloc (InstrPrealloc n)) : c
 
-computeFunctionPrealloc :: (Members '[Error AsmError, Reader Options] r) => Int -> InfoTable -> FunctionInfo -> Sem r FunctionInfo
-computeFunctionPrealloc maxArgsNum tab = liftCodeTransformation (computeCodePrealloc maxArgsNum tab)
+computeFunctionPrealloc :: (Members '[Error AsmError, Reader Options] r) => Int -> Module -> FunctionInfo -> Sem r FunctionInfo
+computeFunctionPrealloc maxArgsNum md = liftCodeTransformation (computeCodePrealloc maxArgsNum md)
 
-computePrealloc :: (Members '[Error AsmError, Reader Options] r) => InfoTable -> Sem r InfoTable
-computePrealloc tab =
-  liftFunctionTransformation (computeFunctionPrealloc (computeMaxArgsNum tab) tab) tab
+computePrealloc :: (Members '[Error AsmError, Reader Options] r) => Module -> Sem r Module
+computePrealloc md =
+  liftFunctionTransformation (computeFunctionPrealloc (computeMaxArgsNum md) md) md
 
-checkCodePrealloc :: forall r. (Members '[Error AsmError, Reader Options] r) => Int -> InfoTable -> Code -> Sem r Bool
-checkCodePrealloc maxArgsNum tab code = do
+checkCodePrealloc :: forall r. (Members '[Error AsmError, Reader Options] r) => Int -> Module -> Code -> Sem r Bool
+checkCodePrealloc maxArgsNum md code = do
   f <- foldS sig code id
   return $ f 0 >= 0
   where
     sig :: FoldSig StackInfo r (Int -> Int)
     sig =
       FoldSig
-        { _foldInfoTable = tab,
+        { _foldModule = md,
           _foldAdjust = id,
           _foldInstr = const goInstr,
           _foldBranch = const goBranch,
@@ -121,7 +121,7 @@ checkCodePrealloc maxArgsNum tab code = do
       AllocConstr tag ->
         return $ \k -> cont (k - size)
         where
-          ci = lookupConstrInfo tab tag
+          ci = lookupConstrInfo md tag
           size = getConstrSize (ci ^. constructorRepresentation) (ci ^. constructorArgsNum)
       AllocClosure InstrAllocClosure {..} -> do
         opts <- ask
@@ -149,10 +149,10 @@ checkCodePrealloc maxArgsNum tab code = do
          in cont (min k1 k2)
 
     goCase :: CmdCase -> [Int -> Int] -> Maybe (Int -> Int) -> (Int -> Int) -> Sem r (Int -> Int)
-    goCase _ brs md cont =
+    goCase _ brs mkd cont =
       return $ \k ->
         let ks = map (\f -> f k) brs
-            kd = fmap (\f -> f k) md
+            kd = fmap (\f -> f k) mkd
             k' = min (minimum ks) (fromMaybe k kd)
          in cont k'
 
@@ -160,11 +160,11 @@ checkCodePrealloc maxArgsNum tab code = do
     goSave _ br cont =
       return $ cont . br
 
-checkPrealloc :: Options -> InfoTable -> Bool
-checkPrealloc opts tab =
+checkPrealloc :: Options -> Module -> Bool
+checkPrealloc opts md =
   case run $ runError $ runReader opts sb of
     Left err -> error (show err)
     Right b -> b
   where
     sb :: Sem '[Reader Options, Error AsmError] Bool
-    sb = allM (checkCodePrealloc (computeMaxArgsNum tab) tab . (^. functionCode)) (HashMap.elems (tab ^. infoFunctions))
+    sb = allM (checkCodePrealloc (computeMaxArgsNum md) md . (^. functionCode)) (HashMap.elems (md ^. moduleInfoTable . infoFunctions))

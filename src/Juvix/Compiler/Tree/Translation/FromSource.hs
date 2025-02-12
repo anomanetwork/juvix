@@ -7,8 +7,8 @@ where
 
 import Control.Monad.Trans.Class (lift)
 import Data.HashMap.Strict qualified as HashMap
-import Juvix.Compiler.Tree.Data.InfoTable
 import Juvix.Compiler.Tree.Data.InfoTableBuilder
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Extra.Base
 import Juvix.Compiler.Tree.Language
 import Juvix.Compiler.Tree.Translation.FromSource.Base
@@ -32,13 +32,13 @@ parseTreeSig =
       _parserSigEmptyExtra = ()
     }
 
-parseText :: Text -> Either MegaparsecError InfoTable
+parseText :: Text -> Either MegaparsecError Module
 parseText = runParser noFile
 
 parseText' :: BuilderState -> Text -> Either MegaparsecError BuilderState
 parseText' bs = runParser' bs noFile
 
-runParser :: Path Abs File -> Text -> Either MegaparsecError InfoTable
+runParser :: Path Abs File -> Text -> Either MegaparsecError Module
 runParser = runParserS parseTreeSig
 
 runParser' :: BuilderState -> Path Abs File -> Text -> Either MegaparsecError BuilderState

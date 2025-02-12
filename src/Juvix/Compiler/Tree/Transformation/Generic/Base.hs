@@ -3,47 +3,48 @@ module Juvix.Compiler.Tree.Transformation.Generic.Base where
 import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Tree.Data.InfoTable.Base
 import Juvix.Compiler.Tree.Data.InfoTableBuilder.Base
+import Juvix.Compiler.Tree.Data.Module.Base
 import Juvix.Compiler.Tree.Language.Base
 import Juvix.Compiler.Tree.Options
 
-mapFunctionsM :: (Monad m) => (FunctionInfo' a e -> m (FunctionInfo' a e)) -> InfoTable' a e -> m (InfoTable' a e)
-mapFunctionsM = overM infoFunctions . mapM
+mapFunctionsM :: (Monad m) => (FunctionInfo' a e -> m (FunctionInfo' a e)) -> Module'' a e -> m (Module'' a e)
+mapFunctionsM = overM (moduleInfoTable . infoFunctions) . mapM
 
-mapInductivesM :: (Monad m) => (InductiveInfo -> m InductiveInfo) -> InfoTable' a e -> m (InfoTable' a e)
-mapInductivesM = overM infoInductives . mapM
+mapInductivesM :: (Monad m) => (InductiveInfo -> m InductiveInfo) -> Module'' a e -> m (Module'' a e)
+mapInductivesM = overM (moduleInfoTable . infoInductives) . mapM
 
-mapConstructorsM :: (Monad m) => (ConstructorInfo -> m ConstructorInfo) -> InfoTable' a e -> m (InfoTable' a e)
-mapConstructorsM = overM infoConstrs . mapM
+mapConstructorsM :: (Monad m) => (ConstructorInfo -> m ConstructorInfo) -> Module'' a e -> m (Module'' a e)
+mapConstructorsM = overM (moduleInfoTable . infoConstrs) . mapM
 
-mapFunctions :: (FunctionInfo' a e -> FunctionInfo' a e) -> InfoTable' a e -> InfoTable' a e
-mapFunctions = over infoFunctions . fmap
+mapFunctions :: (FunctionInfo' a e -> FunctionInfo' a e) -> Module'' a e -> Module'' a e
+mapFunctions = over (moduleInfoTable . infoFunctions) . fmap
 
-mapInductives :: (InductiveInfo -> InductiveInfo) -> InfoTable' a e -> InfoTable' a e
-mapInductives = over infoInductives . fmap
+mapInductives :: (InductiveInfo -> InductiveInfo) -> Module'' a e -> Module'' a e
+mapInductives = over (moduleInfoTable . infoInductives) . fmap
 
-mapConstructors :: (ConstructorInfo -> ConstructorInfo) -> InfoTable' a e -> InfoTable' a e
-mapConstructors = over infoConstrs . fmap
+mapConstructors :: (ConstructorInfo -> ConstructorInfo) -> Module'' a e -> Module'' a e
+mapConstructors = over (moduleInfoTable . infoConstrs) . fmap
 
-mapT :: (Symbol -> a -> a) -> InfoTable' a e -> InfoTable' a e
-mapT f = over infoFunctions (HashMap.mapWithKey (over functionCode . f))
+mapT :: (Symbol -> a -> a) -> Module'' a e -> Module'' a e
+mapT f = over (moduleInfoTable . infoFunctions) (HashMap.mapWithKey (over functionCode . f))
 
-mapT' :: forall a e r. (Symbol -> a -> Sem (InfoTableBuilder' a e ': r) a) -> InfoTable' a e -> Sem r (InfoTable' a e)
-mapT' f tab =
+mapT' :: forall a e r. (Symbol -> a -> Sem (InfoTableBuilder' a e ': r) a) -> Module'' a e -> Sem r (Module'' a e)
+mapT' f md =
   fmap fst $
-    runInfoTableBuilderWithInfoTable tab $
+    runInfoTableBuilder md $
       mapM_
         (\(sym, fi) -> overM functionCode (f sym) fi >>= registerFunction' @a @e)
-        (HashMap.toList (tab ^. infoFunctions))
+        (HashMap.toList (md ^. moduleInfoTable . infoFunctions))
 
-walkT :: (Applicative f) => (Symbol -> a -> f ()) -> InfoTable' a e -> f ()
-walkT f tab = for_ (HashMap.toList (tab ^. infoFunctions)) (\(k, v) -> f k (v ^. functionCode))
+walkT :: (Applicative f) => (Symbol -> a -> f ()) -> Module'' a e -> f ()
+walkT f md = for_ (HashMap.toList (md ^. moduleInfoTable . infoFunctions)) (\(k, v) -> f k (v ^. functionCode))
 
-withOptimizationLevel :: (Member (Reader Options) r) => Int -> (InfoTable' a e -> Sem r (InfoTable' a e)) -> InfoTable' a e -> Sem r (InfoTable' a e)
-withOptimizationLevel n f tab = do
+withOptimizationLevel :: (Member (Reader Options) r) => Int -> (Module'' a e -> Sem r (Module'' a e)) -> Module'' a e -> Sem r (Module'' a e)
+withOptimizationLevel n f md = do
   l <- asks (^. optOptimizationLevel)
   if
-      | l >= n -> f tab
-      | otherwise -> return tab
+      | l >= n -> f md
+      | otherwise -> return md
 
-withOptimizationLevel' :: (Member (Reader Options) r) => InfoTable' a e -> Int -> (InfoTable' a e -> Sem r (InfoTable' a e)) -> Sem r (InfoTable' a e)
-withOptimizationLevel' tab n f = withOptimizationLevel n f tab
+withOptimizationLevel' :: (Member (Reader Options) r) => Module'' a e -> Int -> (Module'' a e -> Sem r (Module'' a e)) -> Sem r (Module'' a e)
+withOptimizationLevel' md n f = withOptimizationLevel n f md

@@ -3,7 +3,7 @@ module Juvix.Compiler.Tree.EvaluatorEff (eval, hEvalIOEither) where
 import Control.Exception qualified as Exception
 import Data.ByteString qualified as BS
 import Juvix.Compiler.Core.Data.BinderList qualified as BL
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Evaluator (EvalError (..), toTreeError, valueToNode)
 import Juvix.Compiler.Tree.Evaluator.Builtins
@@ -27,8 +27,8 @@ emptyEvalCtx =
       _evalCtxTemp = mempty
     }
 
-eval :: (Members '[Output Value, Error EvalError] r) => InfoTable -> Node -> Sem r Value
-eval tab = runReader emptyEvalCtx . eval'
+eval :: (Members '[Output Value, Error EvalError] r) => Module -> Node -> Sem r Value
+eval md = runReader emptyEvalCtx . eval'
   where
     eval' :: forall r'. (Members '[Output Value, Reader EvalCtx, Error EvalError] r') => Node -> Sem r' Value
     eval' node = case node of
@@ -69,7 +69,7 @@ eval tab = runReader emptyEvalCtx . eval'
         goUnop NodeUnop {..} = do
           v <- eval' _nodeUnopArg
           case _nodeUnopOpcode of
-            PrimUnop op -> eitherToError $ evalUnop tab op v
+            PrimUnop op -> eitherToError $ evalUnop md op v
             OpAssert -> goAssert v
             OpTrace -> goTrace v
             OpFail -> goFail v
@@ -105,10 +105,10 @@ eval tab = runReader emptyEvalCtx . eval'
         goAssert = \case
           ValBool True -> return $ ValBool True
           ValBool False -> evalError "assertion failed"
-          v -> evalError ("expected a boolean: " <> printValue tab v)
+          v -> evalError ("expected a boolean: " <> printValue md v)
 
         goFail :: Value -> Sem r' Value
-        goFail v = evalError ("failure: " <> printValue tab v)
+        goFail v = evalError ("failure: " <> printValue md v)
 
         goTrace :: Value -> Sem r' Value
         goTrace v = output v $> v
@@ -189,7 +189,7 @@ eval tab = runReader emptyEvalCtx . eval'
         doCall :: Symbol -> [Value] -> [Node] -> Sem r' Value
         doCall sym clArgs as = do
           vs <- mapM eval' as
-          let fi = lookupFunInfo tab sym
+          let fi = lookupFunInfo md sym
               vs' = clArgs ++ vs
            in if
                   | length vs' == fi ^. functionArgsNum -> do
@@ -245,7 +245,7 @@ eval tab = runReader emptyEvalCtx . eval'
                             }
                       )
                 where
-                  fi = lookupFunInfo tab _closureSymbol
+                  fi = lookupFunInfo md _closureSymbol
                   argsNum = fi ^. functionArgsNum
                   vs' = _closureArgs ++ vs
                   n = length vs'
@@ -295,16 +295,16 @@ hEvalIOEither ::
   (MonadIO m) =>
   Handle ->
   Handle ->
-  InfoTable ->
+  Module ->
   FunctionInfo ->
   m (Either TreeError Value)
-hEvalIOEither hin hout infoTable funInfo = do
+hEvalIOEither hin hout md funInfo = do
   let x :: Sem '[Output Value, Error EvalError, Error TreeError, IOE] Value
       x = do
-        v <- eval infoTable (funInfo ^. functionCode)
-        hRunIO hin hout infoTable v
+        v <- eval md (funInfo ^. functionCode)
+        hRunIO hin hout md v
   let handleTrace :: forall q. (MonadIO q) => Value -> q ()
-      handleTrace = hPutStrLn hout . printValue infoTable
+      handleTrace = hPutStrLn hout . printValue md
   liftIO
     . runEff
     . runError @TreeError
@@ -313,11 +313,11 @@ hEvalIOEither hin hout infoTable funInfo = do
     $ x
 
 -- | Interpret IO actions.
-hRunIO :: forall r. (Members '[IOE, Error EvalError, Output Value] r) => Handle -> Handle -> InfoTable -> Value -> Sem r Value
-hRunIO hin hout infoTable = \case
+hRunIO :: forall r. (Members '[IOE, Error EvalError, Output Value] r) => Handle -> Handle -> Module -> Value -> Sem r Value
+hRunIO hin hout md = \case
   ValConstr (Constr (BuiltinTag TagReturn) [x]) -> return x
   ValConstr (Constr (BuiltinTag TagBind) [x, f]) -> do
-    x' <- hRunIO hin hout infoTable x
+    x' <- hRunIO hin hout md x
     let code =
           CallClosures
             NodeCallClosures
@@ -325,13 +325,13 @@ hRunIO hin hout infoTable = \case
                 _nodeCallClosuresFun = valueToNode f,
                 _nodeCallClosuresArgs = valueToNode x' :| []
               }
-    res <- eval infoTable code
-    hRunIO hin hout infoTable res
+    res <- eval md code
+    hRunIO hin hout md res
   ValConstr (Constr (BuiltinTag TagWrite) [ValString s]) -> do
     hPutStr hout s
     return ValVoid
   ValConstr (Constr (BuiltinTag TagWrite) [arg]) -> do
-    hPutStr hout (ppPrint infoTable arg)
+    hPutStr hout (ppPrint md arg)
     return ValVoid
   ValConstr (Constr (BuiltinTag TagReadLn) []) -> do
     hFlush hout

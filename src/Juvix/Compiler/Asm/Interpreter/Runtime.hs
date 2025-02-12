@@ -8,7 +8,7 @@ where
 import Data.HashMap.Strict qualified as HashMap
 import Debug.Trace qualified as Debug
 import GHC.Base qualified as GHC
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Data.Stack qualified as Stack
 import Juvix.Compiler.Asm.Interpreter.Error
 import Juvix.Compiler.Asm.Interpreter.RuntimeState
@@ -36,8 +36,8 @@ data Runtime :: Effect where
 
 makeSem ''Runtime
 
-runRuntime :: forall r a. InfoTable -> Sem (Runtime ': r) a -> Sem r (RuntimeState, a)
-runRuntime tab = interp
+runRuntime :: forall r a. Module -> Sem (Runtime ': r) a -> Sem r (RuntimeState, a)
+runRuntime md = interp
   where
     iniState =
       RuntimeState
@@ -45,7 +45,7 @@ runRuntime tab = interp
           _runtimeFrame = emptyFrame,
           _runtimeMessages = [],
           _runtimeLocation = Nothing,
-          _runtimeInfoTable = tab
+          _runtimeModule = md
         }
 
     interp :: Sem (Runtime ': r) a -> Sem r (RuntimeState, a)
@@ -105,7 +105,7 @@ runRuntime tab = interp
         doFlushLogs <$> get
       DumpState -> do
         s :: RuntimeState <- get
-        Debug.trace (fromText $ ppTrace (s ^. runtimeInfoTable) s) $ return ()
+        Debug.trace (fromText $ ppTrace (s ^. runtimeModule) s) $ return ()
       RegisterLocation loc ->
         modify' (set runtimeLocation loc)
       RuntimeError msg -> do
@@ -122,11 +122,11 @@ runRuntime tab = interp
       let logs = reverse (s ^. runtimeMessages)
        in map' (\x -> Debug.trace (fromText x) ()) logs `GHC.seq` ()
 
-hEvalRuntime :: forall r a. (Member EmbedIO r) => Handle -> InfoTable -> Sem (Runtime ': r) a -> Sem r a
-hEvalRuntime h tab r = do
-  (s, a) <- runRuntime tab r
+hEvalRuntime :: forall r a. (Member EmbedIO r) => Handle -> Module -> Sem (Runtime ': r) a -> Sem r a
+hEvalRuntime h md r = do
+  (s, a) <- runRuntime md r
   mapM_ (hPutStrLn h) (reverse (s ^. runtimeMessages))
   return a
 
-evalRuntime :: forall r a. (Member EmbedIO r) => InfoTable -> Sem (Runtime ': r) a -> Sem r a
+evalRuntime :: forall r a. (Member EmbedIO r) => Module -> Sem (Runtime ': r) a -> Sem r a
 evalRuntime = hEvalRuntime stdout

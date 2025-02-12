@@ -5,7 +5,7 @@ import Juvix.Compiler.Reg.Transformation.Optimize.ConstantPropagation
 import Juvix.Compiler.Reg.Transformation.Optimize.CopyPropagation
 import Juvix.Compiler.Reg.Transformation.Optimize.DeadCodeElimination
 
-optimize' :: Options -> InfoTable -> InfoTable
+optimize' :: Options -> Module -> Module
 optimize' Options {..} =
   compose
     (2 * _optOptimizationLevel)
@@ -14,7 +14,7 @@ optimize' Options {..} =
         . removeDeadAssignments
     )
 
-optimize :: (Member (Reader Options) r) => InfoTable -> Sem r InfoTable
+optimize :: (Member (Reader Options) r) => Module -> Sem r Module
 optimize tab = do
   opts <- ask
   return $ optimize' opts tab

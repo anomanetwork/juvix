@@ -1,15 +1,15 @@
 module Juvix.Compiler.Tree.Transformation.Validate where
 
 import Juvix.Compiler.Core.Data.BinderList qualified as BL
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Extra.Base (getNodeLocation)
 import Juvix.Compiler.Tree.Extra.Recursors
 import Juvix.Compiler.Tree.Extra.Type
 import Juvix.Compiler.Tree.Transformation.Base
 
-inferType :: forall r. (Member (Error TreeError) r) => InfoTable -> FunctionInfo -> Node -> Sem r Type
-inferType tab funInfo = goInfer mempty
+inferType :: forall r. (Member (Error TreeError) r) => Module -> FunctionInfo -> Node -> Sem r Type
+inferType md funInfo = goInfer mempty
   where
     goInfer :: BinderList Type -> Node -> Sem r Type
     goInfer bl = \case
@@ -42,8 +42,8 @@ inferType tab funInfo = goInfer mempty
         checkBinop ty1' ty2' rty = do
           ty1 <- goInfer bl _nodeBinopArg1
           ty2 <- goInfer bl _nodeBinopArg2
-          void $ unifyTypes' loc tab ty1 ty1'
-          void $ unifyTypes' loc tab ty2 ty2'
+          void $ unifyTypes' loc md ty1 ty1'
+          void $ unifyTypes' loc md ty2 ty2'
           return rty
 
         checkPrimBinop :: BinaryOp -> Sem r Type
@@ -74,7 +74,7 @@ inferType tab funInfo = goInfer mempty
         checkUnop :: Type -> Type -> Sem r Type
         checkUnop ty rty = do
           ty' <- goInfer bl _nodeUnopArg
-          void $ unifyTypes' loc tab ty ty'
+          void $ unifyTypes' loc md ty ty'
           return rty
 
         checkPrimUnop :: UnaryOp -> Sem r Type
@@ -144,7 +144,7 @@ inferType tab funInfo = goInfer mempty
       | _fieldOffset < length tys = return $ tys !! _fieldOffset
       | otherwise = return TyDynamic
       where
-        ci = lookupConstrInfo tab _fieldTag
+        ci = lookupConstrInfo md _fieldTag
         tys = typeArgs (ci ^. constructorType)
 
     goAllocConstr :: BinderList Type -> NodeAllocConstr -> Sem r Type
@@ -159,7 +159,7 @@ inferType tab funInfo = goInfer mempty
                 _treeErrorMsg = ""
               }
       where
-        ci = lookupConstrInfo tab _nodeAllocConstrTag
+        ci = lookupConstrInfo md _nodeAllocConstrTag
         tys = typeArgs (ci ^. constructorType)
 
     goAllocClosure :: BinderList Type -> NodeAllocClosure -> Sem r Type
@@ -175,7 +175,7 @@ inferType tab funInfo = goInfer mempty
               }
       where
         n = length _nodeAllocClosureArgs
-        fi = lookupFunInfo tab _nodeAllocClosureFunSymbol
+        fi = lookupFunInfo md _nodeAllocClosureFunSymbol
         tys = typeArgs (fi ^. functionType)
 
     goExtendClosure :: BinderList Type -> NodeExtendClosure -> Sem r Type
@@ -214,7 +214,7 @@ inferType tab funInfo = goInfer mempty
                 }
         where
           n = length _nodeCallArgs
-          fi = lookupFunInfo tab sym
+          fi = lookupFunInfo md sym
           tys = typeArgs (fi ^. functionType)
       CallClosure cl -> do
         ty <- goInfer bl cl
@@ -261,7 +261,7 @@ inferType tab funInfo = goInfer mempty
       checkType bl _nodeBranchArg mkTypeBool
       ty1 <- goInfer bl _nodeBranchTrue
       ty2 <- goInfer bl _nodeBranchFalse
-      unifyTypes' (_nodeBranchInfo ^. nodeInfoLocation) tab ty1 ty2
+      unifyTypes' (_nodeBranchInfo ^. nodeInfoLocation) md ty1 ty2
 
     goCase :: BinderList Type -> NodeCase -> Sem r Type
     goCase bl NodeCase {..} = do
@@ -281,7 +281,7 @@ inferType tab funInfo = goInfer mempty
           CaseBranch {..} : brs -> do
             let bl' = if _caseBranchSave then BL.cons ity bl else bl
             ty' <- goInfer bl' _caseBranchBody
-            ty'' <- unifyTypes' (_nodeCaseInfo ^. nodeInfoLocation) tab ty ty'
+            ty'' <- unifyTypes' (_nodeCaseInfo ^. nodeInfoLocation) md ty ty'
             go ity ty'' brs
 
     goSave :: BinderList Type -> NodeSave -> Sem r Type
@@ -292,14 +292,14 @@ inferType tab funInfo = goInfer mempty
     checkType :: BinderList Type -> Node -> Type -> Sem r ()
     checkType bl node ty = do
       ty' <- goInfer bl node
-      void $ unifyTypes' (getNodeLocation node) tab ty ty'
+      void $ unifyTypes' (getNodeLocation node) md ty ty'
 
-validateFunction :: (Member (Error TreeError) r) => InfoTable -> FunctionInfo -> Sem r FunctionInfo
-validateFunction tab funInfo = do
-  ty <- inferType tab funInfo (funInfo ^. functionCode)
+validateFunction :: (Member (Error TreeError) r) => Module -> FunctionInfo -> Sem r FunctionInfo
+validateFunction md funInfo = do
+  ty <- inferType md funInfo (funInfo ^. functionCode)
   let ty' = if funInfo ^. functionArgsNum == 0 then funInfo ^. functionType else typeTarget (funInfo ^. functionType)
-  void $ unifyTypes' (funInfo ^. functionLocation) tab ty ty'
+  void $ unifyTypes' (funInfo ^. functionLocation) md ty ty'
   return funInfo
 
-validate :: (Member (Error TreeError) r) => InfoTable -> Sem r InfoTable
-validate tab = mapFunctionsM (validateFunction tab) tab
+validate :: (Member (Error TreeError) r) => Module -> Sem r Module
+validate md = mapFunctionsM (validateFunction md) md

@@ -3,7 +3,7 @@ module Commands.Dev.DevCompile.Tree where
 import Commands.Base
 import Commands.Dev.DevCompile.Tree.Options
 import Commands.Extra.NewCompile
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Pretty
 
 runCommand ::
@@ -14,6 +14,6 @@ runCommand opts = do
   let inputFile = opts ^. treeCompileCommonOptions . compileInputFile
       moutputFile = opts ^. treeCompileCommonOptions . compileOutputFile
   outFile :: Path Abs File <- getOutputFile FileExtJuvixTree inputFile moutputFile
-  res :: InfoTable <- runPipeline opts inputFile upToTree
-  let txt = ppPrint res res
+  res :: Module <- runPipeline opts inputFile upToTree
+  let txt = ppPrint res (computeCombinedInfoTable res)
   writeFileEnsureLn outFile txt

@@ -1,22 +1,34 @@
 module Juvix.Compiler.Reg.Translation.FromAsm where
 
 import Data.HashMap.Strict qualified as HashMap
-import Juvix.Compiler.Asm.Data.InfoTable qualified as Asm
+import Juvix.Compiler.Asm.Data.Module qualified as Asm
 import Juvix.Compiler.Asm.Error qualified as Asm
 import Juvix.Compiler.Asm.Extra.Recursors qualified as Asm
 import Juvix.Compiler.Asm.Language qualified as Asm
-import Juvix.Compiler.Reg.Data.InfoTable
+import Juvix.Compiler.Reg.Data.Module
 import Juvix.Compiler.Reg.Language
 
-fromAsm :: Asm.InfoTable -> InfoTable
-fromAsm tab =
-  InfoTable
-    { _infoFunctions = HashMap.map convertFun (tab ^. Asm.infoFunctions),
-      _infoConstrs = HashMap.map convertConstr (tab ^. Asm.infoConstrs),
-      _infoInductives = HashMap.map convertInductive (tab ^. Asm.infoInductives),
-      _infoMainFunction = tab ^. Asm.infoMainFunction
+fromAsm :: Asm.Module -> Module
+fromAsm md =
+  Module
+    { _moduleId = md ^. moduleId,
+      _moduleInfoTable = tab,
+      _moduleImports = md ^. moduleImports,
+      _moduleImportsTable = mempty
     }
   where
+    tab0 :: Asm.InfoTable
+    tab0 = computeCombinedInfoTable md
+
+    tab :: InfoTable
+    tab =
+      InfoTable
+        { _infoFunctions = HashMap.map convertFun (tab0 ^. Asm.infoFunctions),
+          _infoConstrs = HashMap.map convertConstr (tab0 ^. Asm.infoConstrs),
+          _infoInductives = HashMap.map convertInductive (tab0 ^. Asm.infoInductives),
+          _infoMainFunction = tab0 ^. Asm.infoMainFunction
+        }
+
     convertFun :: Asm.FunctionInfo -> FunctionInfo
     convertFun fi =
       FunctionInfo
@@ -27,7 +39,7 @@ fromAsm tab =
           _functionArgNames = fi ^. Asm.functionArgNames,
           _functionType = fi ^. Asm.functionType,
           _functionExtra = (),
-          _functionCode = fromAsmFun tab fi
+          _functionCode = fromAsmFun md fi
         }
 
     convertConstr :: Asm.ConstructorInfo -> ConstructorInfo
@@ -37,10 +49,10 @@ fromAsm tab =
     convertInductive ii = ii
 
 fromAsmFun ::
-  Asm.InfoTable ->
+  Asm.Module ->
   Asm.FunctionInfo ->
   Code
-fromAsmFun tab fi =
+fromAsmFun md fi =
   case run $ runError $ Asm.recurseS sig (fi ^. Asm.functionCode) of
     Left err -> error (show err)
     Right code -> code
@@ -48,20 +60,20 @@ fromAsmFun tab fi =
     sig :: Asm.RecursorSig Asm.StackInfo (Error Asm.AsmError ': r) Instruction
     sig =
       Asm.RecursorSig
-        { _recursorInfoTable = tab,
-          _recurseInstr = fromAsmInstr fi tab,
+        { _recursorModule = md,
+          _recurseInstr = fromAsmInstr fi md,
           _recurseBranch = fromAsmBranch fi,
-          _recurseCase = fromAsmCase fi tab,
+          _recurseCase = fromAsmCase fi md,
           _recurseSave = fromAsmSave fi
         }
 
 fromAsmInstr ::
   Asm.FunctionInfo ->
-  Asm.InfoTable ->
+  Asm.Module ->
   Asm.StackInfo ->
   Asm.CmdInstr ->
   Sem r Instruction
-fromAsmInstr funInfo tab si Asm.CmdInstr {..} =
+fromAsmInstr funInfo md si Asm.CmdInstr {..} =
   case _cmdInstrInstruction of
     Asm.Binop op -> return $ mkBinop op
     Asm.Unop op -> return $ mkUnop op
@@ -157,7 +169,7 @@ fromAsmInstr funInfo tab si Asm.CmdInstr {..} =
                 _constrFieldMemRep = ci ^. Asm.constructorRepresentation
               }
           where
-            ci = fromMaybe impossible $ HashMap.lookup _fieldTag (tab ^. Asm.infoConstrs)
+            ci = lookupConstrInfo md _fieldTag
 
     mkVar :: Asm.DirectRef -> VarRef
     mkVar = \case
@@ -182,7 +194,7 @@ fromAsmInstr funInfo tab si Asm.CmdInstr {..} =
             _instrAllocMemRep = ci ^. Asm.constructorRepresentation
           }
       where
-        ci = fromMaybe impossible $ HashMap.lookup tag (tab ^. Asm.infoConstrs)
+        ci = lookupConstrInfo md tag
         m = n - ci ^. Asm.constructorArgsNum + 1
 
     mkAllocClosure :: Asm.InstrAllocClosure -> Instruction
@@ -195,7 +207,7 @@ fromAsmInstr funInfo tab si Asm.CmdInstr {..} =
             _instrAllocClosureArgs = getArgs' 0 _allocClosureArgsNum
           }
       where
-        fi = fromMaybe impossible $ HashMap.lookup _allocClosureFunSymbol (tab ^. Asm.infoFunctions)
+        fi = lookupFunInfo md _allocClosureFunSymbol
         m = n - _allocClosureArgsNum + 1
 
     mkExtendClosure :: Asm.InstrExtendClosure -> Instruction
@@ -277,14 +289,14 @@ fromAsmBranch fi isTail si Asm.CmdBranch {} codeTrue codeFalse =
 
 fromAsmCase ::
   Asm.FunctionInfo ->
-  Asm.InfoTable ->
+  Asm.Module ->
   Bool ->
   Asm.StackInfo ->
   Asm.CmdCase ->
   [Code] ->
   Maybe Code ->
   Sem r Instruction
-fromAsmCase fi tab isTail si Asm.CmdCase {..} brs def =
+fromAsmCase fi md isTail si Asm.CmdCase {..} brs def =
   return $
     Case $
       InstrCase
@@ -295,9 +307,7 @@ fromAsmCase fi tab isTail si Asm.CmdCase {..} brs def =
             zipWithExact
               ( \br code ->
                   let tag = br ^. Asm.caseBranchTag
-                      ci =
-                        fromMaybe impossible $
-                          HashMap.lookup tag (tab ^. Asm.infoConstrs)
+                      ci = lookupConstrInfo md tag
                    in CaseBranch
                         { _caseBranchTag = tag,
                           _caseBranchMemRep = ci ^. Asm.constructorRepresentation,
@@ -312,9 +322,7 @@ fromAsmCase fi tab isTail si Asm.CmdCase {..} brs def =
         }
   where
     topIdx = fromJust (fi ^. Asm.functionExtra) ^. Asm.functionMaxTempStackHeight + si ^. Asm.stackInfoValueStackHeight - 1
-    ii =
-      fromMaybe impossible $
-        HashMap.lookup _cmdCaseInductive (tab ^. Asm.infoInductives)
+    ii = lookupInductiveInfo md _cmdCaseInductive
 
 fromAsmSave ::
   Asm.FunctionInfo ->

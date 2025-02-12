@@ -1,7 +1,7 @@
 module Juvix.Compiler.Tree.Pretty.Options where
 
 import Juvix.Compiler.Core.Pretty.Options qualified as Core
-import Juvix.Compiler.Tree.Data.InfoTable.Base
+import Juvix.Compiler.Tree.Data.Module.Base
 import Juvix.Compiler.Tree.Language.Base
 
 data Options = Options
@@ -11,14 +11,17 @@ data Options = Options
 
 makeLenses ''Options
 
-defaultOptions :: InfoTable' t e -> Options
-defaultOptions tab =
+defaultOptions :: Module'' t e -> Options
+defaultOptions md =
   Options
     { _optSymbolNames =
-        fmap (^. functionName) (tab ^. infoFunctions)
-          <> fmap (^. inductiveName) (tab ^. infoInductives),
+        fmap (^. functionName) (md ^. moduleInfoTable . infoFunctions)
+          <> fmap (^. inductiveName) (md ^. moduleInfoTable . infoInductives)
+          <> fmap (^. functionName) (md ^. moduleImportsTable . infoFunctions)
+          <> fmap (^. inductiveName) (md ^. moduleImportsTable . infoInductives),
       _optTagNames =
-        fmap (^. constructorName) (tab ^. infoConstrs)
+        fmap (^. constructorName) (md ^. moduleInfoTable . infoConstrs)
+          <> fmap (^. constructorName) (md ^. moduleImportsTable . infoConstrs)
     }
 
 toCoreOptions :: Options -> Core.Options

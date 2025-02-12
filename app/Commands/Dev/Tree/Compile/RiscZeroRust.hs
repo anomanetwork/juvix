@@ -4,7 +4,7 @@ import Commands.Base
 import Commands.Compile.RiscZeroRust.Options
 import Commands.Compile.RiscZeroRust.Rust
 import Juvix.Compiler.Backend.Rust.Data.Result
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Translation.FromSource qualified as Tree
 
 runCommand ::
@@ -14,7 +14,7 @@ runCommand ::
 runCommand opts = do
   let inputFile = Just $ opts ^. riscZeroRustCompileCommonOptions . compileInputFile
   mainFile <- getMainFile inputFile
-  tab :: InfoTable <- readFile mainFile >>= getRight . Tree.runParser mainFile
+  md :: Module <- readFile mainFile >>= getRight . Tree.runParser mainFile
   entrypoint <-
     applyOptions opts
       <$> getEntryPoint inputFile
@@ -23,5 +23,5 @@ runCommand opts = do
       . run
       . runError @JuvixError
       . runReader entrypoint
-      $ treeToRiscZeroRust tab
+      $ treeToRiscZeroRust md
   compileRustCode opts inputFile _resultRustCode

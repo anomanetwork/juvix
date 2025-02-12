@@ -18,10 +18,10 @@ import Juvix.Compiler.Reg.Transformation.Optimize.Phase.Cairo qualified as Phase
 import Juvix.Compiler.Reg.Transformation.Optimize.Phase.Main qualified as Phase.Main
 import Juvix.Compiler.Reg.Transformation.SSA
 
-applyTransformations :: forall r. (Member (Reader Options) r) => [TransformationId] -> InfoTable -> Sem r InfoTable
+applyTransformations :: forall r. (Member (Reader Options) r) => [TransformationId] -> Module -> Sem r Module
 applyTransformations ts tbl = foldM (flip appTrans) tbl ts
   where
-    appTrans :: TransformationId -> InfoTable -> Sem r InfoTable
+    appTrans :: TransformationId -> Module -> Sem r Module
     appTrans = \case
       IdentityTrans -> return . identity
       Cleanup -> return . cleanup

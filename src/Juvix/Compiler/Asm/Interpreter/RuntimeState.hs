@@ -4,7 +4,7 @@ module Juvix.Compiler.Asm.Interpreter.RuntimeState
   )
 where
 
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Data.Stack (Stack)
 import Juvix.Compiler.Asm.Data.Stack qualified as Stack
 import Juvix.Compiler.Asm.Interpreter.Base
@@ -103,8 +103,8 @@ data RuntimeState = RuntimeState
     _runtimeMessages :: [Text],
     -- | current location in the source
     _runtimeLocation :: Maybe Location,
-    -- | InfoTable associated with the runtime state
-    _runtimeInfoTable :: InfoTable
+    -- | Module associated with the runtime state
+    _runtimeModule :: Module
   }
 
 makeLenses ''AsmCallStack

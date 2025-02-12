@@ -8,7 +8,7 @@ import Juvix.Compiler.Reg.Transformation.Base
 
 -- | Inserts assignments to initialize variables assigned in other branches.
 -- Assumes the input is in SSA form (which is preserved).
-initBranchVars :: InfoTable -> InfoTable
+initBranchVars :: Module -> Module
 initBranchVars = mapT (const goFun)
   where
     goFun :: Code -> Code

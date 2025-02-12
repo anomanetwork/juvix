@@ -1,7 +1,7 @@
 module Juvix.Compiler.Asm.Data.CallGraph where
 
 import Data.HashSet qualified as HashSet
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Extra
 import Juvix.Compiler.Asm.Language
 
@@ -9,30 +9,30 @@ import Juvix.Compiler.Asm.Language
 type CallGraph = DependencyInfo Symbol
 
 -- | Compute the call graph
-createCallGraph :: (Member (Error AsmError) r) => InfoTable -> Sem r CallGraph
-createCallGraph tab = do
-  graph <- createCallGraphMap tab
+createCallGraph :: (Member (Error AsmError) r) => Module -> Sem r CallGraph
+createCallGraph md = do
+  graph <- createCallGraphMap md
   return $ createDependencyInfo graph startVertices
   where
     startVertices :: HashSet Symbol
     startVertices = HashSet.fromList syms
 
     syms :: [Symbol]
-    syms = maybe [] singleton (tab ^. infoMainFunction)
+    syms = maybe [] singleton (md ^. moduleInfoTable . infoMainFunction)
 
-createCallGraphMap :: (Member (Error AsmError) r) => InfoTable -> Sem r (HashMap Symbol (HashSet Symbol))
-createCallGraphMap tab =
+createCallGraphMap :: (Member (Error AsmError) r) => Module -> Sem r (HashMap Symbol (HashSet Symbol))
+createCallGraphMap md =
   mapM
-    (\FunctionInfo {..} -> getFunSymbols tab _functionCode)
-    (tab ^. infoFunctions)
+    (\FunctionInfo {..} -> getFunSymbols md _functionCode)
+    (md ^. moduleInfoTable . infoFunctions)
 
-getFunSymbols :: (Member (Error AsmError) r) => InfoTable -> Code -> Sem r (HashSet Symbol)
-getFunSymbols tab code = foldS sig code mempty
+getFunSymbols :: (Member (Error AsmError) r) => Module -> Code -> Sem r (HashSet Symbol)
+getFunSymbols md code = foldS sig code mempty
   where
     sig :: FoldSig StackInfo r (HashSet Symbol)
     sig =
       FoldSig
-        { _foldInfoTable = tab,
+        { _foldModule = md,
           _foldAdjust = const mempty,
           _foldInstr = \_ CmdInstr {..} acc -> return $ goInstr acc _cmdInstrInstruction,
           _foldBranch = \_ _ a1 a2 a3 -> return $ a1 <> a2 <> a3,

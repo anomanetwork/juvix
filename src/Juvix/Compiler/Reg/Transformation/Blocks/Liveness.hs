@@ -34,5 +34,5 @@ computeBlockLiveness' vars block = block'' {_blockLiveVars = vars'}
           Just x -> HashSet.delete x acc
         acc2 = HashSet.union acc1 (HashSet.fromList vs)
 
-computeLiveness :: InfoTable -> InfoTable
+computeLiveness :: Module -> Module
 computeLiveness = mapT (const computeBlockLiveness)

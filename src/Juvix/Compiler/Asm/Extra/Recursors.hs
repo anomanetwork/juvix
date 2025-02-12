@@ -4,7 +4,7 @@ module Juvix.Compiler.Asm.Extra.Recursors
   )
 where
 
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Data.Stack qualified as Stack
 import Juvix.Compiler.Asm.Error
 import Juvix.Compiler.Asm.Extra.Base
@@ -15,7 +15,7 @@ import Juvix.Compiler.Asm.Pretty
 
 -- | Recursor signature. Contains read-only recursor parameters.
 data RecursorSig m r a = RecursorSig
-  { _recursorInfoTable :: InfoTable,
+  { _recursorModule :: Module,
     _recurseInstr :: m -> CmdInstr -> Sem r a,
     _recurseBranch :: Bool -> m -> CmdBranch -> [a] -> [a] -> Sem r a,
     _recurseCase :: Bool -> m -> CmdCase -> [[a]] -> Maybe [a] -> Sem r a,
@@ -85,7 +85,7 @@ recurse' sig = go True
             Cairo op ->
               fixMemCairo mem op
             Push val -> do
-              ty <- getValueType' loc (sig ^. recursorInfoTable) mem val
+              ty <- getValueType' loc (sig ^. recursorModule) mem val
               return (pushValueStack ty mem)
             Pop -> do
               when (null (mem ^. memoryValueStack)) $
@@ -103,22 +103,22 @@ recurse' sig = go True
             Prealloc {} ->
               return mem
             AllocConstr tag -> do
-              let ci = lookupConstrInfo (sig ^. recursorInfoTable) tag
+              let ci = lookupConstrInfo (sig ^. recursorModule) tag
                   n = ci ^. constructorArgsNum
                   tyargs = typeArgs (ci ^. constructorType)
-              checkValueStack' loc (sig ^. recursorInfoTable) tyargs mem
+              checkValueStack' loc (sig ^. recursorModule) tyargs mem
               tys <-
                 zipWithM
-                  (\ty idx -> unifyTypes'' loc (sig ^. recursorInfoTable) ty (topValueStack' idx mem))
+                  (\ty idx -> unifyTypes'' loc (sig ^. recursorModule) ty (topValueStack' idx mem))
                   tyargs
                   [0 ..]
               return $
                 pushValueStack (mkTypeConstr (ci ^. constructorInductive) tag tys) $
                   popValueStack n mem
             AllocClosure InstrAllocClosure {..} -> do
-              let fi = lookupFunInfo (sig ^. recursorInfoTable) _allocClosureFunSymbol
+              let fi = lookupFunInfo (sig ^. recursorModule) _allocClosureFunSymbol
                   (tyargs, tgt) = unfoldType (fi ^. functionType)
-              checkValueStack' loc (sig ^. recursorInfoTable) (take _allocClosureArgsNum tyargs) mem
+              checkValueStack' loc (sig ^. recursorModule) (take _allocClosureArgsNum tyargs) mem
               return $
                 pushValueStack (mkTypeFun (drop _allocClosureArgsNum tyargs) tgt) $
                   popValueStack _allocClosureArgsNum mem
@@ -137,7 +137,7 @@ recurse' sig = go True
 
         fixMemBinOp' :: Memory -> Type -> Type -> Type -> Sem r Memory
         fixMemBinOp' mem ty0 ty1 rty = do
-          checkValueStack' loc (sig ^. recursorInfoTable) [ty0, ty1] mem
+          checkValueStack' loc (sig ^. recursorModule) [ty0, ty1] mem
           return $ pushValueStack rty (popValueStack 2 mem)
 
         fixMemIntOp :: Memory -> Sem r Memory
@@ -198,7 +198,7 @@ recurse' sig = go True
           where
             checkUnop :: Type -> Type -> Sem r Memory
             checkUnop ty1 ty2 = do
-              checkValueStack' loc (sig ^. recursorInfoTable) [ty1] mem
+              checkValueStack' loc (sig ^. recursorModule) [ty1] mem
               return (pushValueStack ty2 (popValueStack 1 mem))
 
         fixMemCairo :: Memory -> CairoOp -> Sem r Memory
@@ -225,10 +225,10 @@ recurse' sig = go True
               AsmError loc "invalid call: not enough values on the stack"
           let ty = case _callType of
                 CallClosure -> topValueStack' 0 mem
-                CallFun sym -> lookupFunInfo (sig ^. recursorInfoTable) sym ^. functionType
+                CallFun sym -> lookupFunInfo (sig ^. recursorModule) sym ^. functionType
           let argsNum = case _callType of
                 CallClosure -> length (typeArgs ty)
-                CallFun sym -> lookupFunInfo (sig ^. recursorInfoTable) sym ^. functionArgsNum
+                CallFun sym -> lookupFunInfo (sig ^. recursorModule) sym ^. functionArgsNum
           when (argsNum /= 0) $
             checkFunType ty
           when (ty /= TyDynamic && argsNum /= _callArgsNum) $
@@ -264,10 +264,10 @@ recurse' sig = go True
           checkValueStackHeight' loc (argsNum + k) mem
           let mem' = popValueStack k mem
           unless (ty == TyDynamic) $
-            checkValueStack' loc (sig ^. recursorInfoTable) (take argsNum (typeArgs ty)) mem'
+            checkValueStack' loc (sig ^. recursorModule) (take argsNum (typeArgs ty)) mem'
           let tyargs = topValuesFromValueStack' argsNum mem'
           -- `typeArgs ty` may be shorter than `tyargs` only if `ty` is dynamic
-          zipWithM_ (unifyTypes'' loc (sig ^. recursorInfoTable)) tyargs (typeArgs ty)
+          zipWithM_ (unifyTypes'' loc (sig ^. recursorModule)) tyargs (typeArgs ty)
           return $
             pushValueStack (mkTypeFun (drop argsNum (typeArgs ty)) (typeTarget ty)) $
               popValueStack argsNum mem'
@@ -284,17 +284,17 @@ recurse' sig = go True
               AsmError
                 loc
                 ( "expected a function, got value of type "
-                    <> ppTrace (sig ^. recursorInfoTable) ty
+                    <> ppTrace (sig ^. recursorModule) ty
                 )
 
     goBranch :: Bool -> Memory -> CmdBranch -> Sem r (Memory, a)
     goBranch isTail mem cmd@CmdBranch {..} = do
-      checkValueStack' loc (sig ^. recursorInfoTable) [mkTypeBool] mem
+      checkValueStack' loc (sig ^. recursorModule) [mkTypeBool] mem
       let mem0 = popValueStack 1 mem
       (mem1, as1) <- go isTail mem0 _cmdBranchTrue
       (mem2, as2) <- go isTail mem0 _cmdBranchFalse
       a' <- (sig ^. recurseBranch) isTail mem cmd as1 as2
-      mem' <- unifyMemory' loc (sig ^. recursorInfoTable) mem1 mem2
+      mem' <- unifyMemory' loc (sig ^. recursorModule) mem1 mem2
       checkBranchInvariant 1 loc mem0 mem'
       return (mem', a')
       where
@@ -302,7 +302,7 @@ recurse' sig = go True
 
     goCase :: Bool -> Memory -> CmdCase -> Sem r (Memory, a)
     goCase isTail mem cmd@CmdCase {..} = do
-      checkValueStack' loc (sig ^. recursorInfoTable) [mkTypeInductive _cmdCaseInductive] mem
+      checkValueStack' loc (sig ^. recursorModule) [mkTypeInductive _cmdCaseInductive] mem
       rs <- mapM (go isTail mem . (^. caseBranchCode)) _cmdCaseBranches
       let mems = map fst rs
           ass = map snd rs
@@ -313,8 +313,8 @@ recurse' sig = go True
       case mems of
         [] -> return (fromMaybe mem md, a')
         mem0 : mems' -> do
-          mem' <- foldr (\m rm -> rm >>= unifyMemory' loc (sig ^. recursorInfoTable) m) (return mem0) mems'
-          mem'' <- maybe (return mem') (unifyMemory' loc (sig ^. recursorInfoTable) mem') md
+          mem' <- foldr (\m rm -> rm >>= unifyMemory' loc (sig ^. recursorModule) m) (return mem0) mems'
+          mem'' <- maybe (return mem') (unifyMemory' loc (sig ^. recursorModule) mem') md
           checkBranchInvariant 0 loc mem mem''
           return (mem'', a')
       where
@@ -425,7 +425,7 @@ recurseS' sig = go True
             Prealloc {} ->
               return si
             AllocConstr tag -> do
-              let ci = lookupConstrInfo (sig ^. recursorInfoTable) tag
+              let ci = lookupConstrInfo (sig ^. recursorModule) tag
                   n = ci ^. constructorArgsNum
               return $
                 stackInfoPopValueStack (n - 1) si
@@ -528,7 +528,7 @@ recurseS' sig = go True
 -- `_foldAdjust` to `const empty` where `empty` is the empty accumulator value
 -- (e.g. `mempty` for a monoid).
 data FoldSig m r a = FoldSig
-  { _foldInfoTable :: InfoTable,
+  { _foldModule :: Module,
     _foldAdjust :: a -> a,
     _foldInstr :: m -> CmdInstr -> a -> Sem r a,
     _foldBranch :: m -> CmdBranch -> a -> a -> a -> Sem r a,
@@ -550,7 +550,7 @@ foldS' sig si code acc = do
     sig' :: RecursorSig StackInfo r (a -> Sem r a)
     sig' =
       RecursorSig
-        { _recursorInfoTable = sig ^. foldInfoTable,
+        { _recursorModule = sig ^. foldModule,
           _recurseInstr = \s cmd -> return ((sig ^. foldInstr) s cmd),
           _recurseBranch = \_ s cmd br1 br2 ->
             return

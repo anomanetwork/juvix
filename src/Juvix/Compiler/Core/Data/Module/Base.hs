@@ -1,6 +1,12 @@
-module Juvix.Compiler.Core.Data.Module.Base where
+module Juvix.Compiler.Core.Data.Module.Base
+  ( module Juvix.Compiler.Core.Data.Module.Base,
+    module Juvix.Data.ModuleId,
+  )
+where
 
+import Data.HashMap.Strict qualified as HashMap
 import Juvix.Data.ModuleId
+import Juvix.Data.PPOutput (prettyText)
 import Juvix.Extra.Serialize
 import Juvix.Prelude
 
@@ -23,15 +29,35 @@ instance (NFData t) => NFData (Module' t)
 
 makeLenses ''Module'
 
+newtype ModuleTable' t = ModuleTable
+  { _moduleTable :: HashMap ModuleId (Module' t)
+  }
+  deriving newtype (Semigroup, Monoid)
+  deriving stock (Generic)
+
+makeLenses ''ModuleTable'
+
+instance (NFData t) => NFData (ModuleTable' t)
+
 withInfoTable :: (Monoid t) => (Module' t -> Module' t) -> t -> t
 withInfoTable f tab =
   f (moduleFromInfoTable tab) ^. moduleInfoTable
 
-emptyModule :: (Monoid t) => Module' t
-emptyModule = Module defaultModuleId mempty mempty mempty
+emptyModule :: (Monoid t) => ModuleId -> Module' t
+emptyModule mid = Module mid mempty mempty mempty
 
 moduleFromInfoTable :: (Monoid t) => t -> Module' t
 moduleFromInfoTable tab = Module defaultModuleId tab mempty mempty
 
 computeCombinedInfoTable :: (Monoid t) => Module' t -> t
 computeCombinedInfoTable Module {..} = _moduleInfoTable <> _moduleImportsTable
+
+lookupModuleTable' :: ModuleTable' t -> ModuleId -> Maybe (Module' t)
+lookupModuleTable' mt mid = HashMap.lookup mid (mt ^. moduleTable)
+
+lookupModuleTable :: ModuleTable' t -> ModuleId -> Module' t
+lookupModuleTable mt mid =
+  fromMaybe (impossibleError ("Could not find module " <> prettyText mid)) (lookupModuleTable' mt mid)
+
+computeImportsTable :: (Monoid t) => ModuleTable' t -> [ModuleId] -> t
+computeImportsTable mt = foldMap ((^. moduleImportsTable) . lookupModuleTable mt)

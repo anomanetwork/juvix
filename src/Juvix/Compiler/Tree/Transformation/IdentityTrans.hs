@@ -8,11 +8,11 @@ import Juvix.Compiler.Tree.Data.InfoTable
 import Juvix.Compiler.Tree.Extra.Recursors
 import Juvix.Compiler.Tree.Transformation.Base
 
-identity :: InfoTable -> InfoTable
+identity :: Module -> Module
 identity = run . mapT' (const return)
 
-identityU :: InfoTable -> InfoTable
+identityU :: Module -> Module
 identityU = run . mapT' (const (return . umap id))
 
-identityD :: InfoTable -> InfoTable
+identityD :: Module -> Module
 identityD = run . mapT' (const (return . dmap id))

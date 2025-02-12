@@ -5,7 +5,7 @@ import Commands.Compile.Anoma.Options
 import Commands.Extra.NewCompile
 import Juvix.Compiler.Nockma.Pretty qualified as Anoma
 import Juvix.Compiler.Nockma.Translation.FromTree qualified as Anoma
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Translation.FromSource qualified as Tree
 
 runCommand ::
@@ -18,7 +18,7 @@ runCommand opts = do
       moutputFile = opts' ^. compileOutputFile
   outFile <- getOutputFile FileExtNockma inputFile moutputFile
   mainFile <- getMainFile inputFile
-  tab :: InfoTable <- readFile mainFile >>= getRight . Tree.runParser mainFile
+  md :: Module <- readFile mainFile >>= getRight . Tree.runParser mainFile
   entrypoint <-
     applyOptions opts
       <$> getEntryPoint inputFile
@@ -27,5 +27,5 @@ runCommand opts = do
       . run
       . runError @JuvixError
       . runReader entrypoint
-      $ treeToAnoma tab
+      $ treeToAnoma md
   writeFileEnsureLn outFile (Anoma.ppPrint (res ^. Anoma.anomaClosure))

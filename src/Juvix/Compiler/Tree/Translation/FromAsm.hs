@@ -1,9 +1,9 @@
 module Juvix.Compiler.Tree.Translation.FromAsm where
 
-import Juvix.Compiler.Asm.Data.InfoTable qualified as Asm
+import Juvix.Compiler.Asm.Data.Module qualified as Asm
 import Juvix.Compiler.Asm.Extra.Base qualified as Asm
 import Juvix.Compiler.Asm.Language qualified as Asm
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Extra.Base
 import Juvix.Compiler.Tree.Language
@@ -15,19 +15,26 @@ newtype TempSize = TempSize
 
 makeLenses ''TempSize
 
-fromAsm :: (Member (Error TreeError) r) => Asm.InfoTable -> Sem r InfoTable
-fromAsm tab = do
-  fns <- mapM (goFunction tab) (tab ^. Asm.infoFunctions)
+fromAsm :: (Member (Error TreeError) r) => Asm.Module -> Sem r Module
+fromAsm md = do
+  fns <- mapM (goFunction md) (md ^. moduleInfoTable . Asm.infoFunctions)
+  let tab =
+        InfoTable
+          { _infoMainFunction = md ^. moduleInfoTable . Asm.infoMainFunction,
+            _infoFunctions = fns,
+            _infoInductives = md ^. moduleInfoTable . Asm.infoInductives,
+            _infoConstrs = md ^. moduleInfoTable . Asm.infoConstrs
+          }
   return $
-    InfoTable
-      { _infoMainFunction = tab ^. Asm.infoMainFunction,
-        _infoFunctions = fns,
-        _infoInductives = tab ^. Asm.infoInductives,
-        _infoConstrs = tab ^. Asm.infoConstrs
+    Module
+      { _moduleId = md ^. moduleId,
+        _moduleInfoTable = tab,
+        _moduleImports = md ^. moduleImports,
+        _moduleImportsTable = mempty
       }
 
-goFunction :: (Member (Error TreeError) r') => Asm.InfoTable -> Asm.FunctionInfo -> Sem r' FunctionInfo
-goFunction infoTab fi = do
+goFunction :: (Member (Error TreeError) r') => Asm.Module -> Asm.FunctionInfo -> Sem r' FunctionInfo
+goFunction md fi = do
   node' <- runReader (TempSize 0) $ goCodeBlock (fi ^. Asm.functionCode)
   return $
     FunctionInfo
@@ -296,7 +303,7 @@ goFunction infoTab fi = do
                   _nodeAllocConstrArgs = args
                 }
           where
-            argsNum = Asm.lookupConstrInfo infoTab tag ^. constructorArgsNum
+            argsNum = Asm.lookupConstrInfo md tag ^. constructorArgsNum
 
         goAllocClosure :: Asm.InstrAllocClosure -> Sem r Node
         goAllocClosure Asm.InstrAllocClosure {..} = do

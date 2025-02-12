@@ -3,8 +3,9 @@ module Commands.Dev.Tree.Compile.Reg where
 import Commands.Base
 import Commands.Dev.DevCompile.Reg.Options
 import Commands.Extra.NewCompile
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Compiler.Reg.Pretty qualified as Reg
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Translation.FromSource qualified as Tree
 
 runCommand ::
@@ -17,7 +18,7 @@ runCommand opts = do
       moutputFile = opts' ^. compileOutputFile
   outFile <- getOutputFile FileExtJuvixReg inputFile moutputFile
   mainFile <- getMainFile inputFile
-  tab :: InfoTable <- readFile mainFile >>= getRight . Tree.runParser mainFile
+  md :: Module <- readFile mainFile >>= getRight . Tree.runParser mainFile
   entrypoint <-
     applyOptions opts
       <$> getEntryPoint inputFile
@@ -26,5 +27,5 @@ runCommand opts = do
       . run
       . runError @JuvixError
       . runReader entrypoint
-      $ treeToReg tab
-  writeFileEnsureLn outFile (Reg.ppPrint res res)
+      $ treeToReg md
+  writeFileEnsureLn outFile (Reg.ppPrint res (Reg.computeCombinedInfoTable res))

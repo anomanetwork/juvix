@@ -1,7 +1,7 @@
 module Juvix.Compiler.Asm.Extra.Memory where
 
 import Data.HashMap.Strict qualified as HashMap
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Data.Stack (Stack)
 import Juvix.Compiler.Asm.Data.Stack qualified as Stack
 import Juvix.Compiler.Asm.Error
@@ -86,7 +86,7 @@ bottomTempStack' n mem =
 getArgumentType :: Offset -> Memory -> Maybe Type
 getArgumentType off mem = HashMap.lookup off (mem ^. memoryArgumentArea)
 
-getMemValueType :: InfoTable -> MemRef -> Memory -> Maybe Type
+getMemValueType :: Module -> MemRef -> Memory -> Maybe Type
 getMemValueType tab val mem = case val of
   DRef dr -> getDirectRefType dr mem
   ConstrRef fld ->
@@ -112,21 +112,21 @@ getConstantType = \case
   ConstUInt8 {} -> mkTypeUInt8
   ConstByteArray {} -> TyByteArray
 
-getValueType' :: (Member (Error AsmError) r) => Maybe Location -> InfoTable -> Memory -> Value -> Sem r Type
-getValueType' loc tab mem = \case
+getValueType' :: (Member (Error AsmError) r) => Maybe Location -> Module -> Memory -> Value -> Sem r Type
+getValueType' loc md mem = \case
   Constant c -> return (getConstantType c)
-  Ref val -> case getMemValueType tab val mem of
+  Ref val -> case getMemValueType md val mem of
     Just ty -> return ty
     Nothing -> throw $ AsmError loc "invalid memory reference"
 
-getValueType :: InfoTable -> Memory -> Value -> Maybe Type
-getValueType tab mem val =
+getValueType :: Module -> Memory -> Value -> Maybe Type
+getValueType md mem val =
   case run (runError ty0) of
     Left _ -> Nothing
     Right ty -> Just ty
   where
     ty0 :: Sem '[Error AsmError] Type
-    ty0 = getValueType' Nothing tab mem val
+    ty0 = getValueType' Nothing md mem val
 
 -- | Check if the value stack has at least the given height
 checkValueStackHeight' :: (Member (Error AsmError) r) => Maybe Location -> Int -> Memory -> Sem r ()
@@ -144,8 +144,8 @@ checkValueStackHeight' loc n mem = do
 
 -- | Check if the values on top of the value stack have the given types (the
 -- first element of the list corresponds to the top of the stack)
-checkValueStack' :: (Member (Error AsmError) r) => Maybe Location -> InfoTable -> [Type] -> Memory -> Sem r ()
-checkValueStack' loc tab tys mem = do
+checkValueStack' :: (Member (Error AsmError) r) => Maybe Location -> Module -> [Type] -> Memory -> Sem r ()
+checkValueStack' loc md tys mem = do
   checkValueStackHeight' loc (length tys) mem
   mapM_
     ( \(ty, idx) -> do
@@ -156,9 +156,9 @@ checkValueStack' loc tab tys mem = do
               "type mismatch on value stack cell "
                 <> show idx
                 <> " from top: expected "
-                <> ppTrace tab ty
+                <> ppTrace md ty
                 <> " but got "
-                <> ppTrace tab ty'
+                <> ppTrace md ty'
     )
     (zip tys [0 ..])
 
@@ -166,16 +166,16 @@ checkValueStack' loc tab tys mem = do
 -- representations. Throws an error if some types cannot be unified, or the
 -- heights of the value stacks or the temporary stacks don't match, or the sizes
 -- of the argument areas don't match.
-unifyMemory' :: (Member (Error AsmError) r) => Maybe Location -> InfoTable -> Memory -> Memory -> Sem r Memory
-unifyMemory' loc tab mem1 mem2 = do
+unifyMemory' :: (Member (Error AsmError) r) => Maybe Location -> Module -> Memory -> Memory -> Sem r Memory
+unifyMemory' loc md mem1 mem2 = do
   unless (length (mem1 ^. memoryValueStack) == length (mem2 ^. memoryValueStack)) $
     throw $
       AsmError loc "value stack height mismatch"
-  vs <- zipWithM (unifyTypes'' loc tab) (toList (mem1 ^. memoryValueStack)) (toList (mem2 ^. memoryValueStack))
+  vs <- zipWithM (unifyTypes'' loc md) (toList (mem1 ^. memoryValueStack)) (toList (mem2 ^. memoryValueStack))
   unless (length (mem1 ^. memoryTempStack) == length (mem2 ^. memoryTempStack)) $
     throw $
       AsmError loc "temporary stack height mismatch"
-  ts <- zipWithM (unifyTypes'' loc tab) (toList (mem1 ^. memoryTempStack)) (toList (mem2 ^. memoryTempStack))
+  ts <- zipWithM (unifyTypes'' loc md) (toList (mem1 ^. memoryTempStack)) (toList (mem2 ^. memoryTempStack))
   unless
     ( length (mem1 ^. memoryArgumentArea) == length (mem2 ^. memoryArgumentArea)
         && mem1 ^. memoryArgsNum == mem2 ^. memoryArgsNum
@@ -188,7 +188,7 @@ unifyMemory' loc tab mem1 mem2 = do
       ( \off ->
           unifyTypes''
             loc
-            tab
+            md
             (fromJust $ HashMap.lookup off (mem1 ^. memoryArgumentArea))
             (fromJust $ HashMap.lookup off (mem1 ^. memoryArgumentArea))
       )

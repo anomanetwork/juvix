@@ -8,13 +8,13 @@ import Juvix.Compiler.Tree.Transformation.Base
 
 -- | Replaces generic calls (with CallClosures) to unknown unary functions with
 -- known non-function target types by direct closure calls (with Call)
-convertUnaryCalls :: InfoTable -> InfoTable
-convertUnaryCalls tab = mapT convert tab
+convertUnaryCalls :: Module -> Module
+convertUnaryCalls md = mapT convert md
   where
     convert :: Symbol -> Node -> Node
     convert sym = umapL (go argtys)
       where
-        funInfo = lookupFunInfo tab sym
+        funInfo = lookupFunInfo md sym
         argtys
           | funInfo ^. functionArgsNum == 0 = []
           | otherwise = typeArgs (funInfo ^. functionType)
@@ -32,7 +32,7 @@ convertUnaryCalls tab = mapT convert tab
                   isUnaryWithAtomicTarget (BL.lookupLevel _offsetRefOffset tmps ^. tempVarType) ->
                     mkClosureCall ncl
                 | ConstrRef (Field {..}) <- _nodeMemRef,
-                  constrInfo <- lookupConstrInfo tab _fieldTag,
+                  constrInfo <- lookupConstrInfo md _fieldTag,
                   isUnaryWithAtomicTarget (typeArgs (constrInfo ^. constructorType) !! _fieldOffset) ->
                     mkClosureCall ncl
               _ -> node

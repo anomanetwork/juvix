@@ -2,11 +2,13 @@ module Juvix.Compiler.Tree.Transformation.FilterUnreachable where
 
 import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Tree.Data.CallGraph
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Prelude
 
-filterUnreachable :: InfoTable -> InfoTable
-filterUnreachable tab =
-  over infoFunctions (HashMap.filterWithKey (const . isReachable graph)) tab
+filterUnreachable :: Module -> Module
+filterUnreachable md
+  | isJust (md ^. moduleInfoTable . infoMainFunction) =
+      over (moduleInfoTable . infoFunctions) (HashMap.filterWithKey (const . isReachable graph)) md
+  | otherwise = md
   where
-    graph = createCallGraph tab
+    graph = createCallGraph (md ^. moduleInfoTable)

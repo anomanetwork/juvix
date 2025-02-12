@@ -17,11 +17,11 @@ runCommand opts = do
   s' <- readFile inputFile
   tab <- getRight (Core.runParserMain inputFile defaultModuleId mempty s')
   r <- runReader ep . runError @JuvixError $ coreToAsm (Core.moduleFromInfoTable tab)
-  tab' <- getRight r
+  md' <- getRight r
   if
       | project opts ^. coreAsmPrint ->
-          renderStdOut (Asm.ppOutDefault tab' tab')
-      | otherwise -> runAsm True tab'
+          renderStdOut (Asm.ppOutDefault md' (Asm.computeCombinedInfoTable md'))
+      | otherwise -> runAsm True md'
   where
     sinputFile :: AppPath File
     sinputFile = project opts ^. coreAsmInputFile

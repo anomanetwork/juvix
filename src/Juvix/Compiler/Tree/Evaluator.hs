@@ -5,7 +5,7 @@ import Data.ByteString qualified as BS
 import GHC.IO (unsafePerformIO)
 import GHC.Show qualified as S
 import Juvix.Compiler.Core.Data.BinderList qualified as BL
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Evaluator.Builtins
 import Juvix.Compiler.Tree.Extra.Base
@@ -28,11 +28,11 @@ instance Show EvalError where
 
 instance Exception.Exception EvalError
 
-eval :: InfoTable -> Node -> Value
+eval :: Module -> Node -> Value
 eval = hEval stdout
 
-hEval :: Handle -> InfoTable -> Node -> Value
-hEval hout tab = eval' [] mempty
+hEval :: Handle -> Module -> Node -> Value
+hEval hout md = eval' [] mempty
   where
     eval' :: [Value] -> BL.BinderList Value -> Node -> Value
     eval' args temps node = case node of
@@ -74,7 +74,7 @@ hEval hout tab = eval' [] mempty
         goUnop NodeUnop {..} =
           let !v = eval' args temps _nodeUnopArg
            in case _nodeUnopOpcode of
-                PrimUnop op -> eitherToError $ evalUnop tab op v
+                PrimUnop op -> eitherToError $ evalUnop md op v
                 OpAssert -> goAssert v
                 OpTrace -> goTrace v
                 OpFail -> goFail v
@@ -112,10 +112,10 @@ hEval hout tab = eval' [] mempty
           _ -> evalError "assertion failed"
 
         goFail :: Value -> Value
-        goFail v = evalError ("failure: " <> printValue tab v)
+        goFail v = evalError ("failure: " <> printValue md v)
 
         goTrace :: Value -> Value
-        goTrace v = unsafePerformIO (hPutStrLn hout (printValue tab v) >> return v)
+        goTrace v = unsafePerformIO (hPutStrLn hout (printValue md v) >> return v)
 
         goConstant :: NodeConstant -> Value
         goConstant NodeConstant {..} = constantToValue _nodeConstant
@@ -175,7 +175,7 @@ hEval hout tab = eval' [] mempty
         doCall :: Symbol -> [Value] -> [Node] -> Value
         doCall sym vs0 as =
           let !vs = map' (eval' args temps) as
-              fi = lookupFunInfo tab sym
+              fi = lookupFunInfo md sym
               vs' = vs0 ++ vs
            in if
                   | length vs' == fi ^. functionArgsNum ->
@@ -209,7 +209,7 @@ hEval hout tab = eval' [] mempty
                           _closureArgs = vs'
                         }
                 where
-                  fi = lookupFunInfo tab _closureSymbol
+                  fi = lookupFunInfo md _closureSymbol
                   argsNum = fi ^. functionArgsNum
                   vs' = _closureArgs ++ vs
                   n = length vs'
@@ -269,17 +269,17 @@ valueToNode = \case
   ValUInt8 i -> mkConst $ ConstUInt8 i
   ValByteArray b -> mkConst $ ConstByteArray b
 
-hEvalIO :: (MonadIO m) => Handle -> Handle -> InfoTable -> FunctionInfo -> m Value
-hEvalIO hin hout infoTable funInfo = do
-  let !v = hEval hout infoTable (funInfo ^. functionCode)
-  hRunIO hin hout infoTable v
+hEvalIO :: (MonadIO m) => Handle -> Handle -> Module -> FunctionInfo -> m Value
+hEvalIO hin hout md funInfo = do
+  let !v = hEval hout md (funInfo ^. functionCode)
+  hRunIO hin hout md v
 
 -- | Interpret IO actions.
-hRunIO :: (MonadIO m) => Handle -> Handle -> InfoTable -> Value -> m Value
-hRunIO hin hout infoTable = \case
+hRunIO :: (MonadIO m) => Handle -> Handle -> Module -> Value -> m Value
+hRunIO hin hout md = \case
   ValConstr (Constr (BuiltinTag TagReturn) [x]) -> return x
   ValConstr (Constr (BuiltinTag TagBind) [x, f]) -> do
-    x' <- hRunIO hin hout infoTable x
+    x' <- hRunIO hin hout md x
     let code =
           CallClosures
             NodeCallClosures
@@ -287,13 +287,13 @@ hRunIO hin hout infoTable = \case
                 _nodeCallClosuresFun = valueToNode f,
                 _nodeCallClosuresArgs = valueToNode x' :| []
               }
-        !x'' = hEval hout infoTable code
-    hRunIO hin hout infoTable x''
+        !x'' = hEval hout md code
+    hRunIO hin hout md x''
   ValConstr (Constr (BuiltinTag TagWrite) [ValString s]) -> do
     hPutStr hout s
     return ValVoid
   ValConstr (Constr (BuiltinTag TagWrite) [arg]) -> do
-    hPutStr hout (ppPrint infoTable arg)
+    hPutStr hout (ppPrint md arg)
     return ValVoid
   ValConstr (Constr (BuiltinTag TagReadLn) []) -> do
     hFlush hout

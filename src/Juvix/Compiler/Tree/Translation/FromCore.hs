@@ -2,17 +2,26 @@ module Juvix.Compiler.Tree.Translation.FromCore where
 
 import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Core.Data.BinderList qualified as BL
-import Juvix.Compiler.Core.Data.Stripped.InfoTable qualified as Core
+import Juvix.Compiler.Core.Data.Stripped.Module qualified as Core
 import Juvix.Compiler.Core.Language.Stripped qualified as Core
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Extra.Base
 import Juvix.Compiler.Tree.Extra.Type
 import Juvix.Compiler.Tree.Language
 
 type BinderList = BL.BinderList
 
-fromCore :: Core.InfoTable -> InfoTable
-fromCore tab =
+fromCore :: Core.Module -> Module
+fromCore Core.Module {..} =
+  Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = fromCore' _moduleInfoTable,
+      _moduleImports = _moduleImports,
+      _moduleImportsTable = mempty
+    }
+
+fromCore' :: Core.InfoTable -> InfoTable
+fromCore' tab =
   InfoTable
     { _infoMainFunction = tab ^. Core.infoMain,
       _infoFunctions = genCode tab <$> tab ^. Core.infoFunctions,

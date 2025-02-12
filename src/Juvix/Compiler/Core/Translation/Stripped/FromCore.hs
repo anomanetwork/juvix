@@ -1,16 +1,24 @@
-module Juvix.Compiler.Core.Translation.Stripped.FromCore (fromCore) where
+module Juvix.Compiler.Core.Translation.Stripped.FromCore (fromCore, fromCore') where
 
 import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Core
-import Juvix.Compiler.Core.Data.Stripped.InfoTable qualified as Stripped
+import Juvix.Compiler.Core.Data.Stripped.Module qualified as Stripped
 import Juvix.Compiler.Core.Extra.Stripped.Base qualified as Stripped
 import Juvix.Compiler.Core.Info.LocationInfo
 import Juvix.Compiler.Core.Info.NameInfo
 import Juvix.Compiler.Core.Language.Stripped qualified as Stripped
 import Juvix.Compiler.Core.Pretty
 
-fromCore :: InfoTable -> Stripped.InfoTable
-fromCore tab =
+fromCore :: Module -> Stripped.Module
+fromCore Module {..} =
+  Stripped.Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = fromCore' (_moduleInfoTable <> _moduleImportsTable),
+      _moduleImports = _moduleImports
+    }
+
+fromCore' :: InfoTable -> Stripped.InfoTable
+fromCore' tab =
   Stripped.InfoTable
     { _infoMain = tab ^. infoMain,
       _infoFunctions = fmap (translateFunctionInfo tab) (tab' ^. infoIdentifiers),
@@ -179,7 +187,7 @@ translateFunctionInfo tab IdentifierInfo {..} =
         _functionIsExported = _identifierIsExported
       }
   where
-    body = fromJust $ HashMap.lookup _identifierSymbol (tab ^. identContext)
+    body = lookupTabIdentifierNode tab _identifierSymbol
 
 translateArgInfo :: Binder -> Stripped.ArgumentInfo
 translateArgInfo Binder {..} =

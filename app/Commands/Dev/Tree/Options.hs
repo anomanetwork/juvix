@@ -1,7 +1,6 @@
 module Commands.Dev.Tree.Options where
 
 import Commands.Dev.Tree.Compile.Options
-import Commands.Dev.Tree.CompileOld.Options
 import Commands.Dev.Tree.Eval.Options
 import Commands.Dev.Tree.FromAsm.Options
 import Commands.Dev.Tree.Read.Options
@@ -10,7 +9,6 @@ import CommonOptions
 
 data TreeCommand
   = Eval TreeEvalOptions
-  | CompileOld CompileOldOptions
   | Compile CompileCommand
   | Read TreeReadOptions
   | FromAsm TreeFromAsmOptions
@@ -23,7 +21,6 @@ parseTreeCommand =
     mconcat
       [ commandRepl,
         commandEval,
-        commandCompileOld,
         commandCompile,
         commandRead,
         commandFromAsm
@@ -54,15 +51,6 @@ parseTreeCommand =
         compileInfo =
           info
             (Compile <$> parseCompileCommand)
-            (progDesc "Compile a JuvixTree file")
-
-    commandCompileOld :: Mod CommandFields TreeCommand
-    commandCompileOld = command "compile-old" compileInfo
-      where
-        compileInfo :: ParserInfo TreeCommand
-        compileInfo =
-          info
-            (CompileOld <$> parseTreeCompileOptions)
             (progDesc "Compile a JuvixTree file")
 
     commandRead :: Mod CommandFields TreeCommand

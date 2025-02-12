@@ -7,8 +7,8 @@ where
 
 import Control.Monad.Trans.Class (lift)
 import Data.HashMap.Strict qualified as HashMap
-import Juvix.Compiler.Asm.Data.InfoTable
 import Juvix.Compiler.Asm.Data.InfoTableBuilder
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Extra.Base
 import Juvix.Compiler.Asm.Language
 import Juvix.Compiler.Asm.Translation.FromSource.Lexer
@@ -32,13 +32,13 @@ parseAsmSig =
       _parserSigEmptyExtra = mempty
     }
 
-parseText :: Text -> Either MegaparsecError InfoTable
+parseText :: Text -> Either MegaparsecError Module
 parseText = runParser noFile
 
 parseText' :: BuilderState -> Text -> Either MegaparsecError BuilderState
 parseText' bs = runParser' bs noFile
 
-runParser :: Path Abs File -> Text -> Either MegaparsecError InfoTable
+runParser :: Path Abs File -> Text -> Either MegaparsecError Module
 runParser = runParserS parseAsmSig
 
 runParser' :: BuilderState -> Path Abs File -> Text -> Either MegaparsecError BuilderState

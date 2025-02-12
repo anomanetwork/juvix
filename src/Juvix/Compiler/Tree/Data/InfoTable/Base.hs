@@ -73,17 +73,44 @@ emptyInfoTable =
       _infoMainFunction = Nothing
     }
 
-lookupFunInfo :: InfoTable' a e -> Symbol -> FunctionInfo' a e
-lookupFunInfo infoTable sym = fromMaybe (error "invalid function symbol") (HashMap.lookup sym (infoTable ^. infoFunctions))
+lookupTabFunInfo' :: InfoTable' a e -> Symbol -> Maybe (FunctionInfo' a e)
+lookupTabFunInfo' infoTable sym = HashMap.lookup sym (infoTable ^. infoFunctions)
 
-lookupConstrInfo :: InfoTable' a e -> Tag -> ConstructorInfo
-lookupConstrInfo infoTable tag = fromMaybe (error "invalid constructor tag") (HashMap.lookup tag (infoTable ^. infoConstrs))
+lookupTabConstrInfo' :: InfoTable' a e -> Tag -> Maybe ConstructorInfo
+lookupTabConstrInfo' infoTable tag = HashMap.lookup tag (infoTable ^. infoConstrs)
 
-lookupInductiveInfo :: InfoTable' a e -> Symbol -> InductiveInfo
-lookupInductiveInfo infoTable sym = fromMaybe (error "invalid inductive symbol") (HashMap.lookup sym (infoTable ^. infoInductives))
+lookupTabInductiveInfo' :: InfoTable' a e -> Symbol -> Maybe InductiveInfo
+lookupTabInductiveInfo' infoTable sym = HashMap.lookup sym (infoTable ^. infoInductives)
 
-getNextSymbolId :: InfoTable' a e -> Word
-getNextSymbolId tab = maximum (0 : map (^. symbolId) (HashMap.keys (tab ^. infoFunctions) ++ HashMap.keys (tab ^. infoInductives))) + 1
+lookupTabFunInfo :: InfoTable' a e -> Symbol -> FunctionInfo' a e
+lookupTabFunInfo infoTable sym = fromMaybe (error "invalid function symbol") (lookupTabFunInfo' infoTable sym)
 
-getNextUserTag :: InfoTable' a e -> Word
-getNextUserTag tab = maximum (0 : mapMaybe getUserTagId (HashMap.keys (tab ^. infoConstrs))) + 1
+lookupTabConstrInfo :: InfoTable' a e -> Tag -> ConstructorInfo
+lookupTabConstrInfo infoTable tag = fromMaybe (error "invalid constructor tag") (lookupTabConstrInfo' infoTable tag)
+
+lookupTabInductiveInfo :: InfoTable' a e -> Symbol -> InductiveInfo
+lookupTabInductiveInfo infoTable sym = fromMaybe (error "invalid inductive symbol") (lookupTabInductiveInfo' infoTable sym)
+
+nextSymbolId :: InfoTable' a e -> Word
+nextSymbolId tab = maximum (0 : map (^. symbolId) (HashMap.keys (tab ^. infoFunctions) ++ HashMap.keys (tab ^. infoInductives))) + 1
+
+nextUserTag :: InfoTable' a e -> Word
+nextUserTag tab = maximum (0 : mapMaybe getUserTagId (HashMap.keys (tab ^. infoConstrs))) + 1
+
+instance Semigroup (InfoTable' code extra) where
+  t1 <> t2 =
+    InfoTable
+      { _infoFunctions = t1 ^. infoFunctions <> t2 ^. infoFunctions,
+        _infoInductives = t1 ^. infoInductives <> t2 ^. infoInductives,
+        _infoConstrs = t1 ^. infoConstrs <> t2 ^. infoConstrs,
+        _infoMainFunction = t2 ^. infoMainFunction <|> t1 ^. infoMainFunction
+      }
+
+instance Monoid (InfoTable' code extra) where
+  mempty =
+    InfoTable
+      { _infoFunctions = mempty,
+        _infoInductives = mempty,
+        _infoConstrs = mempty,
+        _infoMainFunction = Nothing
+      }
