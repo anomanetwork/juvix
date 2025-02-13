@@ -35,10 +35,10 @@ computeFunctionApply blts = umap go
       where
         sym = fromJust $ HashMap.lookup (length args) (blts ^. applyBuiltinsMap)
 
--- | Assumption: the applyBuiltins are already available (the
--- applyBuiltinsModule has already been added).
 computeApply :: Module -> Module
-computeApply = mapT (const (computeFunctionApply applyBuiltins))
+computeApply =
+  mapT (const (computeFunctionApply applyBuiltins))
+    . over moduleImportsTable (applyBuiltinsModule ^. moduleInfoTable <>)
 
 checkNoCallClosures :: Module -> Bool
 checkNoCallClosures md =

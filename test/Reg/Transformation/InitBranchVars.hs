@@ -18,8 +18,8 @@ liftTest _testRun =
   fromTest
     Test
       { _testTransformations = pipe,
-        _testAssertion = \tab -> do
-          unless (checkSSA tab) $ error "check ssa"
-          unless (checkInitialized tab) $ error "check initialized",
+        _testAssertion = \md -> do
+          unless (checkSSA md) $ error "check ssa"
+          unless (checkInitialized md) $ error "check initialized",
         _testRun
       }
