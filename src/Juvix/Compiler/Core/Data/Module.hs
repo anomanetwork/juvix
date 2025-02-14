@@ -12,6 +12,8 @@ import Juvix.Compiler.Core.Pretty
 
 type Module = Module' InfoTable
 
+type ModuleTable = ModuleTable' InfoTable
+
 lookupInductiveInfo' :: Module -> Symbol -> Maybe InductiveInfo
 lookupInductiveInfo' Module {..} sym =
   lookupTabInductiveInfo' _moduleInfoTable sym

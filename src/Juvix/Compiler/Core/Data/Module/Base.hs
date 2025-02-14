@@ -61,3 +61,12 @@ lookupModuleTable mt mid =
 
 computeImportsTable :: (Monoid t) => ModuleTable' t -> [ModuleId] -> t
 computeImportsTable mt = foldMap ((^. moduleImportsTable) . lookupModuleTable mt)
+
+updateImportsTable :: (Monoid t) => ModuleTable' t -> Module' t -> Module' t
+updateImportsTable mt m =
+  set moduleImportsTable (computeImportsTable mt (m ^. moduleImports)) m
+
+updateImportsTableM :: (Monoid t, Members '[Reader (ModuleTable' t)] r) => Module' t -> Sem r (Module' t)
+updateImportsTableM md = do
+  mt <- ask
+  return $ updateImportsTable mt md
