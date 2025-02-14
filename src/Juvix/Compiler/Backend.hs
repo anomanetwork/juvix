@@ -154,3 +154,15 @@ getTargetSubdir = \case
   TargetRust -> $(mkRelDir "rust")
   TargetAnoma -> $(mkRelDir "anoma")
   TargetCairo -> $(mkRelDir "cairo")
+
+getTargetExtension :: Target -> String
+getTargetExtension = \case
+  TargetCWasm32Wasi -> ".c.bin"
+  TargetCNative64 -> ".c.bin"
+  TargetCore -> ".core.bin"
+  TargetAsm -> ".asm.bin"
+  TargetReg -> ".reg.bin"
+  TargetTree -> ".tree.bin"
+  TargetRust -> ".rs.bin"
+  TargetAnoma -> ".anoma.bin"
+  TargetCairo -> ".cairo.bin"

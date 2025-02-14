@@ -38,3 +38,6 @@ getOptionsSubdir opts =
       if
           | opts ^. optionsDebug -> $(mkRelDir "debug")
           | otherwise -> $(mkRelDir "release")
+
+getOptionsExtension :: Options -> String
+getOptionsExtension opts = maybe ".bin" getTargetExtension (opts ^. optionsTarget)
