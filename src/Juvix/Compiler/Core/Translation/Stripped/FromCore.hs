@@ -13,8 +13,10 @@ fromCore :: Module -> Stripped.Module
 fromCore Module {..} =
   Stripped.Module
     { _moduleId = _moduleId,
+      -- TODO: don't combine info tables
       _moduleInfoTable = fromCore' (_moduleInfoTable <> _moduleImportsTable),
-      _moduleImports = _moduleImports
+      _moduleImports = _moduleImports,
+      _moduleSHA256 = _moduleSHA256
     }
 
 fromCore' :: InfoTable -> Stripped.InfoTable

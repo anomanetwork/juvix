@@ -14,7 +14,8 @@ fromAsm md =
     { _moduleId = md ^. moduleId,
       _moduleInfoTable = tab,
       _moduleImports = md ^. moduleImports,
-      _moduleImportsTable = mempty
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = md ^. moduleSHA256
     }
   where
     tab0 :: Asm.InfoTable

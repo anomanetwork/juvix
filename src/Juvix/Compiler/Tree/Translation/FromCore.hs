@@ -17,7 +17,8 @@ fromCore Core.Module {..} =
     { _moduleId = _moduleId,
       _moduleInfoTable = fromCore' _moduleInfoTable,
       _moduleImports = _moduleImports,
-      _moduleImportsTable = mempty
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = _moduleSHA256
     }
 
 fromCore' :: Core.InfoTable -> InfoTable

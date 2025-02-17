@@ -13,6 +13,7 @@ data Module = Module
     _moduleInfoTable :: InfoTable,
     -- | The imports field contains all direct (non-transitive) dependencies of
     -- the module.
-    _moduleImports :: [ModuleId]
+    _moduleImports :: [ModuleId],
+    _moduleSHA256 :: Text
   }
   deriving stock (Generic)

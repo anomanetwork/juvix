@@ -76,7 +76,8 @@ fromInternal i = mapError (JuvixError . ErrBadScope) $ do
           { _moduleId = imd ^. Internal.internalModuleId,
             _moduleInfoTable = mempty,
             _moduleImports = imd ^. Internal.internalModuleImports,
-            _moduleImportsTable = coreImportsTab
+            _moduleImportsTable = coreImportsTab,
+            _moduleSHA256 = ""
           }
       tabs = i ^. InternalTyped.resultTypeCheckingTables
   res <-

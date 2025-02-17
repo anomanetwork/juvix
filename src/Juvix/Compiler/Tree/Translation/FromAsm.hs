@@ -30,7 +30,8 @@ fromAsm md = do
       { _moduleId = md ^. moduleId,
         _moduleInfoTable = tab,
         _moduleImports = md ^. moduleImports,
-        _moduleImportsTable = mempty
+        _moduleImportsTable = mempty,
+        _moduleSHA256 = md ^. moduleSHA256
       }
 
 goFunction :: (Member (Error TreeError) r') => Asm.Module -> Asm.FunctionInfo -> Sem r' FunctionInfo
