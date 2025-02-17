@@ -14,6 +14,9 @@ import Juvix.Compiler.Tree.Language.Type
 data CallType
   = CallFun Symbol
   | CallClosure Node
+  deriving stock (Generic)
+
+instance Serialize CallType
 
 data Node
   = Binop NodeBinop
@@ -53,17 +56,26 @@ data Node
     -- Used to implement Core.Let. JVT codes: 'save(x) {<code>}',
     -- 'save[<name>](x) {<code>}'.
     Save NodeSave
+  deriving stock (Generic)
+
+instance Serialize Node
 
 newtype NodeInfo = NodeInfo
   { _nodeInfoLocation :: Maybe Location
   }
   deriving newtype (Semigroup, Monoid)
+  deriving stock (Generic)
+
+instance Serialize NodeInfo
 
 data BinaryOpcode
   = PrimBinop BinaryOp
   | -- | Sequence: evaluate and ignore fist argument, return evaluated second
     -- argument. JVT code: 'seq(x1, x2)'.
     OpSeq
+  deriving stock (Generic)
+
+instance Serialize BinaryOpcode
 
 data TreeOp
   = TreeBinaryOpcode BinaryOpcode
@@ -71,6 +83,9 @@ data TreeOp
   | TreeByteArrayOp ByteArrayOp
   | TreeCairoOp CairoOp
   | TreeAnomaOp AnomaOp
+  deriving stock (Generic)
+
+instance Serialize TreeOp
 
 data UnaryOpcode
   = PrimUnop UnaryOp
@@ -80,6 +95,9 @@ data UnaryOpcode
     OpTrace
   | -- | Interrupt execution with a runtime error printing the argument.
     OpFail
+  deriving stock (Generic)
+
+instance Serialize UnaryOpcode
 
 data NodeBinop = NodeBinop
   { _nodeBinopInfo :: NodeInfo,
@@ -87,58 +105,88 @@ data NodeBinop = NodeBinop
     _nodeBinopArg1 :: Node,
     _nodeBinopArg2 :: Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeBinop
 
 data NodeUnop = NodeUnop
   { _nodeUnopInfo :: NodeInfo,
     _nodeUnopOpcode :: UnaryOpcode,
     _nodeUnopArg :: Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeUnop
 
 data NodeByteArray = NodeByteArray
   { _nodeByteArrayInfo :: NodeInfo,
     _nodeByteArrayOpcode :: ByteArrayOp,
     _nodeByteArrayArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeByteArray
 
 data NodeCairo = NodeCairo
   { _nodeCairoInfo :: NodeInfo,
     _nodeCairoOpcode :: CairoOp,
     _nodeCairoArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeCairo
 
 data NodeAnoma = NodeAnoma
   { _nodeAnomaInfo :: NodeInfo,
     _nodeAnomaOpcode :: AnomaOp,
     _nodeAnomaArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeAnoma
 
 data NodeConstant = NodeConstant
   { _nodeConstantInfo :: NodeInfo,
     _nodeConstant :: Constant
   }
+  deriving stock (Generic)
+
+instance Serialize NodeConstant
 
 data NodeMemRef = NodeMemRef
   { _nodeMemRefInfo :: NodeInfo,
     _nodeMemRef :: MemRef
   }
+  deriving stock (Generic)
+
+instance Serialize NodeMemRef
 
 data NodeAllocConstr = NodeAllocConstr
   { _nodeAllocConstrInfo :: NodeInfo,
     _nodeAllocConstrTag :: Tag,
     _nodeAllocConstrArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeAllocConstr
 
 data NodeAllocClosure = NodeAllocClosure
   { _nodeAllocClosureInfo :: NodeInfo,
     _nodeAllocClosureFunSymbol :: Symbol,
     _nodeAllocClosureArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeAllocClosure
 
 data NodeExtendClosure = NodeExtendClosure
   { _nodeExtendClosureInfo :: NodeInfo,
     _nodeExtendClosureFun :: Node,
     _nodeExtendClosureArgs :: NonEmpty Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeExtendClosure
 
 -- | If _nodeCallType is 'CallClosure', then _nodeCallArgs must be non-empty.
 data NodeCall = NodeCall
@@ -146,12 +194,18 @@ data NodeCall = NodeCall
     _nodeCallType :: CallType,
     _nodeCallArgs :: [Node]
   }
+  deriving stock (Generic)
+
+instance Serialize NodeCall
 
 data NodeCallClosures = NodeCallClosures
   { _nodeCallClosuresInfo :: NodeInfo,
     _nodeCallClosuresFun :: Node,
     _nodeCallClosuresArgs :: NonEmpty Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeCallClosures
 
 data NodeBranch = NodeBranch
   { _nodeBranchInfo :: NodeInfo,
@@ -159,6 +213,9 @@ data NodeBranch = NodeBranch
     _nodeBranchTrue :: Node,
     _nodeBranchFalse :: Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeBranch
 
 data NodeCase = NodeCase
   { _nodeCaseInfo :: NodeInfo,
@@ -167,6 +224,9 @@ data NodeCase = NodeCase
     _nodeCaseBranches :: [CaseBranch],
     _nodeCaseDefault :: Maybe Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeCase
 
 data CaseBranch = CaseBranch
   { _caseBranchLocation :: Maybe Location,
@@ -176,12 +236,18 @@ data CaseBranch = CaseBranch
     -- temporary stack in this branch.
     _caseBranchSave :: Bool
   }
+  deriving stock (Generic)
+
+instance Serialize CaseBranch
 
 data TempVar = TempVar
   { _tempVarName :: Maybe Text,
     _tempVarLocation :: Maybe Location,
     _tempVarType :: Type
   }
+  deriving stock (Generic)
+
+instance Serialize TempVar
 
 data NodeSave = NodeSave
   { _nodeSaveInfo :: NodeInfo,
@@ -189,6 +255,9 @@ data NodeSave = NodeSave
     _nodeSaveArg :: Node,
     _nodeSaveBody :: Node
   }
+  deriving stock (Generic)
+
+instance Serialize NodeSave
 
 makeLenses ''NodeBinop
 makeLenses ''NodeUnop

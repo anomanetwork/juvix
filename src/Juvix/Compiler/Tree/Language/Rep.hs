@@ -25,7 +25,7 @@ data MemRep
     -- representing constructors of different inductive types because they have
     -- no tag). The argument is the representation of the wrapped value.
     MemRepUnpacked ValRep
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
 
 -- | Representation of values.
 data ValRep
@@ -39,7 +39,7 @@ data ValRep
     ValRepWord
   | -- | Constructor of an inductive type with a given representation.
     ValRepInd IndRep
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
 
 -- | Representation of an inductive type.
 data IndRep
@@ -68,4 +68,10 @@ data IndRep
   | -- | The constructors can have any representation as long as there is no
     -- ambiguity arising from unpacking.
     IndRepMixed
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize MemRep
+
+instance Serialize ValRep
+
+instance Serialize IndRep

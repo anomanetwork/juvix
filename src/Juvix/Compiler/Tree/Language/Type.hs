@@ -17,18 +17,19 @@ data Type
     -- of an appropriate TyInductive.
     TyConstr TypeConstr
   | TyFun TypeFun
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
 
 data TypeInteger = TypeInteger
   { _typeIntegerMinValue :: Maybe Integer,
     _typeIntegerMaxValue :: Maybe Integer
   }
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
 
 data TypeBool = TypeBool
   { _typeBoolTrueTag :: Tag,
     _typeBoolFalseTag :: Tag
   }
+  deriving stock (Generic)
 
 instance Eq TypeBool where
   _ == _ = True
@@ -36,13 +37,14 @@ instance Eq TypeBool where
 newtype TypeInductive = TypeInductive
   { _typeInductiveSymbol :: Symbol
   }
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
 
 data TypeConstr = TypeConstr
   { _typeConstrInductive :: Symbol,
     _typeConstrTag :: Tag,
     _typeConstrFields :: [Type]
   }
+  deriving stock (Generic)
 
 instance Eq TypeConstr where
   (TypeConstr _ tag1 _) == (TypeConstr _ tag2 _) = tag1 == tag2
@@ -51,7 +53,19 @@ data TypeFun = TypeFun
   { _typeFunArgs :: NonEmpty Type,
     _typeFunTarget :: Type
   }
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize TypeInteger
+
+instance Serialize TypeBool
+
+instance Serialize TypeInductive
+
+instance Serialize TypeConstr
+
+instance Serialize TypeFun
+
+instance Serialize Type
 
 makeLenses ''TypeInteger
 makeLenses ''TypeBool

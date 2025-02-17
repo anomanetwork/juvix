@@ -9,7 +9,6 @@ import Juvix.Compiler.Pipeline.Modular.Cache
 import Juvix.Compiler.Pipeline.Modular.Result
 import Juvix.Compiler.Store.Backend.Module qualified as Stored
 import Juvix.Compiler.Tree.Pipeline qualified as Tree
-import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Serialize qualified as Serialize
 import Juvix.Prelude
 import Path qualified
@@ -22,7 +21,7 @@ processModule = cacheGet
 
 processModuleCacheMiss ::
   forall t t' r.
-  (Serialize t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t')] r) =>
+  (Monoid t', Serialize t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t')] r) =>
   ModuleTable' t ->
   (Module' t -> Sem r (Module' t')) ->
   ModuleId ->
@@ -42,18 +41,48 @@ processModuleCacheMiss mt f mid = do
       absPath = buildDir Path.</> subdir Path.</> relPath
       md0 = lookupModuleTable mt mid
       sha256 = md0 ^. moduleSHA256
-  mmd :: Maybe (Stored.Module' t') <- Serialize.loadFromFile absPath
-  case mmd of
-    Just md
-      | md ^. Stored.moduleSHA256 == sha256
-          && md ^. Stored.moduleOptions == opts -> do
-          pure (PipelineResult (toModule md) False)
-    _ -> do
+  res <- processImports (md0 ^. moduleImports)
+  let changed = res ^. pipelineResultChanged
+      imports = res ^. pipelineResult
+  if
+      | changed ->
+          recompile opts absPath imports md0
+      | otherwise -> do
+          mmd :: Maybe (Stored.Module' t') <- Serialize.loadFromFile absPath
+          case mmd of
+            Just md
+              | md ^. Stored.moduleSHA256 == sha256
+                  && md ^. Stored.moduleOptions == opts -> do
+                  return
+                    PipelineResult
+                      { _pipelineResult = Stored.toCoreModule imports md,
+                        _pipelineResultChanged = False
+                      }
+            _ ->
+              recompile opts absPath imports md0
+  where
+    recompile :: Stored.Options -> Path Abs File -> [Module' t'] -> Module' t -> Sem r (PipelineResult (Module' t'))
+    recompile opts absPath imports md0 = do
       md :: Module' t' <- f md0
-      let md' = md & moduleSHA256 .~ sha256
-      Serialize.saveToFile absPath md
-      cachePut mid (PipelineResult md)
-      pure (PipelineResult md)
+      let md' = md {_moduleImportsTable = mconcatMap computeCombinedInfoTable imports}
+      Serialize.saveToFile absPath (Stored.fromCoreModule opts md')
+      return
+        PipelineResult
+          { _pipelineResult = md',
+            _pipelineResultChanged = True
+          }
+
+processImports ::
+  (Members '[Files, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t)] r) =>
+  [ModuleId] ->
+  Sem r (PipelineResult [Module' t])
+processImports mids = do
+  res <- mapM processModule mids
+  return
+    PipelineResult
+      { _pipelineResult = map (^. pipelineResult) res,
+        _pipelineResultChanged = any (^. pipelineResultChanged) res
+      }
 
 processCoreToTree ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache Tree.Module] r) =>

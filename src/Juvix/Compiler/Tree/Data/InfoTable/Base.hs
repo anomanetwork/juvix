@@ -16,6 +16,7 @@ data InfoTable' code extra = InfoTable
     _infoInductives :: HashMap Symbol InductiveInfo,
     _infoMainFunction :: Maybe Symbol
   }
+  deriving stock (Generic)
 
 data FunctionInfo' code extra = FunctionInfo
   { _functionName :: Text,
@@ -31,6 +32,7 @@ data FunctionInfo' code extra = FunctionInfo
     _functionExtra :: extra,
     _functionCode :: code
   }
+  deriving stock (Generic)
 
 data ConstructorInfo = ConstructorInfo
   { _constructorName :: Text,
@@ -49,6 +51,7 @@ data ConstructorInfo = ConstructorInfo
     _constructorRepresentation :: MemRep,
     _constructorFixity :: Maybe Fixity
   }
+  deriving stock (Generic)
 
 data InductiveInfo = InductiveInfo
   { _inductiveName :: Text,
@@ -58,6 +61,15 @@ data InductiveInfo = InductiveInfo
     _inductiveConstructors :: [Tag],
     _inductiveRepresentation :: IndRep
   }
+  deriving stock (Generic)
+
+instance (Serialize code, Serialize extra) => Serialize (FunctionInfo' code extra)
+
+instance Serialize ConstructorInfo
+
+instance Serialize InductiveInfo
+
+instance (Serialize code, Serialize extra) => Serialize (InfoTable' code extra)
 
 makeLenses ''InfoTable'
 makeLenses ''FunctionInfo'

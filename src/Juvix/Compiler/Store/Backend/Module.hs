@@ -5,6 +5,7 @@ module Juvix.Compiler.Store.Backend.Module
 where
 
 import Data.HashMap.Strict qualified as HashMap
+import Juvix.Compiler.Core.Data.Module.Base qualified as Core
 import Juvix.Compiler.Store.Backend.Options
 import Juvix.Data.ModuleId
 import Juvix.Data.PPOutput (prettyText)
@@ -44,3 +45,23 @@ lookupModuleTable' mt mid = HashMap.lookup mid (mt ^. moduleTable)
 lookupModuleTable :: ModuleTable' t -> ModuleId -> Module' t
 lookupModuleTable mt mid =
   fromMaybe (impossibleError ("Could not find module " <> prettyText mid)) (lookupModuleTable' mt mid)
+
+toCoreModule :: (Monoid t) => [Core.Module' t] -> Module' t -> Core.Module' t
+toCoreModule imports Module {..} =
+  Core.Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = _moduleInfoTable,
+      _moduleImports = _moduleImports,
+      _moduleImportsTable = mconcatMap Core.computeCombinedInfoTable imports,
+      _moduleSHA256 = _moduleSHA256
+    }
+
+fromCoreModule :: Options -> Core.Module' t -> Module' t
+fromCoreModule opts Core.Module {..} =
+  Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = _moduleInfoTable,
+      _moduleImports = _moduleImports,
+      _moduleOptions = opts,
+      _moduleSHA256 = _moduleSHA256
+    }
