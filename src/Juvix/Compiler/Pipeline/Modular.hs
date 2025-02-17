@@ -21,7 +21,10 @@ processModule = cacheGet
 
 processModuleCacheMiss ::
   forall t t' r.
-  (Monoid t', Serialize t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t')] r) =>
+  ( Monoid t',
+    Serialize t',
+    Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t')] r
+  ) =>
   ModuleTable' t ->
   (Module' t -> Sem r (Module' t')) ->
   ModuleId ->
@@ -95,9 +98,21 @@ processCoreToTree checkId mt mid = do
 
 runModularPipeline ::
   forall t t' r.
-  (Monoid t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
-  (Module' t -> Sem r (PipelineResult (Module' t'))) ->
+  (Serialize t', Monoid t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
+  (forall r'. (Members '[Error JuvixError, Reader EntryPoint] r') => Module' t -> Sem r' (Module' t')) ->
   ModuleTable' t ->
   Sem r (ModuleTable' t')
 runModularPipeline f mt = do
-  undefined
+  tab <-
+    evalCacheEmpty
+      (processModuleCacheMiss mt f)
+      $ mapM (fmap (^. pipelineResult) . processModule . (^. moduleId)) (mt ^. moduleTable)
+  return $ ModuleTable tab
+
+runModularCoreToTree ::
+  (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
+  Core.TransformationId ->
+  Core.ModuleTable ->
+  Sem r Tree.ModuleTable
+runModularCoreToTree checkId mt =
+  runModularPipeline (Pipeline.coreToTree checkId) mt
