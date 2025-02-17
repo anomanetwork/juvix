@@ -87,17 +87,17 @@ subTermT = go
           L -> (\l' -> TermCell (set cellLeft l' c)) <$> go ds g (c ^. cellLeft)
           R -> (\r' -> TermCell (set cellRight r' c)) <$> go ds g (c ^. cellRight)
 
-subTerm :: (Members '[Reader EvalCtx, Error (NockEvalError a)] r) => Term a -> Path -> Sem r (Term a)
-subTerm term pos =
+subTerm :: (Members '[Reader EvalCtx, Error (NockEvalError a)] r) => Term a -> Path -> Maybe Interval -> Sem r (Term a)
+subTerm term pos posLoc =
   case term ^? subTermT pos of
-    Nothing -> throwInvalidPath term pos
+    Nothing -> throwInvalidPath posLoc term pos
     Just t -> return t
 
 setSubTerm :: forall a r. (Members '[Error (NockEvalError a), Reader EvalCtx] r) => Term a -> Path -> Term a -> Sem r (Term a)
 setSubTerm term pos repTerm =
   let (old, new) = setAndRemember (subTermT' pos) repTerm term
    in if
-          | isNothing (getFirst old) -> throwInvalidPath term pos
+          | isNothing (getFirst old) -> throwInvalidPath Nothing term pos
           | otherwise -> return new
 
 parseCell ::
@@ -456,7 +456,7 @@ evalProfile inistack initerm =
             goOpAddress :: Sem r (Term a)
             goOpAddress = do
               cr <- withCrumb (crumb crumbDecodeFirst) (asPath (c ^. operatorCellTerm))
-              withCrumb (crumb crumbEval) (subTerm stack cr)
+              withCrumb (crumb crumbEval) (subTerm stack cr (c ^. operatorCellTerm . termLoc))
 
             goOpQuote :: Term a
             goOpQuote = c ^. operatorCellTerm
@@ -538,7 +538,7 @@ evalProfile inistack initerm =
               cellTerm <- withCrumb (crumb crumbDecodeFirst) (asCell (c ^. operatorCellTerm))
               r <- withCrumb (crumb crumbDecodeSecond) (asPath (cellTerm ^. cellLeft))
               t' <- evalArg crumbEvalFirst stack (cellTerm ^. cellRight)
-              subTerm t' r >>= evalArg crumbEvalSecond t'
+              subTerm t' r (cellTerm ^. cellLeft . termLoc) >>= evalArg crumbEvalSecond t'
 
             goOpSequence :: Sem r (Term a)
             goOpSequence = do

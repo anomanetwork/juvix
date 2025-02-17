@@ -39,7 +39,8 @@ data ExpectedAtom a = ExpectedAtom
 data InvalidPath a = InvalidPath
   { _invalidPathCtx :: EvalCtx,
     _invalidPathTerm :: Term a,
-    _invalidPathPath :: Path
+    _invalidPathPath :: Path,
+    _invalidPathLocation :: Maybe Interval
   }
 
 data KeyNotInStorage a = KeyNotInStorage
@@ -76,15 +77,16 @@ throwInvalidNockOp a = do
           _invalidNockOp = a
         }
 
-throwInvalidPath :: (Members '[Error (NockEvalError a), Reader EvalCtx] r) => Term a -> Path -> Sem r x
-throwInvalidPath tm p = do
+throwInvalidPath :: (Members '[Error (NockEvalError a), Reader EvalCtx] r) => Maybe Interval -> Term a -> Path -> Sem r x
+throwInvalidPath mi tm p = do
   ctx <- ask
   throw $
     ErrInvalidPath
       InvalidPath
         { _invalidPathCtx = ctx,
           _invalidPathTerm = tm,
-          _invalidPathPath = p
+          _invalidPathPath = p,
+          _invalidPathLocation = mi
         }
 
 throwExpectedCell :: (Members '[Error (NockEvalError a), Reader EvalCtx] r) => Atom a -> Sem r x
@@ -147,7 +149,8 @@ instance (PrettyCode a, NockNatural a) => PrettyCode (InvalidPath a) where
     ctx <- ppCtx _invalidPathCtx
     path <- ppCode _invalidPathPath
     tm <- ppCode _invalidPathTerm
-    return (ctx <> "The path" <+> path <+> "is invalid for the following term:" <> line <> tm)
+    loc <- mapM ppCode _invalidPathLocation
+    return (ctx <> "The path" <+> path <+> "is invalid for the following term:" <> line <> tm <>? ((line <>) <$> loc))
 
 instance (PrettyCode a, NockNatural a) => PrettyCode (ExpectedAtom a) where
   ppCode ExpectedAtom {..} = do
