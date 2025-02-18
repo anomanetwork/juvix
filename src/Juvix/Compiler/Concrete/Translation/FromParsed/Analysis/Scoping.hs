@@ -2005,7 +2005,6 @@ reserveInductive d = do
         let sig = mkRecordNameSignature r
         storeSig sig
         registerParsedConstructorSig (c' ^. S.nameId) sig
-      traceM ("reserve constructor " <> ppTrace c')
       return c'
 
     registerRecordType :: S.Symbol -> S.Symbol -> Sem (Fail ': r) ()
