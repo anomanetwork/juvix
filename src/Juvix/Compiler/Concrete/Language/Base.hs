@@ -295,12 +295,13 @@ deriving stock instance Ord (Statement 'Scoped)
 
 data ReservedInductiveDef = ReservedInductiveDef
   { _reservedInductiveDef :: InductiveDef 'Parsed,
+    _reservedInductiveConstructors :: NonEmpty S.Symbol,
     _reservedInductiveDefModule :: Module 'Parsed 'ModuleLocal
   }
   deriving stock (Show, Eq, Ord)
 
 data ProjectionDef s = ProjectionDef
-  { _projectionConstructor :: S.Symbol,
+  { _projectionConstructor :: SymbolType s,
     _projectionField :: SymbolType s,
     _projectionType :: ExpressionType s,
     _projectionKind :: ProjectionKind,
@@ -3340,8 +3341,8 @@ instance HasLoc (OpenModule s short) where
       <>? fmap getLoc _openModuleUsingHiding
       <>? getLocPublicAnn _openModulePublic
 
-instance HasLoc (ProjectionDef s) where
-  getLoc = getLoc . (^. projectionConstructor)
+instance (SingI s) => HasLoc (ProjectionDef s) where
+  getLoc = getLocSymbolType . (^. projectionConstructor)
 
 getLocFunctionSymbolType :: forall s. (SingI s) => FunctionSymbolType s -> Interval
 getLocFunctionSymbolType = case sing :: SStage s of

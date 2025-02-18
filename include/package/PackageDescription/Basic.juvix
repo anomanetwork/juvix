@@ -13,3 +13,5 @@ type Package :=
   --- Use this in situations where you don't want the package configuration file
   --- to use the standard library.
   basicPackage;
+
+open Package using {basicPackage} public;

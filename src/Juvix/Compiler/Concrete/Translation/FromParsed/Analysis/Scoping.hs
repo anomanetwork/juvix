@@ -369,7 +369,7 @@ getReservedSymbol ::
 getReservedSymbol dns s = withSomeSing dns $ \ns -> do
   m <- gets (^. scopeReserved . reservedNameSpace ns)
   let s' = fromMaybe err (m ^. at s)
-      err = impossibleError (nameSpaceElemName dns <> ppTrace s <> " not found in the scope. Contents of scope:\n" <> ppTrace (toList m))
+      err = impossibleError (nameSpaceElemName dns <> " " <> ppTrace s <> " not found in the scope. Contents of scope:\n" <> ppTrace (toList m))
   getFixityAndIterator s'
 
 getReservedFixitySymbol ::
@@ -1479,15 +1479,16 @@ checkInductiveDef ::
          Reader PackageId,
          Reader BindingStrategy
        ]
-      r
+      r,
+    HasCallStack
   ) =>
+  NonEmpty S.Symbol ->
   InductiveDef 'Parsed ->
   Sem r (InductiveDef 'Scoped)
-checkInductiveDef InductiveDef {..} = do
-  (inductiveName', constructorNames' :: NonEmpty S.Symbol) <- topBindings $ do
+checkInductiveDef constructorNames' InductiveDef {..} = do
+  inductiveName' <- topBindings $ do
     i <- getReservedDefinitionSymbol _inductiveName
-    cs <- mapM (getReservedDefinitionSymbol . (^. constructorName)) _inductiveConstructors
-    return (i, cs)
+    return i
   (inductiveParameters', inductiveType', inductiveTypeApplied', inductiveDoc', inductiveConstructors') <- withLocalScope $ do
     inductiveParameters' <- mapM checkInductiveParameters _inductiveParameters
     inductiveType' <- mapM checkParseExpressionAtoms _inductiveType
@@ -1617,16 +1618,17 @@ checkProjectionDef ::
   ProjectionDef 'Parsed ->
   Sem r (ProjectionDef 'Scoped)
 checkProjectionDef p = do
+  _projectionConstructor <- getReservedDefinitionSymbol (p ^. projectionConstructor)
   _projectionField <- getReservedDefinitionSymbol (p ^. projectionField)
   _projectionType <- checkParseExpressionAtoms (p ^. projectionType)
   _projectionDoc <- maybe (return Nothing) (checkJudoc >=> return . Just) (p ^. projectionDoc)
   let p' =
         ProjectionDef
           { _projectionFieldIx = p ^. projectionFieldIx,
-            _projectionConstructor = p ^. projectionConstructor,
             _projectionFieldBuiltin = p ^. projectionFieldBuiltin,
             _projectionPragmas = p ^. projectionPragmas,
             _projectionKind = p ^. projectionKind,
+            _projectionConstructor,
             _projectionField,
             _projectionType,
             _projectionDoc
@@ -1799,15 +1801,7 @@ reserveStatements = topBindings . mapM reserveDefinition
       StatementImport i -> reserveImport i $> def
       StatementOpenModule {} -> return def
       StatementReservedInductive {} -> impossible
-      StatementInductive d -> do
-        m <- reserveInductive d
-        reserveLocalModule m
-        let r =
-              ReservedInductiveDef
-                { _reservedInductiveDef = d,
-                  _reservedInductiveDefModule = m
-                }
-        return (StatementReservedInductive r)
+      StatementInductive d -> StatementReservedInductive <$> reserveInductive d
 
 checkReservedStatements ::
   forall r.
@@ -1846,7 +1840,8 @@ checkReservedStatements = topBindings . concatMapM (fmap toList . scopeDefinitio
       StatementProjectionDef d -> pure . StatementProjectionDef <$> checkProjectionDef d
 
 checkReservedInductive ::
-  ( Members
+  ( HasCallStack,
+    Members
       '[ Error ScoperError,
          State Scope,
          State ScoperState,
@@ -1863,7 +1858,7 @@ checkReservedInductive ::
   ReservedInductiveDef ->
   Sem r (NonEmpty (Statement 'Scoped))
 checkReservedInductive r = do
-  tyDef0 <- checkInductiveDef (r ^. reservedInductiveDef)
+  tyDef0 <- checkInductiveDef (r ^. reservedInductiveConstructors) (r ^. reservedInductiveDef)
   modDef <- checkLocalModule (r ^. reservedInductiveDefModule)
   let withDefs :: [Statement 'Scoped] =
         getDefs (modDef ^. moduleBody)
@@ -1873,8 +1868,8 @@ checkReservedInductive r = do
     getDefs :: [Statement 'Scoped] -> [Statement 'Scoped]
     getDefs = dropWhile (has _StatementProjectionDef)
 
-defineInductiveModule :: forall r. (Members '[Reader PackageId] r) => S.Symbol -> InductiveDef 'Parsed -> Sem r (Module 'Parsed 'ModuleLocal)
-defineInductiveModule headConstr i =
+defineInductiveModule :: forall r. (Members '[Reader PackageId] r) => InductiveDef 'Parsed -> Sem r (Module 'Parsed 'ModuleLocal)
+defineInductiveModule i =
   runReader (getLoc (i ^. inductiveName)) genModule
   where
     genModule :: forall s'. (Members '[Reader Interval, Reader PackageId] s') => Sem s' (Module 'Parsed 'ModuleLocal)
@@ -1895,71 +1890,70 @@ defineInductiveModule headConstr i =
       where
         genBody :: Sem s' [Statement 'Parsed]
         genBody = do
-          projections <- genFieldProjections
           return (projections ++ i ^.. inductiveWithModule . _Just . withModuleBody . each)
           where
-            genFieldProjections :: Sem s' [Statement 'Parsed]
-            genFieldProjections = do
-              return . run . evalState 0 $ mapM goRecordStatement fields
-              where
-                goRecordStatement :: RecordStatement 'Parsed -> Sem '[State Int] (Statement 'Parsed)
-                goRecordStatement = \case
-                  RecordStatementSyntax f -> StatementSyntax <$> goSyntax f
-                  RecordStatementField f -> goField f
-                  where
-                    goSyntax :: RecordSyntaxDef 'Parsed -> Sem s (SyntaxDef 'Parsed)
-                    goSyntax = \case
-                      RecordSyntaxOperator d -> return (SyntaxOperator d)
-                      RecordSyntaxIterator d -> return (SyntaxIterator d)
+            constructorAndFields :: Maybe (Symbol, [RecordStatement 'Parsed])
+            constructorAndFields = case i ^. inductiveConstructors of
+              c :| []
+                | ConstructorRhsRecord r <- c ^. constructorRhs -> Just (c ^. constructorName, r ^. rhsRecordStatements)
+              _ -> Nothing
 
-                    goField :: RecordField 'Parsed -> Sem '[State Int] (Statement 'Parsed)
-                    goField f = do
-                      idx <- popFieldIx
-                      let s = mkProjection (Indexed idx f)
-                      return (StatementProjectionDef s)
-                      where
-                        popFieldIx :: Sem '[State Int] Int
-                        popFieldIx = get <* modify' @Int succ
+            projections :: [Statement 'Parsed]
+            projections = case constructorAndFields of
+              Nothing -> []
+              Just (constr, fields) -> run . evalState 0 $ mapM goRecordStatement fields
+                where
+                  goRecordStatement :: RecordStatement 'Parsed -> Sem '[State Int] (Statement 'Parsed)
+                  goRecordStatement = \case
+                    RecordStatementSyntax f -> StatementSyntax <$> goSyntax f
+                    RecordStatementField f -> goField f
+                    where
+                      goSyntax :: RecordSyntaxDef 'Parsed -> Sem s (SyntaxDef 'Parsed)
+                      goSyntax = \case
+                        RecordSyntaxOperator d -> return (SyntaxOperator d)
+                        RecordSyntaxIterator d -> return (SyntaxIterator d)
 
-                mkProjection ::
-                  Indexed (RecordField 'Parsed) ->
-                  ProjectionDef 'Parsed
-                mkProjection (Indexed idx field) =
-                  ProjectionDef
-                    { _projectionConstructor = headConstr,
-                      _projectionField = field ^. fieldName,
-                      _projectionType = G.mkProjectionType i (G.mkTypeSigType' (G.mkWildcardParsed (getLoc (i ^. inductiveName))) (field ^. fieldTypeSig)),
-                      _projectionFieldIx = idx,
-                      _projectionKind = kind,
-                      _projectionFieldBuiltin = field ^. fieldBuiltin,
-                      _projectionDoc = field ^. fieldDoc,
-                      _projectionPragmas = combinePragmas (i ^. inductivePragmas) (field ^. fieldPragmas)
-                    }
-                  where
-                    kind :: ProjectionKind
-                    kind = case field ^. fieldIsImplicit of
-                      ExplicitField -> ProjectionExplicit
-                      ImplicitInstanceField -> ProjectionCoercion
+                      goField :: RecordField 'Parsed -> Sem '[State Int] (Statement 'Parsed)
+                      goField f = do
+                        idx <- popFieldIx
+                        let s = mkProjection (Indexed idx f)
+                        return (StatementProjectionDef s)
+                        where
+                          popFieldIx :: Sem '[State Int] Int
+                          popFieldIx = get <* modify' @Int succ
 
-                    combinePragmas :: Maybe ParsedPragmas -> Maybe ParsedPragmas -> Maybe ParsedPragmas
-                    combinePragmas p1 p2 = case (p1, p2) of
-                      (Nothing, Nothing) -> Nothing
-                      (Just p, Nothing) -> Just p
-                      (Nothing, Just p) -> Just p
-                      (Just p1', Just p2') ->
-                        Just
-                          ( over
-                              (withLocParam . withSourceValue . pragmasIsabelleIgnore)
-                              (\i2 -> i2 <|> (p1' ^. withLocParam . withSourceValue . pragmasIsabelleIgnore))
-                              p2'
-                          )
+                  mkProjection ::
+                    Indexed (RecordField 'Parsed) ->
+                    ProjectionDef 'Parsed
+                  mkProjection (Indexed idx field) =
+                    ProjectionDef
+                      { _projectionConstructor = constr,
+                        _projectionField = field ^. fieldName,
+                        _projectionType = G.mkProjectionType i (G.mkTypeSigType' (G.mkWildcardParsed (getLoc (i ^. inductiveName))) (field ^. fieldTypeSig)),
+                        _projectionFieldIx = idx,
+                        _projectionKind = kind,
+                        _projectionFieldBuiltin = field ^. fieldBuiltin,
+                        _projectionDoc = field ^. fieldDoc,
+                        _projectionPragmas = combinePragmas (i ^. inductivePragmas) (field ^. fieldPragmas)
+                      }
+                    where
+                      kind :: ProjectionKind
+                      kind = case field ^. fieldIsImplicit of
+                        ExplicitField -> ProjectionExplicit
+                        ImplicitInstanceField -> ProjectionCoercion
 
-                fields :: [RecordStatement 'Parsed]
-                fields = case i ^. inductiveConstructors of
-                  c :| [] -> case c ^. constructorRhs of
-                    ConstructorRhsRecord r -> (r ^. rhsRecordStatements)
-                    _ -> []
-                  _ -> []
+                      combinePragmas :: Maybe ParsedPragmas -> Maybe ParsedPragmas -> Maybe ParsedPragmas
+                      combinePragmas p1 p2 = case (p1, p2) of
+                        (Nothing, Nothing) -> Nothing
+                        (Just p, Nothing) -> Just p
+                        (Nothing, Just p) -> Just p
+                        (Just p1', Just p2') ->
+                          Just
+                            ( over
+                                (withLocParam . withSourceValue . pragmasIsabelleIgnore)
+                                (\i2 -> i2 <|> (p1' ^. withLocParam . withSourceValue . pragmasIsabelleIgnore))
+                                p2'
+                            )
 
 -- | Returns the module generated for the inductive definition
 reserveInductive ::
@@ -1972,23 +1966,34 @@ reserveInductive ::
          State Scope,
          NameIdGen,
          State ScoperState,
+         Reader ScopeParameters,
+         HighlightBuilder,
          InfoTableBuilder
        ]
       r
   ) =>
   InductiveDef 'Parsed ->
-  Sem r (Module 'Parsed 'ModuleLocal)
+  Sem r ReservedInductiveDef
 reserveInductive d = do
   i <- reserveInductiveSymbol d
   let builtinConstrs :: NonEmpty (Maybe BuiltinConstructor)
       builtinConstrs =
         NonEmpty.prependList
-          (maybe [] ((map Just . builtinConstructors) . (^. withLocParam)) (d ^. inductiveBuiltin))
+          (d ^.. inductiveBuiltin . _Just . withLocParam . to builtinConstructors . each . to Just)
           (NonEmpty.repeat Nothing)
-  constrs <- mapM (uncurry reserveConstructor) (mzip builtinConstrs (d ^. inductiveConstructors))
-  m <- defineInductiveModule (head constrs) d
-  ignoreFail (registerRecordType (head constrs) i)
-  return m
+  let regConstrs :: Sem r (NonEmpty S.Symbol) = do
+        constrs <- mapM (uncurry reserveConstructor) (mzip builtinConstrs (d ^. inductiveConstructors))
+        ignoreFail (registerRecordType (head constrs) i)
+        return constrs
+  m <- defineInductiveModule d
+  constrs <- reserveTypeLocalModule regConstrs m
+  let r =
+        ReservedInductiveDef
+          { _reservedInductiveDef = d,
+            _reservedInductiveConstructors = constrs,
+            _reservedInductiveDefModule = m
+          }
+  return r
   where
     reserveConstructor :: Maybe BuiltinConstructor -> ConstructorDef 'Parsed -> Sem r S.Symbol
     reserveConstructor b c = do
@@ -2000,6 +2005,7 @@ reserveInductive d = do
         let sig = mkRecordNameSignature r
         storeSig sig
         registerParsedConstructorSig (c' ^. S.nameId) sig
+      traceM ("reserve constructor " <> ppTrace c')
       return c'
 
     registerRecordType :: S.Symbol -> S.Symbol -> Sem (Fail ': r) ()
@@ -2057,10 +2063,34 @@ reserveLocalModule ::
   ) =>
   Module 'Parsed 'ModuleLocal ->
   Sem r ()
-reserveLocalModule Module {..} = do
+reserveLocalModule = reserveTypeLocalModule (return ())
+
+reserveTypeLocalModule ::
+  forall r constrs.
+  ( Members
+      '[ HighlightBuilder,
+         Error ScoperError,
+         State Scope,
+         Reader ScopeParameters,
+         State ScoperState,
+         InfoTableBuilder,
+         Reader InfoTable,
+         NameIdGen,
+         Reader BindingStrategy,
+         Reader PackageId
+       ]
+      r
+  ) =>
+  -- | An action that reserves the constructors at the beginning. Only used for
+  -- type modules
+  (Sem r constrs) ->
+  Module 'Parsed 'ModuleLocal ->
+  Sem r constrs
+reserveTypeLocalModule mreserveConstructors Module {..} = do
   _modulePath' :: S.Symbol <- reserveLocalModuleSymbol _modulePath
-  (resModule :: ReservedModule, minfo :: ModuleExportInfo) <- withLocalScope $ do
+  (cs :: constrs, resModule :: ReservedModule, minfo :: ModuleExportInfo) <- withLocalScope $ do
     inheritScope _modulePath
+    cs <- mreserveConstructors
     b <- reserveStatements _moduleBody
     export <- genExportInfo
     reserved <- gets (^. scopeReserved)
@@ -2076,10 +2106,11 @@ reserveLocalModule Module {..} = do
             { _moduleExportInfoModuleName = mname,
               _moduleExportInfo = export
             }
-    return (resMod, nfo)
+    return (cs, resMod, nfo)
   modify (set (scoperReservedModules . at (_modulePath' ^. S.nameId)) (Just resModule))
   modify (set (scoperExportInfo . at (_modulePath' ^. S.nameId)) (Just minfo))
   registerName True _modulePath'
+  return cs
 
 inheritScope :: (Members '[State Scope] r') => Symbol -> Sem r' ()
 inheritScope _modulePath = do

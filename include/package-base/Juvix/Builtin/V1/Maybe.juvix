@@ -6,3 +6,5 @@ builtin maybe
 type Maybe A :=
   | nothing
   | just A;
+
+open Maybe using {nothing; just} public;

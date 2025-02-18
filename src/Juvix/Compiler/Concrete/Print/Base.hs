@@ -1635,7 +1635,7 @@ instance (SingI s) => PrettyPrint (ProjectionDef s) where
       <+> noLoc ":= projection"
       <+> noLoc (pretty _projectionFieldIx)
       <+> noLoc "for"
-      <+> ppCode _projectionConstructor
+      <+> ppSymbolType _projectionConstructor
 
 ppReservedInductiveDefType :: forall s. (SingI s) => PrettyPrinting (ReservedInductiveDefType s)
 ppReservedInductiveDefType x = case sing :: SStage s of
