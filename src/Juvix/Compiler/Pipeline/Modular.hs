@@ -1,5 +1,6 @@
 module Juvix.Compiler.Pipeline.Modular where
 
+import Data.List.Singletons (type (++))
 import Juvix.Compiler.Core.Data.Module qualified as Core
 import Juvix.Compiler.Core.Data.Module.Base
 import Juvix.Compiler.Core.Data.TransformationId qualified as Core
@@ -12,6 +13,14 @@ import Juvix.Compiler.Tree.Pipeline qualified as Tree
 import Juvix.Extra.Serialize qualified as Serialize
 import Juvix.Prelude
 import Path qualified
+
+type ModularEff r =
+  '[ Files,
+     TaggedLock,
+     Reader EntryPoint,
+     Error JuvixError
+   ]
+    ++ r
 
 processModule ::
   (Members '[Files, Error JuvixError, Reader EntryPoint, ModuleCache (Module' t)] r) =>
@@ -87,23 +96,23 @@ processImports mids = do
         _pipelineResultChanged = any (^. pipelineResultChanged) res
       }
 
-runModularPipeline ::
+processModuleTable ::
   forall t t' r.
   (Serialize t', Monoid t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
-  (forall r'. (Members '[Error JuvixError, Reader EntryPoint] r') => Module' t -> Sem r' (Module' t')) ->
+  (Module' t -> Sem r (Module' t')) ->
   ModuleTable' t ->
   Sem r (ModuleTable' t')
-runModularPipeline f mt = do
+processModuleTable f mt = do
   tab <-
     evalCacheEmpty
-      (processModuleCacheMiss mt f)
+      (processModuleCacheMiss mt (inject . f))
       $ mapM (fmap (^. pipelineResult) . processModule . (^. moduleId)) (mt ^. moduleTable)
   return $ ModuleTable tab
 
-runModularStoredCoreToTree ::
+modularCoreToTree ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
   Core.TransformationId ->
   Core.ModuleTable ->
   Sem r Tree.ModuleTable
-runModularStoredCoreToTree checkId mt =
-  runModularPipeline (Pipeline.storedCoreToTree checkId) mt
+modularCoreToTree checkId mt =
+  processModuleTable (Pipeline.storedCoreToTree checkId) mt

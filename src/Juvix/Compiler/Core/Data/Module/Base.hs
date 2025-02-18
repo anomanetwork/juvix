@@ -61,7 +61,7 @@ lookupModuleTable mt mid =
   fromMaybe (impossibleError ("Could not find module " <> prettyText mid)) (lookupModuleTable' mt mid)
 
 computeImportsTable :: (Monoid t) => ModuleTable' t -> [ModuleId] -> t
-computeImportsTable mt = foldMap ((^. moduleImportsTable) . lookupModuleTable mt)
+computeImportsTable mt = foldMap (computeCombinedInfoTable . lookupModuleTable mt)
 
 updateImportsTable :: (Monoid t) => ModuleTable' t -> Module' t -> Module' t
 updateImportsTable mt m =

@@ -46,6 +46,7 @@ import Juvix.Compiler.Pipeline.JvoCache
 import Juvix.Compiler.Pipeline.Loader.PathResolver
 import Juvix.Compiler.Pipeline.ModuleInfoCache
 import Juvix.Compiler.Store.Core.Extra
+import Juvix.Compiler.Store.Core.Extra qualified as Store
 import Juvix.Compiler.Store.Extra
 import Juvix.Compiler.Store.Extra qualified as Store
 import Juvix.Compiler.Store.Language
@@ -250,6 +251,7 @@ processModuleCacheMissDecide entryIx = do
                 PipelineResult
                   { _pipelineResult = info,
                     _pipelineResultImports = _compileResultModuleTable,
+                    _pipelineResultImportTables = _compileResultImportTables,
                     _pipelineResultChanged = False
                   }
 
@@ -492,11 +494,12 @@ processFileUpToParsing ::
 processFileUpToParsing entry = do
   res <- runReader entry upToParsing
   let imports :: [Import 'Parsed] = res ^. Parser.resultParserState . Parser.parserStateImports
-  mtab <- (^. compileResultModuleTable) <$> runReader entry (processImports (map (^. importModulePath) imports))
+  CompileResult {..} <- runReader entry (processImports (map (^. importModulePath) imports))
   return
     PipelineResult
       { _pipelineResult = res,
-        _pipelineResultImports = mtab,
+        _pipelineResultImports = _compileResultModuleTable,
+        _pipelineResultImportTables = _compileResultImportTables,
         _pipelineResultChanged = True
       }
 
@@ -528,11 +531,25 @@ processImports imports = do
         Store.mkModuleTable (map (^. pipelineResult) ms)
           <> mconcatMap (^. pipelineResultImports) ms
       changed = any (^. pipelineResultChanged) ms
+      itabs =
+        HashMap.fromList
+          . map computeImportsTable
+          $ ms
   return
     CompileResult
       { _compileResultChanged = changed,
-        _compileResultModuleTable = mtab
+        _compileResultModuleTable = mtab,
+        _compileResultImportTables = itabs
       }
+  where
+    computeImportsTable :: PipelineResult Store.ModuleInfo -> (ModuleId, Core.InfoTable)
+    computeImportsTable r =
+      ( mid,
+        Store.toCore (r ^. pipelineResult . Store.moduleInfoCoreTable)
+          <> mconcat (HashMap.elems (r ^. pipelineResultImportTables))
+      )
+      where
+        mid = r ^. pipelineResult . Store.moduleInfoInternalModule . Internal.internalModuleId
 
 processModuleToStoredCore ::
   forall r.
