@@ -2,7 +2,6 @@
 module test069;
 
 import Stdlib.Data.Nat open hiding {Ord; mkOrd};
-import Stdlib.Data.Nat.Ord as NatOrd;
 import Stdlib.Data.Pair as Ord;
 import Stdlib.Data.Bool.Base open;
 import Stdlib.Trait.Ord open using {Ordering; LessThan; Equal; GreaterThan; isLessThan; isGreaterThan};
