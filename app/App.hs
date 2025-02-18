@@ -10,6 +10,7 @@ import Juvix.Compiler.Pipeline.Loader.PathResolver
 import Juvix.Compiler.Pipeline.Root
 import Juvix.Compiler.Pipeline.Run
 import Juvix.Data.Error qualified as Error
+import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Paths.Base hiding (rootBuildDir)
 import Juvix.Parser.Error
 import System.Console.ANSI qualified as Ansi
@@ -170,7 +171,11 @@ getEntryPoint' RunAppIOArgs {..} inputFile = do
         | opts ^. globalStdin -> Just <$> liftIO getContents
         | otherwise -> return Nothing
   mainFile <- getMainAppFileMaybe inputFile
-  set entryPointStdin estdin <$> entryPointFromGlobalOptionsPre root ((^. pathPath) <$> mainFile) opts
+  mainFile' <- maybe (return Nothing) (fmap Just . fromAppFile) mainFile
+  sha256 <- maybe (return Nothing) (fmap Just . runFilesIO . SHA256.digestFile) mainFile'
+  set entryPointSHA256 sha256
+    . set entryPointStdin estdin
+    <$> entryPointFromGlobalOptionsPre root ((^. pathPath) <$> mainFile) opts
 
 runPipelineEither ::
   (Members '[EmbedIO, TaggedLock, Logger, App] r, EntryPointOptions opts) =>

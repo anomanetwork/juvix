@@ -5,6 +5,7 @@ import Juvix.Compiler.Pipeline.Loader.PathResolver
 import Juvix.Compiler.Pipeline.Result
 import Juvix.Compiler.Store.Language qualified as Store
 import Juvix.Data.Effect.Cache
+import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Prelude
 
 data EntryIndex = EntryIndex
@@ -28,19 +29,21 @@ entryIndexPath = fromMaybe err . (^. entryIxEntry . entryPointModulePath)
     err :: a
     err = error "unexpected: EntryIndex should always have a path"
 
-mkEntryIndex :: (Members '[PathResolver, Reader EntryPoint] r) => ImportNode -> Sem r EntryIndex
+mkEntryIndex :: (Members '[Files, PathResolver, Reader EntryPoint] r) => ImportNode -> Sem r EntryIndex
 mkEntryIndex node = do
   entry <- ask
   pkgId <- importNodePackageId node
   let path = node ^. importNodeAbsFile
-      stdin'
+  sha256 <- SHA256.digestFile path
+  let stdin'
         | Just path == entry ^. entryPointModulePath = entry ^. entryPointStdin
         | otherwise = Nothing
       entry' =
         entry
           { _entryPointStdin = stdin',
             _entryPointPackageId = pkgId,
-            _entryPointModulePath = Just path
+            _entryPointModulePath = Just path,
+            _entryPointSHA256 = Just sha256
           }
   return
     EntryIndex

@@ -55,7 +55,6 @@ import Juvix.Compiler.Store.Options qualified as StoredOptions
 import Juvix.Compiler.Store.Scoped.Language (ScopedModuleTable)
 import Juvix.Compiler.Store.Scoped.Language qualified as Scoped
 import Juvix.Data.CodeAnn
-import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Serialize qualified as Serialize
 import Juvix.Prelude
 import Parallel.ProgressLog
@@ -114,7 +113,8 @@ evalModuleInfoCachePackageDotJuvix =
 compileSequentially ::
   forall r.
   ( Members
-      '[ ModuleInfoCache,
+      '[ Files,
+         ModuleInfoCache,
          Reader EntryPoint,
          PathResolver,
          Reader ImportTree
@@ -208,7 +208,10 @@ processModuleCacheMissDecide ::
   EntryIndex ->
   Sem r (ProcessModuleDecision rrecompile)
 processModuleCacheMissDecide entryIx = do
-  let buildDir = resolveAbsBuildDir root (entry ^. entryPointBuildDir)
+  let entry = entryIx ^. entryIxEntry
+      root = entry ^. entryPointRoot
+      opts = StoredModule.fromEntryPoint entry
+      buildDir = resolveAbsBuildDir root (entry ^. entryPointBuildDir)
       sourcePath = fromJust (entry ^. entryPointModulePath)
       relPath =
         fromJust
@@ -217,11 +220,11 @@ processModuleCacheMissDecide entryIx = do
           $ stripProperPrefix $(mkAbsDir "/") sourcePath
       subdir = StoredOptions.getOptionsSubdir opts
       absPath = buildDir Path.</> subdir Path.</> relPath
-  sha256 <- SHA256.digestFile sourcePath
+      sha256 = fromJust (entry ^. entryPointSHA256)
 
   let recompile :: Sem rrecompile (PipelineResult Store.ModuleInfo)
       recompile = do
-        res <- processModuleToStoredCore sha256 entry
+        res <- processModuleToStoredCore entry
         Serialize.saveToFile absPath (res ^. pipelineResult)
         return res
 
@@ -249,10 +252,6 @@ processModuleCacheMissDecide entryIx = do
                     _pipelineResultImports = _compileResultModuleTable,
                     _pipelineResultChanged = False
                   }
-  where
-    entry = entryIx ^. entryIxEntry
-    root = entry ^. entryPointRoot
-    opts = StoredModule.fromEntryPoint entry
 
 processModuleCacheMiss ::
   forall r.
@@ -283,7 +282,7 @@ processModuleCacheMiss entryIx = do
     ProcessModuleRecompile recomp -> recomp ^. recompileDo
 
 processProject ::
-  (Members '[PathResolver, ModuleInfoCache, Reader EntryPoint, Reader ImportTree] r) =>
+  (Members '[Files, PathResolver, ModuleInfoCache, Reader EntryPoint, Reader ImportTree] r) =>
   Sem r [ProcessedNode ()]
 processProject = do
   rootDir <- asks (^. entryPointRoot)
@@ -538,10 +537,9 @@ processImports imports = do
 processModuleToStoredCore ::
   forall r.
   (Members '[ModuleInfoCache, PathResolver, HighlightBuilder, TopModuleNameChecker, Error JuvixError, Files] r) =>
-  Text ->
   EntryPoint ->
   Sem r (PipelineResult Store.ModuleInfo)
-processModuleToStoredCore sha256 entry = over pipelineResult mkModuleInfo <$> processFileToStoredCore entry
+processModuleToStoredCore entry = over pipelineResult mkModuleInfo <$> processFileToStoredCore entry
   where
     mkModuleInfo :: Core.CoreResult -> Store.ModuleInfo
     mkModuleInfo Core.CoreResult {..} =
@@ -551,7 +549,7 @@ processModuleToStoredCore sha256 entry = over pipelineResult mkModuleInfo <$> pr
           _moduleInfoCoreTable = fromCore (_coreResultModule ^. Core.moduleInfoTable),
           _moduleInfoImports = map (^. importModulePath) $ scoperResult ^. Scoper.resultParserResult . Parser.resultParserState . parserStateImports,
           _moduleInfoOptions = StoredOptions.fromEntryPoint entry,
-          _moduleInfoSHA256 = sha256
+          _moduleInfoSHA256 = fromJust (entry ^. entryPointSHA256)
         }
       where
         scoperResult = _coreResultInternalTypedResult ^. InternalTyped.resultInternal . Internal.resultScoper

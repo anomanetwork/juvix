@@ -65,9 +65,10 @@ computeImplicitArgs = \case
 
 fromInternal ::
   (Members '[NameIdGen, Reader Store.ModuleTable, Error JuvixError] k) =>
+  Maybe Text ->
   InternalTyped.InternalTypedResult ->
   Sem k CoreResult
-fromInternal i = mapError (JuvixError . ErrBadScope) $ do
+fromInternal sha256 i = mapError (JuvixError . ErrBadScope) $ do
   importTab <- asks Store.getInternalModuleTable
   coreImportsTab <- asks Store.computeCombinedCoreInfoTable
   let imd = i ^. InternalTyped.resultInternalModule
@@ -77,7 +78,7 @@ fromInternal i = mapError (JuvixError . ErrBadScope) $ do
             _moduleInfoTable = mempty,
             _moduleImports = imd ^. Internal.internalModuleImports,
             _moduleImportsTable = coreImportsTab,
-            _moduleSHA256 = ""
+            _moduleSHA256 = sha256
           }
       tabs = i ^. InternalTyped.resultTypeCheckingTables
   res <-

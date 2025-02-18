@@ -143,7 +143,9 @@ upToIsabelle = upToInternalTyped >>= Isabelle.fromInternal
 upToCore ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Core.CoreResult
-upToCore = upToInternalTyped >>= Core.fromInternal
+upToCore = do
+  sha256 <- asks (^. entryPointSHA256)
+  upToInternalTyped >>= Core.fromInternal sha256
 
 upToStoredCore ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>

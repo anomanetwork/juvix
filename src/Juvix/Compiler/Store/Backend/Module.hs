@@ -53,7 +53,7 @@ toCoreModule imports Module {..} =
       _moduleInfoTable = _moduleInfoTable,
       _moduleImports = _moduleImports,
       _moduleImportsTable = mconcatMap Core.computeCombinedInfoTable imports,
-      _moduleSHA256 = _moduleSHA256
+      _moduleSHA256 = Just _moduleSHA256
     }
 
 fromCoreModule :: Options -> Core.Module' t -> Module' t
@@ -63,5 +63,5 @@ fromCoreModule opts Core.Module {..} =
       _moduleInfoTable = _moduleInfoTable,
       _moduleImports = _moduleImports,
       _moduleOptions = opts,
-      _moduleSHA256 = _moduleSHA256
+      _moduleSHA256 = fromJust _moduleSHA256
     }

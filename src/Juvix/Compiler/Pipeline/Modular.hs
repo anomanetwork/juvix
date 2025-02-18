@@ -43,7 +43,7 @@ processModuleCacheMiss mt f mid = do
       subdir = Stored.getOptionsSubdir opts
       absPath = buildDir Path.</> subdir Path.</> relPath
       md0 = lookupModuleTable mt mid
-      sha256 = md0 ^. moduleSHA256
+      sha256 = fromJust (md0 ^. moduleSHA256)
   res <- processImports (md0 ^. moduleImports)
   let changed = res ^. pipelineResultChanged
       imports = res ^. pipelineResult
@@ -87,15 +87,6 @@ processImports mids = do
         _pipelineResultChanged = any (^. pipelineResultChanged) res
       }
 
-processCoreToTree ::
-  (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint, ModuleCache Tree.Module] r) =>
-  Core.TransformationId ->
-  Core.ModuleTable ->
-  ModuleId ->
-  Sem r (PipelineResult Tree.Module)
-processCoreToTree checkId mt mid = do
-  processModuleCacheMiss mt (Pipeline.coreToTree checkId) mid
-
 runModularPipeline ::
   forall t t' r.
   (Serialize t', Monoid t', Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
@@ -109,10 +100,10 @@ runModularPipeline f mt = do
       $ mapM (fmap (^. pipelineResult) . processModule . (^. moduleId)) (mt ^. moduleTable)
   return $ ModuleTable tab
 
-runModularCoreToTree ::
+runModularStoredCoreToTree ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
   Core.TransformationId ->
   Core.ModuleTable ->
   Sem r Tree.ModuleTable
-runModularCoreToTree checkId mt =
-  runModularPipeline (Pipeline.coreToTree checkId) mt
+runModularStoredCoreToTree checkId mt =
+  runModularPipeline (Pipeline.storedCoreToTree checkId) mt

@@ -20,7 +20,7 @@ data Module' t = Module
     -- module M imports A but not B, but A imports B, then all identifiers from
     -- B will be in the imports table of M nonetheless.
     _moduleImportsTable :: t,
-    _moduleSHA256 :: Text
+    _moduleSHA256 :: Maybe Text
   }
   deriving stock (Generic)
 
@@ -45,10 +45,10 @@ withInfoTable f tab =
   f (moduleFromInfoTable tab) ^. moduleInfoTable
 
 emptyModule :: (Monoid t) => ModuleId -> Module' t
-emptyModule mid = Module mid mempty mempty mempty ""
+emptyModule mid = Module mid mempty mempty mempty Nothing
 
 moduleFromInfoTable :: (Monoid t) => t -> Module' t
-moduleFromInfoTable tab = Module defaultModuleId tab mempty mempty ""
+moduleFromInfoTable tab = Module defaultModuleId tab mempty mempty Nothing
 
 computeCombinedInfoTable :: (Monoid t) => Module' t -> t
 computeCombinedInfoTable Module {..} = _moduleInfoTable <> _moduleImportsTable

@@ -14,6 +14,6 @@ data Module = Module
     -- | The imports field contains all direct (non-transitive) dependencies of
     -- the module.
     _moduleImports :: [ModuleId],
-    _moduleSHA256 :: Text
+    _moduleSHA256 :: Maybe Text
   }
   deriving stock (Generic)
