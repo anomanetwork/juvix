@@ -5,6 +5,7 @@ syntax fixity logical := binary {assoc := right};
 type Bool :=
   | true : Bool
   | false : Bool;
+open Bool;
 
 not : Bool → Bool
   | true := false

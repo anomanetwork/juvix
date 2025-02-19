@@ -1,6 +1,7 @@
 module issue2999;
 
 type T := t;
+open T;
 
 fun : T :=
   namedFun@{

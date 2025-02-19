@@ -5,6 +5,7 @@ syntax fixity add := binary {assoc := left};
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+open Nat;
 
 syntax operator + add;
 
