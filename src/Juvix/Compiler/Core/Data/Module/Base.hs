@@ -53,6 +53,13 @@ moduleFromInfoTable tab = Module defaultModuleId tab mempty mempty Nothing
 computeCombinedInfoTable :: (Monoid t) => Module' t -> t
 computeCombinedInfoTable Module {..} = _moduleInfoTable <> _moduleImportsTable
 
+combineInfoTables :: (Monoid t) => Module' t -> Module' t
+combineInfoTables md =
+  md
+    { _moduleInfoTable = computeCombinedInfoTable md,
+      _moduleImportsTable = mempty
+    }
+
 lookupModuleTable' :: ModuleTable' t -> ModuleId -> Maybe (Module' t)
 lookupModuleTable' mt mid = HashMap.lookup mid (mt ^. moduleTable)
 

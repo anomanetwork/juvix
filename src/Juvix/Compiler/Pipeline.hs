@@ -168,31 +168,31 @@ upToReg ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Reg.Module
 upToReg =
-  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToReg _coreResultModule
+  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToReg (Core.combineInfoTables _coreResultModule)
 
 upToTree ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Tree.Module
 upToTree =
-  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToTree Core.IdentityTrans _coreResultModule
+  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToTree Core.IdentityTrans (Core.combineInfoTables _coreResultModule)
 
 upToAsm ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Asm.Module
 upToAsm =
-  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToAsm _coreResultModule
+  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToAsm (Core.combineInfoTables _coreResultModule)
 
 upToCasm ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Casm.Result
 upToCasm =
-  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToCasm _coreResultModule
+  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToCasm (Core.combineInfoTables _coreResultModule)
 
 upToCairo ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r Cairo.Result
 upToCairo =
-  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToCairo _coreResultModule
+  upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToCairo (Core.combineInfoTables _coreResultModule)
 
 upToMiniC ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
@@ -202,17 +202,17 @@ upToMiniC = upToAsm >>= asmToMiniC
 upToAnoma ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
   Sem r NockmaTree.AnomaResult
-upToAnoma = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToAnoma _coreResultModule
+upToAnoma = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToAnoma (Core.combineInfoTables _coreResultModule)
 
 upToRust ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError, PathResolver] r) =>
   Sem r Rust.Result
-upToRust = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToRust _coreResultModule
+upToRust = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToRust (Core.combineInfoTables _coreResultModule)
 
 upToRiscZeroRust ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError, PathResolver] r) =>
   Sem r Rust.Result
-upToRiscZeroRust = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToRiscZeroRust _coreResultModule
+upToRiscZeroRust = upToStoredCore' Core.PipelineExec >>= \Core.CoreResult {..} -> storedCoreToRiscZeroRust (Core.combineInfoTables _coreResultModule)
 
 upToCoreTypecheck ::
   (Members '[HighlightBuilder, Reader Parser.ParserResult, Reader EntryPoint, Reader Store.ModuleTable, Files, NameIdGen, Error JuvixError] r) =>
