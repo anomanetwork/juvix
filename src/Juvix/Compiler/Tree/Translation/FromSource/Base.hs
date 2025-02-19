@@ -39,7 +39,17 @@ localS update a = do
   return a'
 
 runParserS :: ParserSig t e d -> Path Abs File -> Text -> Either MegaparsecError (Module'' t e)
-runParserS sig fileName input_ = (^. stateModule) <$> runParserS' sig (mkBuilderState (emptyModule defaultModuleId)) fileName input_
+runParserS sig fileName input_ = (^. stateModule) <$> runParserS' sig (mkBuilderState (emptyModule mid)) fileName input_
+  where
+    mid =
+      ModuleId
+        { _moduleIdPath = nonEmptyToTopModulePathKey (pure (toFilePath fileName)),
+          _moduleIdPackageId =
+            PackageId
+              { _packageIdName = "$",
+                _packageIdVersion = SemVer 1 0 0 Nothing Nothing
+              }
+        }
 
 runParserS' :: forall t e d. ParserSig t e d -> BuilderState' t e -> Path Abs File -> Text -> Either MegaparsecError (BuilderState' t e)
 runParserS' sig bs fileName input_ = case runParserS'' (parseToplevel @t @e @d) sig bs fileName input_ of

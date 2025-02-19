@@ -28,9 +28,9 @@ import Typecheck qualified
 
 slowTests :: IO TestTree
 slowTests =
-  testGroup
+  sequentialTestGroup
     "Juvix slow tests"
-    -- AllFinish
+    AllFinish
     <$> sequence
       [ return Runtime.allTests,
         return Reg.allTests,
