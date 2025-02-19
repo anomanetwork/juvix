@@ -17,6 +17,7 @@ import Juvix.Prelude
 fromParsed ::
   ( Members
       '[ HighlightBuilder,
+         Reader Migration,
          Reader PackageId,
          Reader ModuleTable,
          Reader Parsed.ParserResult,

@@ -99,6 +99,7 @@ evalModuleInfoCachePackageDotJuvix ::
          Files,
          Concurrent,
          Logger,
+         Reader Migration,
          PathResolver
        ]
       r
@@ -159,7 +160,7 @@ evalModuleInfoCacheSetup ::
 evalModuleInfoCacheSetup setup m = do
   evalJvoCache
     . runProgressLog
-    . evalCacheEmptySetup setup processModuleCacheMiss
+    . evalCacheEmptySetup setup (runMigration . processModuleCacheMiss)
     $ m
 
 logDecision :: (Members '[ProgressLog] r) => ThreadId -> ImportNode -> ProcessModuleDecision x -> Sem r ()
@@ -197,6 +198,7 @@ processModuleCacheMissDecide ::
     Members
       '[ ModuleInfoCache,
          Error JuvixError,
+         Reader Migration,
          Files,
          TaggedLock,
          TopModuleNameChecker,
@@ -264,6 +266,7 @@ processModuleCacheMiss ::
          Error JuvixError,
          Files,
          JvoCache,
+         Reader Migration,
          ProgressLog,
          Concurrent,
          PathResolver
@@ -302,6 +305,7 @@ processProjectWith ::
   ( Members
       '[ Error JuvixError,
          ModuleInfoCache,
+         Reader Migration,
          PathResolver,
          Reader EntryPoint,
          Reader ImportTree,
@@ -313,6 +317,7 @@ processProjectWith ::
     ( Members
         '[ Error JuvixError,
            Files,
+           Reader Migration,
            Reader PackageId,
            HighlightBuilder,
            PathResolver
@@ -342,6 +347,7 @@ processProjectUpToScoping ::
   ( Members
       '[ Files,
          Error JuvixError,
+         Reader Migration,
          PathResolver,
          ModuleInfoCache,
          Reader EntryPoint,
@@ -358,6 +364,7 @@ processProjectUpToParsing ::
       '[ Files,
          Error JuvixError,
          PathResolver,
+         Reader Migration,
          ModuleInfoCache,
          Reader EntryPoint,
          Reader ImportTree
@@ -387,6 +394,7 @@ processNodeUpToScoping ::
   ( Members
       '[ PathResolver,
          Error JuvixError,
+         Reader Migration,
          Files,
          HighlightBuilder,
          Reader PackageId
@@ -458,6 +466,7 @@ processRecursivelyUpToTyped ::
   ( Members
       '[ Reader EntryPoint,
          TopModuleNameChecker,
+         Reader Migration,
          TaggedLock,
          HighlightBuilder,
          Error JuvixError,
@@ -537,7 +546,7 @@ processImports imports = do
 
 processModuleToStoredCore ::
   forall r.
-  (Members '[ModuleInfoCache, PathResolver, HighlightBuilder, TopModuleNameChecker, Error JuvixError, Files] r) =>
+  (Members '[Reader Migration, ModuleInfoCache, PathResolver, HighlightBuilder, TopModuleNameChecker, Error JuvixError, Files] r) =>
   Text ->
   EntryPoint ->
   Sem r (PipelineResult Store.ModuleInfo)
@@ -558,7 +567,7 @@ processModuleToStoredCore sha256 entry = over pipelineResult mkModuleInfo <$> pr
 
 processFileToStoredCore ::
   forall r.
-  (Members '[ModuleInfoCache, HighlightBuilder, PathResolver, TopModuleNameChecker, Error JuvixError, Files] r) =>
+  (Members '[Reader Migration, ModuleInfoCache, HighlightBuilder, PathResolver, TopModuleNameChecker, Error JuvixError, Files] r) =>
   EntryPoint ->
   Sem r (PipelineResult Core.CoreResult)
 processFileToStoredCore entry = do

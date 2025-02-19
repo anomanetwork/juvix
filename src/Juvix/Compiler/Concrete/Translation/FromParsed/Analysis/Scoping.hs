@@ -26,6 +26,8 @@ import Juvix.Compiler.Concrete.Data.ScopedName (nameConcrete)
 import Juvix.Compiler.Concrete.Data.ScopedName qualified as S
 import Juvix.Compiler.Concrete.Extra qualified as P
 import Juvix.Compiler.Concrete.Gen qualified as G
+import Juvix.Compiler.Concrete.Gen qualified as Gen
+import Juvix.Compiler.Concrete.Keywords qualified as Kw
 import Juvix.Compiler.Concrete.Language
 import Juvix.Compiler.Concrete.Pretty (ppTrace)
 import Juvix.Compiler.Concrete.Translation.FromParsed.Analysis.Scoping.Data.Context
@@ -40,7 +42,7 @@ data PatternNamesKind
   | PatternNamesKindFunctions
 
 scopeCheck ::
-  (Members '[HighlightBuilder, Error JuvixError, NameIdGen] r) =>
+  (Members '[Reader Migration, HighlightBuilder, Error JuvixError, NameIdGen] r) =>
   PackageId ->
   ScopedModuleTable ->
   Parser.ParserResult ->
@@ -67,7 +69,7 @@ iniScoperState tab =
     }
 
 scopeCheck' ::
-  (Members '[HighlightBuilder, Error ScoperError, NameIdGen, Reader PackageId] r) =>
+  (Members '[Reader Migration, HighlightBuilder, Error ScoperError, NameIdGen, Reader PackageId] r) =>
   ScopedModuleTable ->
   Parser.ParserResult ->
   Module 'Parsed 'ModuleTop ->
@@ -155,7 +157,7 @@ scopeCheckImport ::
   InfoTable ->
   Import 'Parsed ->
   Sem r (Import 'Scoped)
-scopeCheckImport = scopeCheckRepl checkImport
+scopeCheckImport = scopeCheckRepl (runReader noMigration . checkImport)
 
 scopeCheckOpenModule ::
   forall r.
@@ -543,6 +545,7 @@ checkImport ::
          InfoTableBuilder,
          Reader InfoTable,
          NameIdGen,
+         Reader Migration,
          Reader BindingStrategy,
          Reader PackageId
        ]
@@ -631,6 +634,7 @@ checkImportPublic ::
          State ScoperState,
          InfoTableBuilder,
          Reader InfoTable,
+         Reader Migration,
          NameIdGen,
          HighlightBuilder,
          Reader BindingStrategy,
@@ -1477,18 +1481,18 @@ checkInductiveDef ::
          Reader InfoTable,
          NameIdGen,
          Reader PackageId,
+         Reader Migration,
          Reader BindingStrategy
        ]
       r,
     HasCallStack
   ) =>
-  NonEmpty S.Symbol ->
-  InductiveDef 'Parsed ->
+  ReservedInductiveDef ->
   Sem r (InductiveDef 'Scoped)
-checkInductiveDef constructorNames' InductiveDef {..} = do
-  inductiveName' <- topBindings $ do
-    i <- getReservedDefinitionSymbol _inductiveName
-    return i
+checkInductiveDef reserved = do
+  let constructorNames' = reserved ^. reservedInductiveConstructors
+      InductiveDef {..} = reserved ^. reservedInductiveDef
+  inductiveName' <- getReservedDefinitionSymbol _inductiveName
   (inductiveParameters', inductiveType', inductiveTypeApplied', inductiveDoc', inductiveConstructors') <- withLocalScope $ do
     inductiveParameters' <- mapM checkInductiveParameters _inductiveParameters
     inductiveType' <- mapM checkParseExpressionAtoms _inductiveType
@@ -1524,6 +1528,7 @@ checkInductiveDef constructorNames' InductiveDef {..} = do
   forM_ inductiveConstructors' $ \c -> do
     registerNameSignature (c ^. constructorName . S.nameId) (indDef, c)
   registerInductive @$> indDef
+  return indDef
   where
     -- note that the constructor name is not bound here
     checkConstructorDef :: S.Symbol -> S.Symbol -> ConstructorDef 'Parsed -> Sem r (ConstructorDef 'Scoped)
@@ -1644,7 +1649,7 @@ localBindings = runReader BindingLocal
 
 checkTopModule ::
   forall r.
-  (Members '[HighlightBuilder, Error ScoperError, Reader ScopeParameters, State ScoperState, Reader InfoTable, NameIdGen, Reader PackageId] r) =>
+  (Members '[Reader Migration, HighlightBuilder, Error ScoperError, Reader ScopeParameters, State ScoperState, Reader InfoTable, NameIdGen, Reader PackageId] r) =>
   Module 'Parsed 'ModuleTop ->
   Sem r (Module 'Scoped 'ModuleTop, ScopedModule, Scope)
 checkTopModule m@Module {..} = checkedModule
@@ -1740,7 +1745,7 @@ withLocalScope ma = do
 
 checkLocalModuleBody ::
   forall r.
-  (Members '[HighlightBuilder, InfoTableBuilder, Reader InfoTable, Error ScoperError, State Scope, Reader ScopeParameters, State ScoperState, NameIdGen, Reader PackageId, Reader BindingStrategy] r) =>
+  (Members '[Reader Migration, HighlightBuilder, InfoTableBuilder, Reader InfoTable, Error ScoperError, State Scope, Reader ScopeParameters, State ScoperState, NameIdGen, Reader PackageId, Reader BindingStrategy] r) =>
   ReservedModule ->
   Sem r [Statement 'Scoped]
 checkLocalModuleBody res = do
@@ -1749,7 +1754,7 @@ checkLocalModuleBody res = do
 
 checkTopModuleBody ::
   forall r.
-  (Members '[HighlightBuilder, InfoTableBuilder, Reader InfoTable, Error ScoperError, State Scope, Reader ScopeParameters, State ScoperState, NameIdGen, Reader PackageId, Reader BindingStrategy] r) =>
+  (Members '[Reader Migration, HighlightBuilder, InfoTableBuilder, Reader InfoTable, Error ScoperError, State Scope, Reader ScopeParameters, State ScoperState, NameIdGen, Reader PackageId, Reader BindingStrategy] r) =>
   [Statement 'Parsed] ->
   Sem r [Statement 'Scoped]
 checkTopModuleBody =
@@ -1805,7 +1810,7 @@ reserveStatements = topBindings . mapM reserveDefinition
 
 checkReservedStatements ::
   forall r.
-  (Members '[HighlightBuilder, Error ScoperError, Reader ScopeParameters, State Scope, State ScoperState, InfoTableBuilder, Reader InfoTable, NameIdGen, Reader PackageId] r) =>
+  (Members '[HighlightBuilder, Reader Migration, Error ScoperError, Reader ScopeParameters, State Scope, State ScoperState, InfoTableBuilder, Reader InfoTable, NameIdGen, Reader PackageId] r) =>
   [Statement 'Parsed] ->
   Sem r [Statement 'Scoped]
 checkReservedStatements = topBindings . concatMapM (fmap toList . scopeDefinition)
@@ -1821,6 +1826,7 @@ checkReservedStatements = topBindings . concatMapM (fmap toList . scopeDefinitio
              NameIdGen,
              Reader BindingStrategy,
              HighlightBuilder,
+             Reader Migration,
              Reader InfoTable
            ]
           r'
@@ -1847,6 +1853,7 @@ checkReservedInductive ::
          State ScoperState,
          Reader PackageId,
          Reader ScopeParameters,
+         Reader Migration,
          InfoTableBuilder,
          NameIdGen,
          Reader BindingStrategy,
@@ -1858,13 +1865,29 @@ checkReservedInductive ::
   ReservedInductiveDef ->
   Sem r (NonEmpty (Statement 'Scoped))
 checkReservedInductive r = do
-  tyDef0 <- checkInductiveDef (r ^. reservedInductiveConstructors) (r ^. reservedInductiveDef)
-  modDef <- checkLocalModule (r ^. reservedInductiveDefModule)
+  tyDef0 <- checkInductiveDef r
+  modDef :: Module 'Scoped 'ModuleLocal <- checkLocalModule (r ^. reservedInductiveDefModule)
+  Migration migr <- ask
   let withDefs :: [Statement 'Scoped] =
         getDefs (modDef ^. moduleBody)
       tyDef = set (inductiveWithModule . _Just . withModuleBody) withDefs tyDef0
-  return (StatementInductive tyDef :| [StatementModule modDef])
+      openTypeModule :: Maybe (Statement 'Scoped) = do
+        guard (migr == Just MigrateExportConstructors)
+        return (StatementOpenModule (genOpenPublic (modDef ^. modulePath)))
+  return (StatementInductive tyDef :| (StatementModule modDef : maybeToList openTypeModule))
   where
+    genOpenPublic :: S.Symbol -> OpenModule 'Scoped 'OpenFull
+    genOpenPublic modName = run . runReader (getLoc modName) $ do
+      _openModuleKw <- Gen.kw Kw.kwOpen
+      kwPub <- Irrelevant <$> Gen.kw Kw.kwPublic
+      return
+        OpenModule
+          { _openModuleKw,
+            _openModuleName = S.unqualifiedSymbol modName,
+            _openModuleUsingHiding = Nothing,
+            _openModulePublic = Public kwPub
+          }
+
     getDefs :: [Statement 'Scoped] -> [Statement 'Scoped]
     getDefs = dropWhile (has _StatementProjectionDef)
 
@@ -2138,6 +2161,7 @@ checkLocalModule ::
          State ScoperState,
          InfoTableBuilder,
          Reader InfoTable,
+         Reader Migration,
          NameIdGen,
          Reader BindingStrategy,
          Reader PackageId
@@ -2472,7 +2496,8 @@ checkLetStatements ::
   Sem r (NonEmpty (LetStatement 'Scoped))
 checkLetStatements =
   fmap fromSections
-    . (reserveStatements >=> checkReservedStatements)
+    -- TODO require (Reader Migration r) instead of passing noMigration
+    . (reserveStatements >=> runReader noMigration . checkReservedStatements)
     . mkLetSections
     . toList
   where

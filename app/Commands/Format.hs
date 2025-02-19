@@ -50,16 +50,21 @@ targetFromOptions opts = do
 formatProject ::
   forall r.
   (Members (ScopeEff ': Output FormattedFileInfo ': AppEffects) r) =>
+  Migration ->
   Sem r FormatResult
-formatProject = silenceProgressLog . runPipelineOptions . runPipelineSetup $ do
-  res :: [ProcessedNode ScoperResult] <- processProjectUpToScoping
-  pkgId :: PackageId <- (^. entryPointPackageId) <$> ask
-  res' :: [(ImportNode, SourceCode)] <- runReader pkgId $ forM res $ \node -> do
-    src <- formatModuleInfo node
-    return (node ^. processedNode, src)
-  formatRes <- formatProjectSourceCode res'
-  formatPkgRes <- formatPackageDotJuvix
-  return (formatRes <> formatPkgRes)
+formatProject migr = silenceProgressLog
+  . runPipelineOptions
+  . local (set pipelineMigration migr)
+  . runPipelineSetup
+  $ do
+    res :: [ProcessedNode ScoperResult] <- processProjectUpToScoping
+    pkgId :: PackageId <- (^. entryPointPackageId) <$> ask
+    res' :: [(ImportNode, SourceCode)] <- runReader pkgId $ forM res $ \node -> do
+      src <- formatModuleInfo node
+      return (node ^. processedNode, src)
+    formatRes <- formatProjectSourceCode res'
+    formatPkgRes <- formatPackageDotJuvix
+    return (formatRes <> formatPkgRes)
 
 formatPackageDotJuvix :: forall r. (Members (Output FormattedFileInfo ': ScopeEff ': AppEffects) r) => Sem r FormatResult
 formatPackageDotJuvix = do
@@ -72,7 +77,7 @@ runCommand opts = do
   runOutputSem (renderFormattedOutput target opts) . runScopeFileApp $ do
     res <- case target of
       TargetFile p -> format p
-      TargetProject -> formatProject
+      TargetProject -> formatProject (opts ^. formatMigration)
       TargetStdin -> do
         entry <- getEntryPointStdin
         runReader entry formatStdin
@@ -98,7 +103,13 @@ renderModeFromOptions target opts formattedInfo
       | formattedInfo ^. formattedFileInfoContentsModified = res
       | otherwise = NoEdit Silent
 
-renderFormattedOutput :: forall r. (Members '[EmbedIO, App, Files] r) => FormatTarget -> FormatOptions -> FormattedFileInfo -> Sem r ()
+renderFormattedOutput ::
+  forall r.
+  (Members '[EmbedIO, App, Files] r) =>
+  FormatTarget ->
+  FormatOptions ->
+  FormattedFileInfo ->
+  Sem r ()
 renderFormattedOutput target opts fInfo = do
   let renderMode = renderModeFromOptions target opts fInfo
   outputResult renderMode
