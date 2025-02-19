@@ -31,7 +31,7 @@ lookupFunInfo' Module {..} sym =
 lookupInductiveInfo :: Module -> Symbol -> InductiveInfo
 lookupInductiveInfo m sym = fromJust (lookupInductiveInfo' m sym)
 
-lookupConstrInfo :: Module -> Tag -> ConstructorInfo
+lookupConstrInfo :: (HasCallStack) => Module -> Tag -> ConstructorInfo
 lookupConstrInfo m tag = fromJust (lookupConstrInfo' m tag)
 
 lookupFunInfo :: Module -> Symbol -> FunctionInfo

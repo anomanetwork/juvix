@@ -47,7 +47,7 @@ compileAssertionEntry adjustEntry root' bInterp bRunVM optLevel mainFile inputFi
           }
   PipelineResult {..} <- snd <$> testRunIO entryPoint' upToStoredCore
   step "Translate to CASM"
-  case run $ runError @JuvixError $ runReader entryPoint' $ storedCoreToCasm (_pipelineResult ^. Core.coreResultModule) of
+  case run $ runError @JuvixError $ runReader entryPoint' $ storedCoreToCasm (Core.combineInfoTables (_pipelineResult ^. Core.coreResultModule)) of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
     Right Result {..} -> do
       withTempDir'
