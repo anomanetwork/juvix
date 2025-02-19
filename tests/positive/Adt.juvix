@@ -4,11 +4,17 @@ type Bool :=
   | true
   | false;
 
+open Bool;
+
 type Pair (A B : Type) := mkPair A B;
+
+open Pair;
 
 type Nat :=
   | zero
   | suc Nat;
+
+open Nat;
 
 c1 : Bool := true;
 

@@ -4,6 +4,8 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool public;
+
 not : Bool → Bool
   | true := false
   | false := true;

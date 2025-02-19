@@ -4,6 +4,8 @@ type Multi (A B C : Type) := mult : Multi A B C;
 
 type T := t;
 
+open T public;
+
 f : {A B : Type} → (C : Type) → {D E F : Type} → Type → T
   | C _ := t;
 

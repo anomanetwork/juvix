@@ -4,7 +4,8 @@ syntax fixity i3 := binary;
 
 module M;
   module N;
-    syntax operator t i3;
+    syntax operator T.t i3;
+
     type T := t : T -> T -> T;
   end;
 
@@ -17,4 +18,4 @@ end;
 import M;
 
 f : M.N.T -> M.N.T
-  | (a M.N.t b) := a M.N.t b;
+  | (a M.N.T.t b) := a M.N.T.t b;

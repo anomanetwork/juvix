@@ -7,6 +7,8 @@ type List (A : Type) :=
   | nil : List A
   | :: : A → List A → List A;
 
+open List public;
+
 match : {A : Type} → {B : Type} → A → (A → B) → B
   | x f := f x;
 

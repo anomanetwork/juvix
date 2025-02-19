@@ -4,6 +4,8 @@ import Nat open;
 
 type Unit := unit : Unit;
 
+open Unit;
+
 f : Nat := case unit of is-zero := zero;
 
 f2 : Nat :=

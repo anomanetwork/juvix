@@ -4,11 +4,14 @@ module test084;
 
 type Phantom (M : Type) := nothing;
 
-type T := mkt;
+open Phantom;
+
+type T := mk;
 
 type Monad (f : Type -> Type) :=
   mkMonad@{
-  bind : f T -> (T -> f T) -> f T};
+    bind : f T -> (T -> f T) -> f T;
+  };
 
 open Monad;
 
@@ -19,11 +22,12 @@ maybeMonad : Monad Phantom :=
   };
 
 minusThree : Phantom T :=
-  bind maybeMonad
+  bind
+    maybeMonad
     (nothing {T})
     λ{_ :=
       let
-        x2' : T := mkt;
-      in bind maybeMonad nothing  λ{_ := nothing}};
+        x2' : T := T.mk;
+      in bind maybeMonad nothing λ{_ := nothing}};
 
 main : Phantom T := minusThree;

@@ -2,10 +2,14 @@ module Puns;
 
 type A := a;
 
+open A;
+
 type B := b;
 
+open B;
+
 type S :=
-  mkS@{
+  mk@{
     fieldA : A;
     fieldB : B;
     fieldC : A;
@@ -16,7 +20,7 @@ type S :=
 f (fieldA : A) (fieldB : B) : S :=
   let
     fieldD := b;
-  in mkS@{
+  in S.mk@{
        fieldC := fieldA;
        fieldA;
        fieldB;
