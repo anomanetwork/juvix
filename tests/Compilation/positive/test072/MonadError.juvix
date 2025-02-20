@@ -5,9 +5,11 @@ import Stdlib.Data.Unit open;
 
 trait
 type MonadError (Err : Type) (M : Type -> Type) :=
-  mkMonadError {
+  mkMonadError@{
     monad : Monad M;
-    throw : {A : Type} -> Err -> M A
+    throw : {A : Type} -> Err -> M A;
   };
+
+open MonadError using {mkMonadError} public;
 
 open MonadError public;

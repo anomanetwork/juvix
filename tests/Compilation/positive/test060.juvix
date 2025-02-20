@@ -10,11 +10,15 @@ type Triple (A B C : Type) :=
     thd : C;
   };
 
+open Triple using {mkTriple} public;
+
 type Pair' (A B : Type) :=
   mkPair@{
     fst : A;
     snd : B;
   };
+
+open Pair' using {mkPair} public;
 
 mf : Pair' (Pair' Bool (List Nat)) (List Nat) → Bool
   | mkPair@{fst := _; snd := nil} := true
@@ -24,8 +28,13 @@ mf : Pair' (Pair' Bool (List Nat)) (List Nat) → Bool
 main : Triple Nat Nat Nat :=
   let
     p : Triple Nat Nat Nat := mkTriple 2 2 2;
-    p' : Triple Nat Nat Nat := p@Triple{fst := Triple.fst p + 1; snd := Triple.snd p * 3 + Triple.thd p + Triple.fst p};
-    f : Triple Nat Nat Nat -> Triple Nat Nat Nat := \{p := p@Triple{fst := Triple.fst p * 10}};
+    p' : Triple Nat Nat Nat :=
+      p@Triple{
+        fst := Triple.fst p + 1;
+        snd := Triple.snd p * 3 + Triple.thd p + Triple.fst p;
+      };
+    f : Triple Nat Nat Nat -> Triple Nat Nat Nat :=
+      \{p := p@Triple{fst := Triple.fst p * 10}};
     pp :=
       mkPair@{
         fst :=

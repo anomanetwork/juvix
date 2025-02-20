@@ -4,10 +4,12 @@ module test075;
 import Stdlib.Data.Field open;
 
 type Point :=
-  mkPoint {
+  mkPoint@{
     x : Field;
-    y : Field
+    y : Field;
   };
+
+open Point using {mkPoint} public;
 
 f : Point -> Point -> Point
   | p@(mkPoint x1 y1) q@(mkPoint x2 y2) :=

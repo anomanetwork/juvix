@@ -5,5 +5,7 @@ import Stdlib.Prelude open;
 
 type Pair' := pair : Nat -> Nat -> Pair';
 
+open Pair' using {pair} public;
+
 main : Pair (List (Pair Pair' Nat)) (List Pair') :=
   (pair 1 2, 3) :: (pair 2 3, 4) :: nil, pair 1 2 :: pair 2 3 :: nil;

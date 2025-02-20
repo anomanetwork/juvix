@@ -6,6 +6,8 @@ type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
 builtin string
 axiom String : Type;
 

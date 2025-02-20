@@ -21,6 +21,8 @@ type Order A :=
     ge : A -> A -> Bool;
   };
 
+open Order using {mkOrd} public;
+
 mkOrdHelper
   {A}
   (cmp : A -> A -> Ordering)

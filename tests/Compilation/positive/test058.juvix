@@ -4,9 +4,13 @@ module test058;
 import Stdlib.Prelude open;
 
 sum (x : Nat) : Nat :=
-  for (acc := 0) (n in 1 to x) {acc + n};
+  for (acc := 0) (n in 1 to x) {
+    acc + n
+  };
 
 sum' (x : Nat) : Nat :=
-  for (acc := 0) (n in 1 to x step 2) {acc + n};
+  for (acc := 0) (n in 1 to x step 2) {
+    acc + n
+  };
 
 main : Nat := sum 100 + sum' 100;

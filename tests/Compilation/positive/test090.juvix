@@ -20,7 +20,9 @@ module Resource;
     open Delta using {+; *};
 
     x : Delta.Nat := Resource.x + Resource0.x;
+
     a : Delta.Nat := x * Resource.Gamma.x + test090.x;
+
     b : Delta.Nat := 1900;
   end;
 

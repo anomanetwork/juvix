@@ -29,8 +29,8 @@ rumpa : {A : Type} -> (A -> A) -> A -> A
 
 main : Nat :=
   let
-    f : Nat -> Nat := mycompose λ {x := x + 1} λ {x := x * 2};
+    f : Nat -> Nat := mycompose λ{x := x + 1} λ{x := x * 2};
     g : Nat -> Nat -> Nat := myflip myconst;
     {-# inline: false #-}
-    myid : Nat -> Nat := λ {x := x};
+    myid : Nat -> Nat := λ{x := x};
   in myid (f 3 + g 7 9 + rumpa myid 5);

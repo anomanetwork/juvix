@@ -15,6 +15,8 @@ type Tree :=
   | leaf : Tree
   | node : Tree -> Tree -> Tree;
 
+open Tree using {leaf; node} public;
+
 gen : Nat → Tree
   | zero := leaf
   | (suc zero) := node leaf leaf
@@ -27,8 +29,7 @@ f : Tree → Nat
     case g l, g r of
       | leaf, leaf := 3
       | node l r, leaf := mod ((f l + f r) * 2) 20000
-      | node l1 r1, node l2 r2 :=
-        mod ((f l1 + f r1) * (f l2 + f r2)) 20000
+      | node l1 r1, node l2 r2 := mod ((f l1 + f r1) * (f l2 + f r2)) 20000
       | _, node l r := mod (f l + f r) 20000;
 
 g : Tree → Tree
@@ -42,16 +43,15 @@ h : Nat -> Nat
 
 hh (x : Nat) : Nat :=
   case x of
-  | zero := 1
-  | (suc n) if h n == 0 := n
-  | (suc zero) := 17
-  | (suc (suc (suc (suc (suc (suc zero)))))) := 9
-  | _ := 0;
+    | zero := 1
+    | suc n if h n == 0 := n
+    | suc zero := 17
+    | suc (suc (suc (suc (suc (suc zero))))) := 9
+    | _ := 0;
 
 printListNatLn : List Nat → IO
   | nil := printStringLn "nil"
-  | (x :: xs) :=
-    printNat x >>> printString " :: " >>> printListNatLn xs;
+  | (x :: xs) := printNat x >>> printString " :: " >>> printListNatLn xs;
 
 main : IO :=
   printListNatLn (sum2 (lgen 5))

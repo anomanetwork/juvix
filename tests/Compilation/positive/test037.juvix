@@ -16,7 +16,7 @@ f (l : List ((Nat → Nat) → Nat → Nat)) : Nat :=
             | _ :: _ := id
             | _ := id z
           }
-      y)
+         y)
     7;
 
-main : IO := printNatLn (f (λ {| x y := x y + 2} :: nil));
+main : IO := printNatLn (f (λ{| x y := x y + 2} :: nil));
