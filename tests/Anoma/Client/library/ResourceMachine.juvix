@@ -20,6 +20,8 @@ type Resource :=
     rseed : Nat;
   };
 
+open Resource using {mkResource} public;
+
 positive
 type Public-Inputs :=
   mkPublic-Inputs@{
@@ -30,6 +32,8 @@ type Public-Inputs :=
     other-public : Nat;
   };
 
+open Public-Inputs using {mkPublic-Inputs} public;
+
 positive
 type Private-Inputs :=
   mkPrivate-Inputs@{
@@ -37,6 +41,8 @@ type Private-Inputs :=
     nullified-resources : List Resource;
     other-private : Nat;
   };
+
+open Private-Inputs using {mkPrivate-Inputs} public;
 
 builtin anoma-delta
 axiom Delta : Type;
@@ -62,19 +68,23 @@ type Logic-Proof : Type :=
     inputs : Pair Public-Inputs Private-Inputs;
   };
 
+open Logic-Proof using {mkLogicProof} public;
+
 Compliance-Proof : Type := Nat;
 
 type Proof :=
   | proofCompliance
   | proofLogic Resource (Pair Public-Inputs Private-Inputs);
 
+open Proof using {proofCompliance; proofLogic} public;
+
 mkProofCompliance (_ : Compliance-Proof) : Proof := proofCompliance;
 
 mkProofLogic
   (resource : Resource)
   (publicInputs : Public-Inputs)
-  (privateInputs : Private-Inputs): Proof :=
-  proofLogic resource (publicInputs, privateInputs);
+  (privateInputs : Private-Inputs)
+  : Proof := proofLogic resource (publicInputs, privateInputs);
 
 builtin anoma-action
 type Action :=
@@ -84,6 +94,8 @@ type Action :=
     proofs : List Proof;
     app-data : Nat;
   };
+
+open Action using {mkAction} public;
 
 builtin anoma-action-delta
 axiom actionDelta : Action -> Delta;
@@ -117,6 +129,8 @@ module Transaction;
       delta : Delta;
       delta-proof : Nat;
     };
+
+  open Transaction using {mkTransaction} public;
 
   open Transaction public;
 

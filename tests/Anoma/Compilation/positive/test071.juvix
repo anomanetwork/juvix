@@ -1,7 +1,7 @@
 -- Named application
 module test071;
 
-import Stdlib.Data.Nat open hiding {Ord; mkOrd};
+import Stdlib.Data.Nat open hiding {Ord};
 import Stdlib.Data.Pair as Ord;
 import Stdlib.Data.Bool.Base open;
 import Stdlib.Trait.Ord open using {Ordering; LessThan; Equal; GreaterThan; isLessThan; isGreaterThan};
@@ -20,7 +20,7 @@ mkOrdHelper
   {lt : A -> A -> Bool := λ {a b := isLessThan (cmp a b)}}
   {gt : A -> A -> Bool := λ {a b := isGreaterThan (cmp a b)}}
   : Ord A :=
-  mkOrd cmp lt gt;
+  Ord.mkOrd cmp lt gt;
 
 instance
 ordNat : Ord Nat := mkOrdHelper@{

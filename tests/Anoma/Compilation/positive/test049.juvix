@@ -1,28 +1,29 @@
 -- Builtin Int
+
 module test049;
 
 import Stdlib.Prelude open;
 import Stdlib.Debug.Trace open;
 
 f : Int -> Nat
-  | (negSuc n) := n
-  | (ofNat n) := n;
+  | (Int.negSuc n) := n
+  | (Int.ofNat n) := n;
 
 main : Int :=
-    trace (ofNat 1)
-    >-> trace (ofNat (suc zero))
+    trace (Int.fromNat 1)
+    >-> trace (Int.fromNat (suc zero))
     >-> trace (f -1)
-    >-> trace (f (ofNat (suc zero)))
-    >-> trace (f (negSuc (suc zero)))
+    >-> trace (f (fromNat (suc zero)))
+    >-> trace (f (Int.negSuc (suc zero)))
     >-> trace (1 == -1)
-    >-> trace (neg -1)
+    >-> trace (Int.neg -1)
     >-> trace
        (let
-         g : Int -> Int := neg;
+         g : Int -> Int := Int.neg;
        in g -1)
     >-> trace (-2 * -2)
-    >-> trace (nonNeg 0)
-    >-> trace (nonNeg -1)
+    >-> trace (Int.nonNeg 0)
+    >-> trace (Int.nonNeg -1)
     >-> trace (0 < 0)
     >-> trace (0 <= 0)
     >-> trace (0 < 1)
