@@ -19,23 +19,35 @@ data VarInfo = VarInfo
     _varInfoLocation :: Maybe Location,
     _varInfoType :: Type -- TyDynamic if not available
   }
+  deriving stock (Generic)
+
+instance Serialize VarInfo
 
 data IdentInfo = IdentInfo
   { _identInfoName :: Text,
     _identInfoLocation :: Maybe Location,
     _identInfoType :: Type
   }
+  deriving stock (Generic)
+
+instance Serialize IdentInfo
 
 data ConstrInfo = ConstrInfo
   { _constrInfoName :: Text,
     _constrInfoLocation :: Maybe Location,
     _constrInfoType :: Type
   }
+  deriving stock (Generic)
+
+instance Serialize ConstrInfo
 
 data CaseBranchInfo = CaseBranchInfo
   { _caseBranchInfoConstrName :: Text,
     _caseBranchInfoConstrType :: Type
   }
+  deriving stock (Generic)
+
+instance Serialize CaseBranchInfo
 
 {---------------------------------------------------------------------------------}
 
@@ -50,7 +62,9 @@ type Apps = Apps' () Fun Node
 data Fun
   = FunVar Var
   | FunIdent Ident
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize Fun
 
 type BuiltinApp = BuiltinApp' () Node
 
@@ -80,7 +94,9 @@ data Node
   | NLet Let
   | NCase Case
   | NIf If
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize Node
 
 instance HasAtomicity Node where
   atomicity = \case

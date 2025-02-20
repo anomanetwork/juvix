@@ -357,7 +357,7 @@ runPipelineModular ::
   opts ->
   Maybe (AppPath File) ->
   (Core.ModuleTable -> Sem (ModularEff r) a) ->
-  Sem r a
+  Sem r (ModuleId, a)
 runPipelineModular opts input_ f = runPipelineOptions $ do
   entry <- getEntryPoint'' opts input_
   let p :: Sem (PipelineEff r) Core.CoreResult = Pipeline.upToStoredCore
@@ -369,7 +369,8 @@ runPipelineModular opts input_ f = runPipelineOptions $ do
           . Store.toCoreModuleTable (res ^. pipelineResultImportTables)
           . HashMap.elems
           $ res ^. pipelineResultImports . Store.moduleTable
-  Pipeline.Modular.runIOEitherPipeline entry (inject (f mtab)) >>= fromRightJuvixError
+  a <- Pipeline.Modular.runIOEitherPipeline entry (inject (f mtab)) >>= fromRightJuvixError
+  return (md ^. Core.moduleId, a)
 
 renderStdOutLn :: forall a r. (Member App r, HasAnsiBackend a, HasTextBackend a) => a -> Sem r ()
 renderStdOutLn txt = renderStdOut txt >> newline

@@ -28,6 +28,7 @@ import Juvix.Compiler.Concrete.Translation.FromSource qualified as Parser
 import Juvix.Compiler.Concrete.Translation.FromSource.TopModuleNameChecker
 import Juvix.Compiler.Concrete.Translation.ImportScanner
 import Juvix.Compiler.Core qualified as Core
+import Juvix.Compiler.Core.Data.Stripped.Module qualified as Stripped
 import Juvix.Compiler.Core.Transformation
 import Juvix.Compiler.Core.Translation.Stripped.FromCore qualified as Stripped
 import Juvix.Compiler.Internal qualified as Internal
@@ -226,15 +227,21 @@ upToCoreTypecheck = do
 -- Workflows from stored Core
 --------------------------------------------------------------------------------
 
+storedCoreToStripped ::
+  (Members '[Error JuvixError, Reader EntryPoint] r) =>
+  Core.TransformationId ->
+  Core.Module ->
+  Sem r Stripped.Module
+storedCoreToStripped checkId md =
+  Stripped.fromCore
+    <$> Core.toStripped checkId md
+
 storedCoreToTree ::
   (Members '[Error JuvixError, Reader EntryPoint] r) =>
   Core.TransformationId ->
   Core.Module ->
   Sem r Tree.Module
-storedCoreToTree checkId md = do
-  Tree.fromCore
-    . Stripped.fromCore
-    <$> Core.toStripped checkId md
+storedCoreToTree checkId = storedCoreToStripped checkId >=> strippedCoreToTree
 
 storedCoreToAnoma :: (Members '[Error JuvixError, Reader EntryPoint] r) => Core.Module -> Sem r NockmaTree.AnomaResult
 storedCoreToAnoma = storedCoreToTree Core.CheckAnoma >=> treeToAnoma
@@ -259,6 +266,37 @@ storedCoreToCasm = local (set entryPointFieldSize cairoFieldSize) . storedCoreTo
 
 storedCoreToCairo :: (Members '[Error JuvixError, Reader EntryPoint] r) => Core.Module -> Sem r Cairo.Result
 storedCoreToCairo = storedCoreToCasm >=> casmToCairo
+
+--------------------------------------------------------------------------------
+-- Workflows from stripped Core
+--------------------------------------------------------------------------------
+
+strippedCoreToTree :: Stripped.Module -> Sem r Tree.Module
+strippedCoreToTree = return . Tree.fromCore
+
+strippedCoreToAnoma :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r NockmaTree.AnomaResult
+strippedCoreToAnoma = strippedCoreToTree >=> treeToAnoma
+
+strippedCoreToAsm :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Asm.Module
+strippedCoreToAsm = strippedCoreToTree >=> treeToAsm
+
+strippedCoreToReg :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Reg.Module
+strippedCoreToReg = strippedCoreToAsm >=> asmToReg
+
+strippedCoreToMiniC :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r C.MiniCResult
+strippedCoreToMiniC = strippedCoreToAsm >=> asmToMiniC
+
+strippedCoreToRust :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Rust.Result
+strippedCoreToRust = strippedCoreToTree >=> treeToReg >=> regToRust
+
+strippedCoreToRiscZeroRust :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Rust.Result
+strippedCoreToRiscZeroRust = strippedCoreToTree >=> treeToReg >=> regToRiscZeroRust
+
+strippedCoreToCasm :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Casm.Result
+strippedCoreToCasm = local (set entryPointFieldSize cairoFieldSize) . strippedCoreToTree >=> treeToCasm
+
+strippedCoreToCairo :: (Members '[Error JuvixError, Reader EntryPoint] r) => Stripped.Module -> Sem r Cairo.Result
+strippedCoreToCairo = strippedCoreToCasm >=> casmToCairo
 
 --------------------------------------------------------------------------------
 -- Workflows from Core

@@ -23,4 +23,7 @@ parseTree = do
   pure TreeOptions {..}
 
 instance EntryPointOptions (TreeOptions k) where
-  applyOptions = applyOptions . (^. treeCompileCommonOptions)
+  applyOptions opts =
+    set entryPointPipeline (Just PipelineExec)
+      . set entryPointTarget (Just TargetTree)
+      . applyOptions (opts ^. treeCompileCommonOptions)

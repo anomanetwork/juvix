@@ -2,15 +2,14 @@ module Juvix.Compiler.Store.Backend.Options where
 
 import Juvix.Compiler.Backend
 import Juvix.Compiler.Pipeline.EntryPoint
+import Juvix.Compiler.Store.Options qualified as Store
 import Juvix.Extra.Serialize
 import Juvix.Prelude
 import Path qualified
 
 data Options = Options
-  { _optionsDebug :: Bool,
-    _optionsOptimizationLevel :: Int,
-    _optionsFieldSize :: Natural,
-    _optionsTarget :: Maybe Target
+  { _optionsInfo :: Store.Options,
+    _optionsFinalTarget :: Maybe Target
   }
   deriving stock (Show, Eq, Generic)
 
@@ -21,23 +20,18 @@ instance NFData Options
 makeLenses ''Options
 
 fromEntryPoint :: EntryPoint -> Options
-fromEntryPoint EntryPoint {..} =
+fromEntryPoint e@EntryPoint {..} =
   Options
-    { _optionsDebug = _entryPointDebug,
-      _optionsOptimizationLevel = _entryPointOptimizationLevel,
-      _optionsFieldSize = _entryPointFieldSize,
-      _optionsTarget = _entryPointTarget
+    { _optionsInfo = Store.fromEntryPoint e,
+      _optionsFinalTarget = _entryPointTarget
     }
 
-getOptionsSubdir :: Options -> Path Rel Dir
-getOptionsSubdir opts =
+getOptionsSubdir :: Target -> Options -> Path Rel Dir
+getOptionsSubdir midTarget opts =
   subdir1
-    Path.</> maybe $(mkRelDir "default") getTargetSubdir (opts ^. optionsTarget)
+    Path.</> maybe $(mkRelDir "default") (getTargetSubdir midTarget) (opts ^. optionsFinalTarget)
   where
     subdir1 =
       if
-          | opts ^. optionsDebug -> $(mkRelDir "debug")
+          | opts ^. optionsInfo . Store.optionsDebug -> $(mkRelDir "debug")
           | otherwise -> $(mkRelDir "release")
-
-getOptionsExtension :: Options -> String
-getOptionsExtension opts = maybe ".bin" getTargetExtension (opts ^. optionsTarget)

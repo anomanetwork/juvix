@@ -539,7 +539,9 @@ processImports imports = do
     CompileResult
       { _compileResultChanged = changed,
         _compileResultModuleTable = mtab,
-        _compileResultImportTables = itabs
+        _compileResultImportTables =
+          itabs
+            <> mconcatMap (^. pipelineResultImportTables) ms
       }
   where
     computeImportsTable :: PipelineResult Store.ModuleInfo -> (ModuleId, Core.InfoTable)

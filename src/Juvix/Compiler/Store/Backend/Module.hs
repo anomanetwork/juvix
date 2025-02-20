@@ -46,8 +46,8 @@ lookupModuleTable :: ModuleTable' t -> ModuleId -> Module' t
 lookupModuleTable mt mid =
   fromMaybe (impossibleError ("Could not find module " <> prettyText mid)) (lookupModuleTable' mt mid)
 
-toCoreModule :: (Monoid t) => [Core.Module' t] -> Module' t -> Core.Module' t
-toCoreModule imports Module {..} =
+toBaseModule :: (Monoid t) => [Core.Module' t] -> Module' t -> Core.Module' t
+toBaseModule imports Module {..} =
   Core.Module
     { _moduleId = _moduleId,
       _moduleInfoTable = _moduleInfoTable,
@@ -56,8 +56,8 @@ toCoreModule imports Module {..} =
       _moduleSHA256 = Just _moduleSHA256
     }
 
-fromCoreModule :: Options -> Core.Module' t -> Module' t
-fromCoreModule opts Core.Module {..} =
+fromBaseModule :: Options -> Core.Module' t -> Module' t
+fromBaseModule opts Core.Module {..} =
   Module
     { _moduleId = _moduleId,
       _moduleInfoTable = _moduleInfoTable,

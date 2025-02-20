@@ -8,7 +8,9 @@ data Type
   | TyPrim Primitive
   | TyApp TypeApp
   | TyFun TypeFun
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize Type
 
 data TypeApp = TypeApp
   { _typeAppName :: Text,
@@ -16,13 +18,17 @@ data TypeApp = TypeApp
     _typeAppSymbol :: Symbol,
     _typeAppArgs :: [Type]
   }
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize TypeApp
 
 data TypeFun = TypeFun
   { _typeFunLeft :: Type,
     _typeFunRight :: Type
   }
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize TypeFun
 
 makeLenses ''TypeApp
 makeLenses ''TypeFun

@@ -151,3 +151,6 @@ writeFile p bs = do
 
 pathFileToPathDir :: Path Abs File -> Path Abs Dir
 pathFileToPathDir = absDir . toFilePath
+
+sanitizeFilename :: String -> FilePath
+sanitizeFilename = map (\c -> if isAlphaNum c || c `elem` (".-_" :: String) then c else '_')

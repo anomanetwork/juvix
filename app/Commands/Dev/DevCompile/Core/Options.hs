@@ -23,4 +23,7 @@ parseCore = do
   pure CoreOptions {..}
 
 instance EntryPointOptions (CoreOptions k) where
-  applyOptions = applyOptions . (^. coreCompileCommonOptions)
+  applyOptions opts =
+    set entryPointPipeline (Just PipelineExec)
+      . set entryPointTarget (Just TargetCore)
+      . applyOptions (opts ^. coreCompileCommonOptions)

@@ -353,3 +353,15 @@ substituteIndParams ::
   expr ->
   Sem r expr
 substituteIndParams = substitutionE . HashMap.fromList . map (first (^. inductiveParamName))
+
+getInductiveKind :: InductiveDef -> Expression
+getInductiveKind InductiveDef {..} =
+  foldr
+    ( \p f ->
+        ExpressionFunction $
+          Function
+            (FunctionParameter (Just (p ^. inductiveParamName)) Explicit (p ^. inductiveParamType))
+            f
+    )
+    _inductiveType
+    _inductiveParameters

@@ -8,9 +8,10 @@ data Target
   = TargetCWasm32Wasi
   | TargetCNative64
   | TargetCore
+  | TargetStripped
+  | TargetTree
   | TargetAsm
   | TargetReg
-  | TargetTree
   | TargetRust
   | TargetAnoma
   | TargetCairo
@@ -74,6 +75,10 @@ getLimits tgt debug = case tgt of
       }
   TargetCore ->
     defaultLimits
+  TargetStripped ->
+    defaultLimits
+  TargetTree ->
+    defaultLimits
   TargetAsm ->
     defaultLimits
   TargetReg ->
@@ -91,8 +96,6 @@ getLimits tgt debug = case tgt of
         _limitsBuiltinUIDsNum = 8,
         _limitsSpecialisedApply = 3
       }
-  TargetTree ->
-    defaultLimits
   TargetAnoma ->
     defaultLimits
   TargetCairo ->
@@ -143,26 +146,33 @@ defaultLimits =
       _limitsSpecialisedApply = 0
     }
 
-getTargetSubdir :: Target -> Path Rel Dir
-getTargetSubdir = \case
-  TargetCWasm32Wasi -> $(mkRelDir "wasm32-wasi")
-  TargetCNative64 -> $(mkRelDir "native64")
+getTargetSubdir :: Target -> Target -> Path Rel Dir
+getTargetSubdir midTarget finalTarget = case midTarget of
   TargetCore -> $(mkRelDir "default")
-  TargetAsm -> $(mkRelDir "default")
-  TargetReg -> $(mkRelDir "default")
-  TargetTree -> $(mkRelDir "tree")
-  TargetRust -> $(mkRelDir "rust")
-  TargetAnoma -> $(mkRelDir "anoma")
-  TargetCairo -> $(mkRelDir "cairo")
+  TargetStripped -> $(mkRelDir "default")
+  TargetTree -> $(mkRelDir "default")
+  _ ->
+    case finalTarget of
+      TargetCWasm32Wasi -> $(mkRelDir "wasm32-wasi")
+      TargetCNative64 -> $(mkRelDir "native64")
+      TargetCore -> $(mkRelDir "default")
+      TargetStripped -> $(mkRelDir "default")
+      TargetTree -> $(mkRelDir "default")
+      TargetAsm -> $(mkRelDir "default")
+      TargetReg -> $(mkRelDir "default")
+      TargetRust -> $(mkRelDir "rust")
+      TargetAnoma -> $(mkRelDir "anoma")
+      TargetCairo -> $(mkRelDir "cairo")
 
 getTargetExtension :: Target -> String
 getTargetExtension = \case
-  TargetCWasm32Wasi -> ".c.bin"
-  TargetCNative64 -> ".c.bin"
+  TargetCWasm32Wasi -> ".c.wasm.bin"
+  TargetCNative64 -> ".c.native.bin"
   TargetCore -> ".core.bin"
+  TargetStripped -> ".stripped.bin"
+  TargetTree -> ".tree.bin"
   TargetAsm -> ".asm.bin"
   TargetReg -> ".reg.bin"
-  TargetTree -> ".tree.bin"
   TargetRust -> ".rs.bin"
   TargetAnoma -> ".anoma.bin"
   TargetCairo -> ".cairo.bin"

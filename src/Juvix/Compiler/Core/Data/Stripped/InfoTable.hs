@@ -9,6 +9,9 @@ data InfoTable = InfoTable
     _infoInductives :: HashMap Symbol InductiveInfo,
     _infoConstructors :: HashMap Tag ConstructorInfo
   }
+  deriving stock (Generic)
+
+instance Serialize InfoTable
 
 data FunctionInfo = FunctionInfo
   { _functionName :: Text,
@@ -23,12 +26,18 @@ data FunctionInfo = FunctionInfo
     _functionArgsInfo :: [ArgumentInfo],
     _functionIsExported :: Bool
   }
+  deriving stock (Generic)
+
+instance Serialize FunctionInfo
 
 data ArgumentInfo = ArgumentInfo
   { _argumentName :: Text,
     _argumentLocation :: Maybe Location,
     _argumentType :: Type
   }
+  deriving stock (Generic)
+
+instance Serialize ArgumentInfo
 
 data InductiveInfo = InductiveInfo
   { _inductiveName :: Text,
@@ -38,6 +47,9 @@ data InductiveInfo = InductiveInfo
     _inductiveConstructors :: [Tag],
     _inductiveParams :: [ParameterInfo]
   }
+  deriving stock (Generic)
+
+instance Serialize InductiveInfo
 
 data ConstructorInfo = ConstructorInfo
   { _constructorName :: Text,
@@ -50,6 +62,9 @@ data ConstructorInfo = ConstructorInfo
     _constructorArgsNum :: Int,
     _constructorFixity :: Maybe Fixity
   }
+  deriving stock (Generic)
+
+instance Serialize ConstructorInfo
 
 data ParameterInfo = ParameterInfo
   { _paramName :: Text,
@@ -57,6 +72,9 @@ data ParameterInfo = ParameterInfo
     _paramKind :: Type,
     _paramIsImplicit :: Bool
   }
+  deriving stock (Generic)
+
+instance Serialize ParameterInfo
 
 makeLenses ''InfoTable
 makeLenses ''FunctionInfo
@@ -65,8 +83,32 @@ makeLenses ''InductiveInfo
 makeLenses ''ConstructorInfo
 makeLenses ''ParameterInfo
 
+instance Semigroup InfoTable where
+  tab1 <> tab2 =
+    InfoTable
+      { _infoMain = tab1 ^. infoMain <|> tab2 ^. infoMain,
+        _infoFunctions = tab1 ^. infoFunctions <> tab2 ^. infoFunctions,
+        _infoInductives = tab1 ^. infoInductives <> tab2 ^. infoInductives,
+        _infoConstructors = tab1 ^. infoConstructors <> tab2 ^. infoConstructors
+      }
+
+instance Monoid InfoTable where
+  mempty =
+    InfoTable
+      { _infoMain = Nothing,
+        _infoFunctions = mempty,
+        _infoInductives = mempty,
+        _infoConstructors = mempty
+      }
+
 lookupTabConstructorInfo' :: InfoTable -> Tag -> Maybe ConstructorInfo
 lookupTabConstructorInfo' tab tag = HashMap.lookup tag (tab ^. infoConstructors)
+
+lookupTabFunInfo' :: InfoTable -> Symbol -> Maybe FunctionInfo
+lookupTabFunInfo' tab sym = HashMap.lookup sym (tab ^. infoFunctions)
+
+lookupTabInductiveInfo' :: InfoTable -> Symbol -> Maybe InductiveInfo
+lookupTabInductiveInfo' tab sym = HashMap.lookup sym (tab ^. infoInductives)
 
 lookupTabConstructorInfo :: InfoTable -> Tag -> ConstructorInfo
 lookupTabConstructorInfo tab tag = fromJust $ HashMap.lookup tag (tab ^. infoConstructors)

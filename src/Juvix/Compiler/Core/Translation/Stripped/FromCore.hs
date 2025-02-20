@@ -15,6 +15,7 @@ fromCore Module {..} =
     { _moduleId = _moduleId,
       _moduleInfoTable = fromCore' _moduleInfoTable,
       _moduleImports = _moduleImports,
+      _moduleImportsTable = mempty,
       _moduleSHA256 = _moduleSHA256
     }
 
@@ -291,13 +292,18 @@ translateNode node = case node of
           (translateNode _caseValue)
           (map translateCaseBranch _caseBranches)
           (fmap translateNode _caseDefault)
+  NBot {} ->
+    unitNode
   _
     | isType' node ->
-        Stripped.mkConstr (Stripped.ConstrInfo "()" Nothing Stripped.TyDynamic) (BuiltinTag TagTrue) []
+        unitNode
   _ ->
     unsupported
   where
-    unsupported :: a
+    unitNode :: Stripped.Node
+    unitNode = Stripped.mkConstr (Stripped.ConstrInfo "()" Nothing Stripped.TyDynamic) (BuiltinTag TagTrue) []
+
+    unsupported :: (HasCallStack) => a
     unsupported = error "Core to Core.Stripped: unsupported node"
 
     translateIf :: Node -> Node -> Node -> Stripped.Node
