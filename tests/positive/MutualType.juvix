@@ -2,13 +2,13 @@ module MutualType;
 
 syntax fixity cons := binary {assoc := right};
 
-syntax operator :: cons;
 --- Inductive list.
 type List (a : Type) :=
   | --- The empty list
     nil : List a
   | --- An element followed by a list
     :: : a → List a → List a;
+syntax operator :: cons;
 
 Forest : Type -> Type
 

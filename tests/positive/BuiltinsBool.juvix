@@ -2,10 +2,10 @@ module BuiltinsBool;
 
 builtin bool
 type Bool :=
-  | true : Bool
-  | false : Bool;
+  | false
+  | true;
 
 builtin bool-if
-ite : {A : Type} → Bool → A → A → A
-  | true t _ := t
-  | false _ e := e;
+ite : {A : Type} -> Bool -> A -> A -> A
+  | true a _ := a
+  | false _ b := b;

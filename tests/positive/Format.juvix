@@ -28,7 +28,6 @@ hiding -- Hide some names
   Bool;
   true;
   false;
-  mkShow;
   module Show;
 };
 
@@ -233,7 +232,7 @@ f : Nat -> Nat :=
   };
 
 module Patterns;
-
+  open ×;
   syntax operator × functor;
   syntax operator , pair;
   type × (A : Type) (B : Type) := , : A → B → A × B;
@@ -320,7 +319,7 @@ module EmptyRecords;
 
   type T := mkT@{};
 
-  x : T := mkT@{};
+  x : T := T.mkT@{};
 
   isZero : Nat -> Bool
     | zero := true
@@ -329,7 +328,7 @@ end;
 
 --- Traits
 module Traits;
-  import Stdlib.Prelude open hiding {Show; mkShow; module Show};
+  import Stdlib.Prelude open hiding {Show; module Show};
 
   trait
   type Show A :=
@@ -339,19 +338,19 @@ module Traits;
 
   instance
   showStringI : Show String :=
-    mkShow@{
+    Show.mkShow@{
       show := id;
     };
 
   instance
   showBoolI : Show Bool :=
-    mkShow@{
+    Show.mkShow@{
       show := λ{x := ite x "true" "false"};
     };
 
   instance
   showNatI : Show Nat :=
-    mkShow@{
+    Show.mkShow@{
       show := natToString;
     };
 
@@ -363,7 +362,7 @@ module Traits;
 
   instance
   showListI {A} {{Show A}} : Show (List A) :=
-    mkShow@{
+    Show.mkShow@{
       show := showList;
     };
 
@@ -373,7 +372,7 @@ module Traits;
 
   instance
   showMaybeI {A} {{Show A}} : Show (Maybe A) :=
-    mkShow@{
+    Show.mkShow@{
       show := showMaybe;
     };
 
@@ -381,7 +380,7 @@ module Traits;
     | x := Show.show x;
 
   f' {A} : {{Show A}} → A → String
-    | {{mkShow s}} x := s x;
+    | {{Show.mkShow s}} x := s x;
 
   f'' {A} : {{Show A}} → A → String
     | {{M}} x := Show.show {{M}} x;

@@ -5,6 +5,7 @@ import Stdlib.Data.Fixity open;
 -- aliases are allowed to forward reference, but they themselves cannot be
 -- forward referenced
 syntax alias Boolean := Bool;
+open Bool;
 syntax alias ⊥ := false;
 syntax alias ⊤ := true;
 
