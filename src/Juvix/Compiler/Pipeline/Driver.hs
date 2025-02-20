@@ -308,6 +308,7 @@ processProjectWith ::
          Reader Migration,
          PathResolver,
          Reader EntryPoint,
+         Reader MainPackageId,
          Reader ImportTree,
          Files
        ]
@@ -319,6 +320,7 @@ processProjectWith ::
            Files,
            Reader Migration,
            Reader PackageId,
+           Reader MainPackageId,
            HighlightBuilder,
            PathResolver
          ]
@@ -351,6 +353,7 @@ processProjectUpToScoping ::
          PathResolver,
          ModuleInfoCache,
          Reader EntryPoint,
+         Reader MainPackageId,
          Reader ImportTree
        ]
       r
@@ -365,6 +368,7 @@ processProjectUpToParsing ::
          Error JuvixError,
          PathResolver,
          Reader Migration,
+         Reader MainPackageId,
          ModuleInfoCache,
          Reader EntryPoint,
          Reader ImportTree
@@ -397,7 +401,8 @@ processNodeUpToScoping ::
          Reader Migration,
          Files,
          HighlightBuilder,
-         Reader PackageId
+         Reader PackageId,
+         Reader MainPackageId
        ]
       r
   ) =>
@@ -405,13 +410,13 @@ processNodeUpToScoping ::
   Sem r ScoperResult
 processNodeUpToScoping node = do
   parseRes <- processNodeUpToParsing node
-  pkg <- ask
+  pkg <- ask @PackageId
   let modules = node ^. processedNodeInfo . pipelineResultImports
       scopedModules :: ScopedModuleTable = getScopedModuleTable modules
       tmp :: TopModulePathKey = relPathtoTopModulePathKey (node ^. processedNode . importNodeFile)
       moduleid :: ModuleId = run (runReader pkg (getModuleId tmp))
   evalTopNameIdGen moduleid $
-    scopeCheck pkg scopedModules parseRes
+    scopeCheck scopedModules parseRes
 
 processRecursivelyUpTo ::
   forall a r.

@@ -19,6 +19,7 @@ fromParsed ::
       '[ HighlightBuilder,
          Reader Migration,
          Reader PackageId,
+         Reader MainPackageId,
          Reader ModuleTable,
          Reader Parsed.ParserResult,
          Error JuvixError,
@@ -28,7 +29,6 @@ fromParsed ::
   ) =>
   Sem r ScoperResult
 fromParsed = do
-  pkg <- ask
   tab <- ask
   r <- ask
-  scopeCheck pkg (getScopedModuleTable tab) r
+  scopeCheck (getScopedModuleTable tab) r

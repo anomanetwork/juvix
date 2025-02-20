@@ -57,7 +57,8 @@ formatProject migr = silenceProgressLog
   . local (set pipelineMigration migr)
   . runPipelineSetup
   $ do
-    res :: [ProcessedNode ScoperResult] <- processProjectUpToScoping
+    mpkg <- asks (^. entryPointMainPackageId)
+    res :: [ProcessedNode ScoperResult] <- runReader mpkg processProjectUpToScoping
     pkgId :: PackageId <- (^. entryPointPackageId) <$> ask
     res' :: [(ImportNode, SourceCode)] <- runReader pkgId $ forM res $ \node -> do
       src <- formatModuleInfo node
