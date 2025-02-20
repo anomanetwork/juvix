@@ -6,24 +6,17 @@ qsHelper : {A : Type} → A → Pair (List A) (List A) → List A
   | a (l, r) := l ++ (a :: nil) ++ r;
 
 terminating
-quickSort
-  : {A : Type} → (A → A → Ordering) → List A → List A
+quickSort : {A : Type} → (A → A → Ordering) → List A → List A
   | _ nil := nil
   | _ (x :: nil) := x :: nil
   | cmp (x :: xs) :=
-    qsHelper
-      x
-      (both (quickSort cmp) (partition (isGreaterThan << cmp x) xs));
+    qsHelper x (both (quickSort cmp) (partition (isGreaterThan << cmp x) xs));
 
-uniq
-  : {A : Type} -> (A -> A -> Ordering) -> List A -> List A
+uniq : {A : Type} -> (A -> A -> Ordering) -> List A -> List A
   | _ nil := nil
   | _ y@(x :: nil) := y
   | cmp (x :: x' :: xs) :=
-    ite
-      (isEqual (cmp x x'))
-      (uniq cmp (x' :: xs))
-      (x :: uniq cmp (x' :: xs));
+    ite (isEqual (cmp x x')) (uniq cmp (x' :: xs)) (x :: uniq cmp (x' :: xs));
 
 gen : Nat -> (Nat -> Nat) -> List Nat -> List Nat
   | zero _ acc := acc
@@ -38,6 +31,4 @@ three : Nat := suc (suc (suc zero));
 four : Nat := suc three;
 
 main : List Nat :=
-  uniq
-    Ord.compare
-    (quickSort Ord.compare (flatten (gen2 three four nil)));
+  uniq Ord.compare (quickSort Ord.compare (flatten (gen2 three four nil)));

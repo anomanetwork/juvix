@@ -7,4 +7,3 @@ f : Nat -> Nat
   | zero := 0;
 
 main : IO := printNatLn (f 3) >>> printNatLn (f 0);
-

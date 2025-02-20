@@ -4,8 +4,7 @@ import Stdlib.Prelude open;
 
 printListNatLn : List Nat → IO
   | nil := printStringLn "nil"
-  | (x :: xs) :=
-    printNat x >>> printString " :: " >>> printListNatLn xs;
+  | (x :: xs) := printNat x >>> printString " :: " >>> printListNatLn xs;
 
 f1 : List Nat -> List Nat
   | a@(x :: x' :: xs) := a
@@ -30,11 +29,7 @@ f5 : List Nat -> List Nat -> List Nat
 l1 : List Nat := zero :: suc zero :: nil;
 
 l2 : List Nat :=
-  zero
-    :: suc zero
-    :: suc (suc zero)
-    :: suc (suc (suc zero))
-    :: nil;
+  zero :: suc zero :: suc (suc zero) :: suc (suc (suc zero)) :: nil;
 
 main : IO :=
   printListNatLn (f1 l1)
@@ -42,4 +37,3 @@ main : IO :=
     >>> printListNatLn (f3 zero l1)
     >>> printNatLn (f4 zero l1)
     >>> printListNatLn (f5 l1 l2);
-

@@ -1,4 +1,3 @@
 module Universe;
 
 main : Type := Type;
-
