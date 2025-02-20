@@ -8,4 +8,3 @@ app : ({A : Type} → A → A) → {A : Type} → A → A
   | x := x x;
 
 main : Nat := app id (3 + 4);
-

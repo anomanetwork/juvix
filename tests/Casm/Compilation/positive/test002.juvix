@@ -2,4 +2,4 @@ module test002;
 
 import Stdlib.Prelude open;
 
-main : Nat := \ {x y z := z + x * y} 2 3 5;
+main : Nat := \{x y z := z + x * y} 2 3 5;

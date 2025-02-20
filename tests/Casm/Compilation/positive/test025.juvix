@@ -5,8 +5,7 @@ import Stdlib.Prelude open;
 
 terminating
 gcd : Nat → Nat → Nat
-  | a b :=
-    ite (a > b) (gcd b a) (ite (a == 0) b (gcd (mod b a) a));
+  | a b := ite (a > b) (gcd b a) (ite (a == 0) b (gcd (mod b a) a));
 
 main : Nat :=
   gcd (3 * 7 * 2) (7 * 2 * 11)

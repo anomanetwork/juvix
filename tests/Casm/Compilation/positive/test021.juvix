@@ -16,8 +16,4 @@ power' : Nat → Nat → Nat → Nat
 
 power : Nat → Nat → Nat := power' 1;
 
-main : Nat :=
-  power 2 3
-    + (power 3 7)
-    + (power 5 11);
-
+main : Nat := power 2 3 + power 3 7 + power 5 11;

@@ -13,4 +13,3 @@ u : Nat → Nat
   | x := f (h 4) + x;
 
 main : Nat := u 2;
-
