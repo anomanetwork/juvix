@@ -6,8 +6,7 @@ import Stdlib.Prelude open;
 split : {A : Type} → Nat → List A → Pair (List A) (List A)
   | zero xs := nil, xs
   | (suc n) nil := nil, nil
-  | (suc n) (x :: xs) :=
-    case split n xs of {l1, l2 := x :: l1, l2};
+  | (suc n) (x :: xs) := case split n xs of l1, l2 := x :: l1, l2;
 
 terminating
 merge' : List Nat → List Nat → List Nat
@@ -24,15 +23,13 @@ sort : List Nat → List Nat
     in ite
       (n <= 1)
       xs
-      case split (div n 2) xs of {l1, l2 :=
-        merge' (sort l1) (sort l2)};
+      case split (div n 2) xs of {l1, l2 := merge' (sort l1) (sort l2)};
 
 terminating
 uniq : List Nat → List Nat
   | nil := nil
   | (x :: nil) := x :: nil
-  | (x :: xs@(x' :: _)) :=
-    ite (x == x') (uniq xs) (x :: uniq xs);
+  | (x :: xs@(x' :: _)) := ite (x == x') (uniq xs) (x :: uniq xs);
 
 gen : List Nat → Nat → (Nat → Nat) → List Nat
   | acc zero f := acc
@@ -40,13 +37,11 @@ gen : List Nat → Nat → (Nat → Nat) → List Nat
 
 gen2 : List (List Nat) → Nat → Nat → List (List Nat)
   | acc m zero := acc
-  | acc m (suc n) :=
-    gen2 (gen nil m ((+) (suc n)) :: acc) m n;
+  | acc m (suc n) := gen2 (gen nil m ((+) (suc n)) :: acc) m n;
 
 printListNatLn : List Nat → IO
   | nil := printStringLn "nil"
-  | (x :: xs) :=
-    printNat x >>> printString " :: " >>> printListNatLn xs;
+  | (x :: xs) := printNat x >>> printString " :: " >>> printListNatLn xs;
 
 sum : List Nat → Nat
   | nil := 0
