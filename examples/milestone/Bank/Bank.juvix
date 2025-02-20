@@ -20,6 +20,8 @@ type Token :=
     amount : Nat;
   };
 
+open Token using {mkToken} public;
+
 --- This module defines the type for balances and its associated operations.
 module Balances;
   Balances : Type := List (Pair Field Nat);

@@ -15,9 +15,11 @@ type Square :=
       player : Symbol;
     };
 
+open Square using {empty; occupied} public;
+
 instance
 eqSquareI : Eq Square :=
-  mkEq@{
+  Eq.mk@{
     isEqual (square1 square2 : Square) : Bool :=
       case square1, square2 of
         | empty m, empty n := m == n
