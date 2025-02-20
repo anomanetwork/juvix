@@ -18,6 +18,8 @@ axiom H : Type;
 
 type Unit := unit : Unit;
 
+open Unit using {unit} public;
+
 axiom fun1 : (a : Type) -> (b : Type) -> {c : Type} -> Type;
 
 -- all provided by name
@@ -25,71 +27,55 @@ t1 : Type :=
   fun1@{
     a := A;
     b := B;
-    c := C
+    c := C;
   };
 
 -- skip implicit at the end
 t1' : {_ : Type} -> Type :=
   fun1@{
     b := B;
-    a := A
+    a := A;
   };
 
-axiom fun2 : (a : Type)
-  -> (b : Type)
-  -> {c : Type}
-  -> {d : Type}
-  -> Type;
+axiom fun2 : (a : Type) -> (b : Type) -> {c : Type} -> {d : Type} -> Type;
 
 -- skip implicit in implicit group
 t2 : {_ : Type} -> Type :=
   fun2@{
     a := A;
     b := B;
-    c := D
+    c := D;
   };
 
-axiom fun3 : (a : Type)
-  -> (b : Type)
-  -> {c : Type}
-  -> {d : c}
-  -> Type;
+axiom fun3 : (a : Type) -> (b : Type) -> {c : Type} -> {d : c} -> Type;
 
 -- skip implicit in the middle
 t3 : Type :=
   fun3@{
     a := A;
     b := B;
-    d := unit
+    d := unit;
   };
 
-axiom fun4 : (a : Type)
-  -> (b : Type)
-  -> {c : Type}
-  -> (d : c)
-  -> Type;
+axiom fun4 : (a : Type) -> (b : Type) -> {c : Type} -> (d : c) -> Type;
 
 -- skip implicit in the middle
 t4 : Type :=
   fun4@{
     a := A;
     b := B;
-    d := unit
+    d := unit;
   };
 
-axiom fun5 : (a : Type)
-  -> (b : Type)
-  -> {c c' : Type}
-  -> (d : c)
-  -> (d' : c')
-  -> Type;
+axiom fun5
+  : (a : Type) -> (b : Type) -> {c c' : Type} -> (d : c) -> (d' : c') -> Type;
 
 t5 : Type :=
   fun5@{
     a := A;
     b := B;
     d' := unit;
-    d := unit
+    d := unit;
   };
 
 t5' : Type :=
@@ -97,23 +83,24 @@ t5' : Type :=
     a := A;
     b := B;
     d' := unit;
-    d := unit
+    d := unit;
   };
 
-axiom fun6 : {a : Type}
-  -> (b : Type)
-  -> {c c' : Type}
-  -> (d : c)
-  -> (d' : c')
-  -> (a' : a)
-  -> Type;
+axiom fun6
+  : {a : Type}
+    -> (b : Type)
+    -> {c c' : Type}
+    -> (d : c)
+    -> (d' : c')
+    -> (a' : a)
+    -> Type;
 
 t6 : Type :=
   fun6@{
     b := B;
     d' := unit;
     d := unit;
-    a' := unit
+    a' := unit;
   };
 
 t6' : Type :=
@@ -121,26 +108,33 @@ t6' : Type :=
     d' := unit;
     d := unit;
     a' := unit;
-    b := B
+    b := B;
   };
 
 module FakeRecord;
-  type Pair (A B : Type) :=
-    mkPair : (fst : A) -> (snd : B) -> Pair A B;
+  type Pair (A B : Type) := mkPair : (fst : A) -> (snd : B) -> Pair A B;
+
+  open Pair using {mkPair} public;
 
   pp
     : Pair@{
-      B := Unit;
-      A := Type
-    } :=
+        B := Unit;
+        A := Type;
+      } :=
     mkPair@{
       snd := unit;
-      fst := Type
+      fst := Type;
     };
 
   pp2
     : Pair@{
-      B := Unit;
-      A := Type
-    } := \{snd := mkPair@{fst := Type; snd}} (unit);
+        B := Unit;
+        A := Type;
+      } :=
+    \{snd :=
+        mkPair@{
+          fst := Type;
+          snd;
+        }}
+      (unit);
 end;

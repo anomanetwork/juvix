@@ -2,22 +2,38 @@ module main;
 
 type T := mkT;
 
+open T using {mkT} public;
+
 type Phantom (H : Type) := phantom;
+
+open Phantom using {phantom} public;
 
 type Phantom2 (H : Type) := phantom2 (Phantom H);
 
+open Phantom2 using {phantom2} public;
+
 type Box (A : Type) := box A;
+
+open Box using {box} public;
 
 module M1;
   type T1 (x y : Type) := mkT1 y (x -> x) x;
 
+  open T1 using {mkT1} public;
+
   type T2 (x : (Type -> Type) -> Type) := mkT2 (x (T1 T));
+
+  open T2 using {mkT2} public;
 end;
 
 module M2;
   type T1 (x : Type) := mkT1 (T2 x);
 
+  open T1 using {mkT1} public;
+
   type T2 (x : Type) := mkT2 (x -> T);
+
+  open T2 using {mkT2} public;
 
 -- type T3 := mkT3 (T1 T3);
 end;
@@ -26,26 +42,42 @@ module M3;
   type List (x : Type) :=
     | nil
     | cons x (List x);
+
+  open List using {nil; cons} public;
 end;
 
 module E1;
   type Alice (A : Type) := alice (Phantom2 (Alice A) -> Alice A);
 
+  open Alice using {alice} public;
+
   type Bob (C : Type) := bob (Carol C) (Bob C) (Phantom (Bob C) -> T);
 
+  open Bob using {bob} public;
+
   type Carol (C : Type) := carol (Alice C);
+
+  open Carol using {carol} public;
 end;
 
 module E3;
   type NotBad (A : Type) := notBad (A -> NotBad A);
+
+  open NotBad using {notBad} public;
 end;
 
 module E5;
   type Ghost1 (A : Type) := ghost1 (Ghost2 (Ghost1 (A -> A) -> Ghost2 A));
 
+  open Ghost1 using {ghost1} public;
+
   type Ghost2 (B : Type) := ghost2 Ok (Ghost1 B);
 
+  open Ghost2 using {ghost2} public;
+
   type Ok := mkOk (Ghost1 (Ok -> Ok));
+
+  open Ok using {mkOk} public;
 end;
 
 module E6;
@@ -53,13 +85,19 @@ module E6;
     | zero
     | suc Nat;
 
+  open Nat using {zero; suc} public;
+
   type Box :=
     mkBox@{
       unbox : Nat;
     };
 
+  open Box using {mkBox} public;
+
   type Foldable :=
     mkFoldable@{
       for : {B : Type} -> (B -> Nat -> B) -> B -> Box -> B;
     };
+
+  open Foldable using {mkFoldable} public;
 end;

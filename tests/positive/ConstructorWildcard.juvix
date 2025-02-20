@@ -4,9 +4,13 @@ type Bool :=
   | false
   | true;
 
+open Bool using {false; true} public;
+
 type either (A B : Type) :=
   | left A
   | right B;
+
+open either using {left; right} public;
 
 isLeft {A B} : either A B → Bool
   | left@{} := true

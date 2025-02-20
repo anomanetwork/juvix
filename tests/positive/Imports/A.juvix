@@ -7,6 +7,8 @@ module M;
     syntax operator T.t i3;
 
     type T := t : T -> T -> T;
+
+    open T using {t} public;
   end;
 
   syntax fixity add := binary {assoc := right; above := [i3]};

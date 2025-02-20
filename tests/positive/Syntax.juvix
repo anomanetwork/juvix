@@ -9,11 +9,15 @@ type Bool :=
   | false : Bool
   | true : Bool;
 
+open Bool using {false; true} public;
+
 open Bool;
 
 type Nat :=
   | zero : Nat
   | suc : Nat -> Nat;
+
+open Nat using {zero; suc} public;
 
 open Nat;
 
@@ -57,7 +61,11 @@ module MutualTypes;
     | empty : Tree a
     | node : a -> Forest a -> Tree a;
 
+  open Tree using {empty; node} public;
+
   type Forest (a : Type) :=
     | nil : Forest a
     | cons : Tree a -> Forest a;
+
+  open Forest using {nil; cons} public;
 end;

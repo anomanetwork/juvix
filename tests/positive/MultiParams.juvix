@@ -2,7 +2,11 @@ module MultiParams;
 
 type Multi (A B C : Type) := mult : Multi A B C;
 
+open Multi using {mult} public;
+
 type T := t;
+
+open T using {t} public;
 
 open T public;
 

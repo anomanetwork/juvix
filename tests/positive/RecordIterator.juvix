@@ -10,6 +10,8 @@ type Foldable (container elem : Type) :=
     rfor : {B : Type} -> (B -> elem -> B) -> B → container → B;
   };
 
+open Foldable using {mkFoldable} public;
+
 open Foldable;
 
 foldl

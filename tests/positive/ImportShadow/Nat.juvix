@@ -4,9 +4,13 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+
+open Nat using {zero; suc} public;
 
 is-zero : Nat → Bool
   | n :=

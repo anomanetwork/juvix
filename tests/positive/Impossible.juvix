@@ -7,6 +7,8 @@ module ImportantStuffFirst;
 
   --- N-Ary tree.
   type Tree (A : Type) := node : A -> Forest A -> Tree A;
+
+  open Tree using {node} public;
 end;
 
 module Forest;
@@ -15,7 +17,7 @@ module Forest;
   Forest : Type -> Type
     | A := List.List (Tree A);
 
-  -- open List public; -- Impossible
+-- open List public; -- Impossible
 end;
 
 module List;
@@ -25,5 +27,8 @@ module List;
       nil : List a
     | --- An element followed by a list
       :: : a → List a → List a;
+
+  open List using {nil; ::} public;
+
   syntax operator :: cons;
 end;

@@ -2,9 +2,13 @@ module Puns;
 
 type A := a;
 
+open A using {a} public;
+
 open A;
 
 type B := b;
+
+open B using {b} public;
 
 open B;
 
@@ -16,6 +20,8 @@ type S :=
     fieldD : B;
     fieldE : B;
   };
+
+open S using {mk} public;
 
 f (fieldA : A) (fieldB : B) : S :=
   let

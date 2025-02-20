@@ -2,6 +2,8 @@ module LocalSynonym;
 
 type Unit := unit : Unit;
 
+open Unit using {unit} public;
+
 myUnit : Type := Unit;
 
 module L;

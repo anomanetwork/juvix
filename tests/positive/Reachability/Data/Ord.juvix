@@ -4,3 +4,5 @@ type Ordering :=
   | LT : Ordering
   | EQ : Ordering
   | GT : Ordering;
+
+open Ordering using {LT; EQ; GT} public;

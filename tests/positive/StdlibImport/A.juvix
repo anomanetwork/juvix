@@ -1,3 +1,5 @@
 module A;
 
 type Foo := bar : Foo;
+
+open Foo using {bar} public;

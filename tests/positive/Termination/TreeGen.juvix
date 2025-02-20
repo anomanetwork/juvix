@@ -6,6 +6,8 @@ type Tree :=
   | leaf : Tree
   | node : Tree → Tree → Tree;
 
+open Tree using {leaf; node} public;
+
 gen : Nat → Tree
   | zero := leaf
   | (suc zero) := node leaf leaf

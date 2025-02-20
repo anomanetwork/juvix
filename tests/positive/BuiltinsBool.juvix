@@ -5,6 +5,8 @@ type Bool :=
   | false
   | true;
 
+open Bool using {false; true} public;
+
 builtin bool-if
 ite : {A : Type} -> Bool -> A -> A -> A
   | true a _ := a

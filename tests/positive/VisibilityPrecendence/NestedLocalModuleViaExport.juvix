@@ -2,6 +2,8 @@ module NestedLocalModuleViaExport;
 
 module A;
   type T := t;
+
+  open T using {t} public;
 end;
 
 open A using {T} public;

@@ -1,19 +1,26 @@
 module Polymorphism;
 
-type Pair (A : Type) (B : Type) :=
-  mkPair : A → B → Pair A B;
+type Pair (A : Type) (B : Type) := mkPair : A → B → Pair A B;
+
+open Pair using {mkPair} public;
 
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
 type List (A : Type) :=
   | nil : List A
   | cons : A → List A → List A;
 
+open List using {nil; cons} public;
+
 type Bool :=
   | false : Bool
   | true : Bool;
+
+open Bool using {false; true} public;
 
 id : (A : Type) → A → A
   | _ a := a;
@@ -41,14 +48,7 @@ p : Pair Bool Bool := mkPair true false;
 swap : (A : Type) → (B : Type) → Pair A B → Pair B A
   | A B (mkPair a b) := mkPair b a;
 
-curry
-  : (A : Type)
-    → (B : Type)
-    → (C : Type)
-    → (Pair A B → C)
-    → A
-    → B
-    → C
+curry : (A : Type) → (B : Type) → (C : Type) → (Pair A B → C) → A → B → C
   | A B C f a b := f (mkPair a b);
 
 ap : (A : Type) → (B : Type) → (A → B) → A → B
@@ -65,22 +65,13 @@ headDef : (A : Type) → A → List A → A
 filter : (A : Type) → (A → Bool) → List A → List A
   | A f nil := nil
   | A f (cons x xs) :=
-    ite
-      (List A)
-      (f x)
-      (cons x (filter A f xs))
-      (filter A f xs);
+    ite (List A) (f x) (cons x (filter A f xs)) (filter A f xs);
 
 map : (A : Type) → (B : Type) → (A → B) → List A → List B
   | A B f nil := nil
   | A B f (cons x xs) := cons (f x) (map A B f xs);
 
-zip
-  : (A : Type)
-    → (B : Type)
-    → List A
-    → List B
-    → List (Pair A B)
+zip : (A : Type) → (B : Type) → List A → List B → List (Pair A B)
   | A B nil _ := nil
   | A B _ nil := nil
   | A B (cons a as) (cons b bs) := nil;
@@ -95,8 +86,7 @@ zipWith
     → List C
   | A B C f nil _ := nil
   | A B C f _ nil := nil
-  | A B C f (cons a as) (cons b bs) :=
-    cons (f a b) (zipWith A B C f as bs);
+  | A B C f (cons a as) (cons b bs) := cons (f a b) (zipWith A B C f as bs);
 
 rankn : ((A : Type) → A → A) → Bool → Nat → Pair Bool Nat
   | f b n := mkPair (f Bool b) (f Nat n);

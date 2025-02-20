@@ -1,6 +1,8 @@
 module issue2999;
 
 type T := t;
+
+open T using {t} public;
 open T;
 
 fun : T :=

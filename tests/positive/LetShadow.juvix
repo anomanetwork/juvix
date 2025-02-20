@@ -4,7 +4,11 @@ type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
 type Unit := unit : Unit;
+
+open Unit using {unit} public;
 
 t : Nat :=
   case unit of

@@ -3,6 +3,8 @@ module InstanceAxiom;
 trait
 type T := t;
 
+open T using {t} public;
+
 axiom <body> : T;
 
 instance

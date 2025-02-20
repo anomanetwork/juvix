@@ -216,6 +216,8 @@ exampleFunction2
 positive
 type T0 (A : Type) := c0 : (A -> T0 A) -> T0 A;
 
+open T0 using {c0} public;
+
 -- Single Lambda clause
 idLambda : {A : Type} -> A -> A := λ{x := x};
 
@@ -233,9 +235,12 @@ f : Nat -> Nat :=
 
 module Patterns;
   open ×;
+
   syntax operator × functor;
   syntax operator , pair;
   type × (A : Type) (B : Type) := , : A → B → A × B;
+
+  open × using {,} public;
 
   f : Nat × Nat × Nat × Nat -> Nat
     | (a, b, c, d) := a;
@@ -301,6 +306,8 @@ module Comments;
     -- comment before pipe
     | blue : color;
 
+  open color using {black; white; red; blue} public;
+
   axiom a5 : Type;
 
   open Patterns -- before using
@@ -312,12 +319,16 @@ module Comments;
   };
 
   type list (A : Type) : Type := cons A (list A);
+
+  open list using {cons} public;
 end;
 
 module EmptyRecords;
   import Stdlib.Data.Bool.Base open;
 
   type T := mkT@{};
+
+  open T using {mkT} public;
 
   x : T := T.mkT@{};
 
@@ -335,6 +346,8 @@ module Traits;
     mkShow@{
       show : A → String;
     };
+
+  open Show using {mkShow} public;
 
   instance
   showStringI : Show String :=
@@ -402,6 +415,8 @@ module OperatorRecord;
       * : A -> A -> A;
     };
 
+  open Natural using {myNatural} public;
+
   open Natural;
 
   calc {A : Type} {{Natural A}} (n m : A) : A :=
@@ -419,6 +434,8 @@ module RecordFieldPragmas;
       {-# inline: false #-}
       psnd : B;
     };
+
+  open Pr using {mkPr} public;
 end;
 
 module MultiConstructorRecord;
@@ -431,6 +448,8 @@ module MultiConstructorRecord;
         left : Tree A;
         right : Tree A;
       };
+
+  open Tree using {leaf; node} public;
 end;
 
 longLongLongArg : Int := 0;
@@ -549,12 +568,16 @@ module TypeModule;
     toNat : Rec -> Nat := a;
   end;
 
+  open Rec using {mk} public;
+
   recId : Nat -> Nat := Rec.fromNat >> Rec.toNat;
 
   type S := mS
   -- empty with module
   with
   end;
+
+  open S using {mS} public;
 end;
 
 {-hi

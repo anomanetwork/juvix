@@ -2,47 +2,63 @@ module Records;
 
 type T := constructT : T;
 
-type T-wrapper := mkWrapper {unwrap : T};
+open T using {constructT} public;
+
+type T-wrapper :=
+  mkWrapper@{
+    unwrap : T;
+  };
+
+open T-wrapper using {mkWrapper} public;
 
 type Pair (A B : Type) :=
   --- creates a pair
-  mkPair {
+  mkPair@{
     fst : A;
-    snd : B
+    snd : B;
   };
+
+open Pair using {mkPair} public;
 
 p1 : Pair T T :=
   mkPair@{
     fst := constructT;
-    snd := constructT
+    snd := constructT;
   };
 
 type EnumRecord :=
   | --- doc for C1
-    C1 {
+    C1@{
       c1a : T;
-      c1b : T
+      c1b : T;
     }
-  | C2 {
+  | C2@{
       c2a : T;
-      c2b : T
+      c2b : T;
     };
+
+open EnumRecord using {C1; C2} public;
 
 p2 : Pair EnumRecord EnumRecord :=
   mkPair@{
     fst :=
       C1@{
         c1a := constructT;
-        c1b := constructT
+        c1b := constructT;
       };
     snd :=
       C2@{
         c2a := constructT;
-        c2b := constructT
-      }
+        c2b := constructT;
+      };
   };
 
-type newtype := mknewtype {f : T};
+type newtype :=
+  mknewtype@{
+    f : T;
+  };
+
+open newtype using {mknewtype} public;
 
 p3 : Pair T T -> T := Pair.fst;
 
@@ -53,6 +69,8 @@ p4 {A : Type} : Pair A T -> A := fst;
 type Bool :=
   | false
   | true;
+
+open Bool using {false; true} public;
 
 module Update;
   f {A B : Type} (p : Pair A B) : Pair Bool B := p@Pair{fst := true};

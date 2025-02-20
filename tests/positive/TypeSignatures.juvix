@@ -14,6 +14,12 @@ type R :=
     rf (x : Nat) : Nat;
   };
 
+open R using {mkR} public;
+
 type R' := mkR' (rf : Nat -> Nat) : R';
 
+open R' using {mkR'} public;
+
 type RR := mkRR : (Nat -> Nat) -> RR;
+
+open RR using {mkRR} public;

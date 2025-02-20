@@ -6,6 +6,8 @@ syntax fixity mul := binary {assoc := left; above := [add]};
 type ℕ :=
   | zero : ℕ
   | suc : ℕ → ℕ;
+
+open ℕ using {zero; suc} public;
 open ℕ public;
 
 syntax operator + add;

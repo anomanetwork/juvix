@@ -2,6 +2,8 @@ module LetSynonym;
 
 type T := t : T;
 
+open T using {t} public;
+
 main : T :=
   let
     A : Type := T;

@@ -2,7 +2,11 @@ module TypeAlias;
 
 type T := t : T;
 
+open T using {t} public;
+
 type T2 := t2 : T2;
+
+open T2 using {t2} public;
 
 alias : Type := T;
 
@@ -20,12 +24,12 @@ syntax operator ⊙ composition;
 
 x2 : (id ⊙ id) alias := t;
 
-flip
-  : (Type → Type → Type) → id Type → Type → (id ⊙ id) Type
+flip : (Type → Type → Type) → id Type → Type → (id ⊙ id) Type
   | f a b := f b a;
 
-type Pair (A : Type) (B : Type) :=
-  mkPair : id T → id (id A) → B → Pair A B;
+type Pair (A : Type) (B : Type) := mkPair : id T → id (id A) → B → Pair A B;
+
+open Pair using {mkPair} public;
 
 p : {A : Type} → A → Pair A A
   | a := mkPair t a a;
@@ -35,7 +39,7 @@ x' : flip Pair (id _) T2 := mkPair x t2 t;
 funAlias : Type -> Type
   | a := a -> a;
 
-f : funAlias T := \ {t := t};
+f : funAlias T := \{t := t};
 
 f' : funAlias T
   | t := t;

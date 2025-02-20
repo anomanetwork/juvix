@@ -4,6 +4,8 @@ import Stdlib.Prelude open;
 
 type MyList (A : Type) := myList : List A -> MyList A;
 
+open MyList using {myList} public;
+
 toList : {A : Type} -> MyList A -> List A
   | (myList xs) := xs;
 
