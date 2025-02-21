@@ -16,8 +16,7 @@ sum' : Nat → Nat
 
 printListNatLn : List Nat → IO
   | nil := printStringLn "nil"
-  | (h :: t) :=
-    printNat h >>> printString " :: " >>> printListNatLn t;
+  | (h :: t) := printNat h >>> printString " :: " >>> printListNatLn t;
 
 main (n : Nat) : Nat :=
   trace (gen 10)

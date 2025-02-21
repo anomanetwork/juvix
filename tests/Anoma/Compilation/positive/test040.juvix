@@ -5,7 +5,11 @@ import Stdlib.Data.Bool open;
 
 type Unit := unit : Unit;
 
+open Unit using {unit} public;
+
 type Foo (A : Type) := foo : Unit -> A -> Foo A;
+
+open Foo using {foo} public;
 
 f : {A : Type} -> Foo A -> A
   | (foo unit a) := a;

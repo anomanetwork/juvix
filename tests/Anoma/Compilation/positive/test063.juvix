@@ -5,66 +5,101 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Trace open;
 
 trait
-type T1 A := mkT1 {pp : A -> A};
+type T1 A :=
+  mkT1@{
+    pp : A -> A;
+  };
+
+open T1 using {mkT1} public;
 
 trait
-type T2 A := mkT2 {pp : A -> A};
+type T2 A :=
+  mkT2@{
+    pp : A -> A;
+  };
+
+open T2 using {mkT2} public;
 
 trait
-type T3 A := mkT3 {pp : A -> A};
+type T3 A :=
+  mkT3@{
+    pp : A -> A;
+  };
+
+open T3 using {mkT3} public;
 
 trait
-type T4 A := mkT4 {pp : A -> A};
+type T4 A :=
+  mkT4@{
+    pp : A -> A;
+  };
+
+open T4 using {mkT4} public;
 
 instance
 instT1 {A} : T1 A :=
   mkT1@{
-    pp := id
+    pp := id;
   };
 
 coercion instance
 fromT1toT2 {A} {{M : T1 A}} : T2 A :=
   mkT2@{
-    pp := T1.pp {{M}}
+    pp := T1.pp {{M}};
   };
 
 coercion instance
 fromT2toT3 {A} {{M : T2 A}} : T3 A :=
   mkT3@{
-    pp := T2.pp {{M}}
+    pp := T2.pp {{M}};
   };
 
 coercion instance
 fromT2toT4 {A} {{M : T2 A}} : T4 A :=
   mkT4@{
-    pp := T2.pp {{M}}
+    pp := T2.pp {{M}};
   };
 
 instance
 instT4 : T4 Nat :=
   mkT4@{
-    pp (n : Nat) : Nat := 100 * n
+    pp (n : Nat) : Nat := 100 * n;
   };
 
 trait
-type U A := mkU {pp : A -> A};
+type U A :=
+  mkU@{
+    pp : A -> A;
+  };
+
+open U using {mkU} public;
 
 trait
-type U1 A := mkU1 {pp : A -> A};
+type U1 A :=
+  mkU1@{
+    pp : A -> A;
+  };
+
+open U1 using {mkU1} public;
 
 trait
-type U2 A := mkU2 {pp : A -> A};
+type U2 A :=
+  mkU2@{
+    pp : A -> A;
+  };
+
+open U2 using {mkU2} public;
 
 coercion instance
 fromU1toU {A} {{U1 A}} : U A :=
   mkU@{
-    pp := U1.pp
+    pp := U1.pp;
   };
 
 coercion instance
 fromU2toU {A} {{U2 A}} : U A :=
   mkU@{
-    pp := U2.pp
+    pp := U2.pp;
   };
 
 instance
@@ -78,10 +113,10 @@ h {A} {{U2 A}} : A -> A := f;
 
 main : Nat :=
   trace (T1.pp 0)
-       >-> trace (T2.pp 1)
-       >-> trace (T3.pp 2)
-       >-> trace (T4.pp 3)
-       >-> trace (U.pp 4)
-       >-> trace (f 5)
-       >-> trace (g {{mkU1 id}} 6)
-       >-> h 7;
+    >-> trace (T2.pp 1)
+    >-> trace (T3.pp 2)
+    >-> trace (T4.pp 3)
+    >-> trace (U.pp 4)
+    >-> trace (f 5)
+    >-> trace (g {{mkU1 id}} 6)
+    >-> h 7;

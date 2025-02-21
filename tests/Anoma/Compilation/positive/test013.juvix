@@ -8,14 +8,7 @@ f : Nat → Nat → Nat
   | x :=
     ite
       (x == 6)
-      λ {_ := 0}
-      (ite
-        (x == 5)
-        λ {_ := 1}
-        (ite (x == 10) λ {_ := λ {x := x} 2} λ {x := x}));
+      λ{_ := 0}
+      (ite (x == 5) λ{_ := 1} (ite (x == 10) λ{_ := λ{x := x} 2} λ{x := x}));
 
-main : Nat :=
-  trace (f 5 6)
-    >-> trace (f 6 5)
-    >-> trace (f 10 5)
-    >-> f 11 5;
+main : Nat := trace (f 5 6) >-> trace (f 6 5) >-> trace (f 10 5) >-> f 11 5;

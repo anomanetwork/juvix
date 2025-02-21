@@ -4,31 +4,39 @@ module test071;
 import Stdlib.Data.Nat open hiding {Ord};
 import Stdlib.Data.Pair as Ord;
 import Stdlib.Data.Bool.Base open;
-import Stdlib.Trait.Ord open using {Ordering; LessThan; Equal; GreaterThan; isLessThan; isGreaterThan};
+import Stdlib.Trait.Ord open using {
+  Ordering;
+  LessThan;
+  Equal;
+  GreaterThan;
+  isLessThan;
+  isGreaterThan;
+};
 
 trait
-type Ord A :=
-  mkOrd {
+type Order A :=
+  mkOrd@{
     cmp : A -> A -> Ordering;
     lt : A -> A -> Bool;
-    ge : A -> A -> Bool
+    ge : A -> A -> Bool;
   };
+
+open Order using {mkOrd} public;
 
 mkOrdHelper
   {A}
   (cmp : A -> A -> Ordering)
-  {lt : A -> A -> Bool := λ {a b := isLessThan (cmp a b)}}
-  {gt : A -> A -> Bool := λ {a b := isGreaterThan (cmp a b)}}
-  : Ord A :=
-  Ord.mkOrd cmp lt gt;
+  {lt : A -> A -> Bool := λ{a b := isLessThan (cmp a b)}}
+  {gt : A -> A -> Bool := λ{a b := isGreaterThan (cmp a b)}}
+  : Order A := Order.mkOrd cmp lt gt;
 
 instance
-ordNat : Ord Nat := mkOrdHelper@{
-  cmp (x y : Nat) : Ordering := Ord.compare x y
-};
+ordNat : Order Nat :=
+  mkOrdHelper@{
+    cmp (x y : Nat) : Ordering := Ord.compare x y;
+  };
 
-fun {a : Nat := 1} {b : Nat := a + 1} {c : Nat := b + a + 1}
-  : Nat := a * b + c;
+fun {a : Nat := 1} {b : Nat := a + 1} {c : Nat := b + a + 1} : Nat := a * b + c;
 
 f {a : Nat := 2} {b : Nat := a + 1} {c : Nat} : Nat := a * b * c;
 
@@ -37,6 +45,29 @@ g {a : Nat := 2} {b : Nat := a + 1} (c : Nat) : Nat := a * b * c;
 h {a : Nat := 2} (b c : Nat) {d : Nat := 3} : Nat := a * b + c * d;
 
 main : Nat :=
-  fun@{a := fun; b := fun@{b := 3} * fun@{b := fun {2}}} +
-  f@{c := 5} + \{c := g@{b := 4; c}} 3 + ite (Ord.lt 1 0) 1 0 +
-  \{c := h@{b := 4; c}} 1;
+  fun@{
+    a := fun;
+    b :=
+      fun@{
+        b := 3;
+      }
+        * fun@{
+            b := fun {2};
+          };
+  }
+    + f@{
+        c := 5;
+      }
+    + \{c :=
+        g@{
+          b := 4;
+          c;
+        }}
+      3
+    + ite (Order.lt 1 0) 1 0
+    + \{c :=
+        h@{
+          b := 4;
+          c;
+        }}
+      1;

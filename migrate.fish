@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-cd ./tests/Compilation/positive
+cd ./tests/Anoma
 for dir in (fd -a -t f "Package.juvix" | xargs -I{} dirname "{}")
     set witness "$dir/.migrated"
     if test -e $witness

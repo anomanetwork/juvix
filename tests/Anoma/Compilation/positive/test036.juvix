@@ -12,7 +12,7 @@ g : Nat → Nat → Nat
   | z := f << flip sub z;
 
 g' : Nat → Nat → Nat
-  | z := f << λ {x := sub x z};
+  | z := f << λ{x := sub x z};
 
 h : Nat → Nat := f << g 3;
 

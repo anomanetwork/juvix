@@ -4,29 +4,38 @@ module test069;
 import Stdlib.Data.Nat open hiding {Ord};
 import Stdlib.Data.Pair as Ord;
 import Stdlib.Data.Bool.Base open;
-import Stdlib.Trait.Ord open using {Ordering; LessThan; Equal; GreaterThan; isLessThan; isGreaterThan};
+import Stdlib.Trait.Ord open using {
+  Ordering;
+  LessThan;
+  Equal;
+  GreaterThan;
+  isLessThan;
+  isGreaterThan;
+};
 
 trait
-type Ord A :=
-  mkOrd {
+type Order A :=
+  mkOrd@{
     cmp : A -> A -> Ordering;
     lt : A -> A -> Bool;
-    ge : A -> A -> Bool
+    ge : A -> A -> Bool;
   };
+
+open Order using {mkOrd} public;
 
 mkOrdHelper
   {A}
   (cmp : A -> A -> Ordering)
-  {lt : A -> A -> Bool := λ {a b := isLessThan (cmp a b)}}
-  {gt : A -> A -> Bool := λ {a b := isGreaterThan (cmp a b)}}
-  : Ord A := Ord.mkOrd cmp lt gt;
+  {lt : A -> A -> Bool := λ{a b := isLessThan (cmp a b)}}
+  {gt : A -> A -> Bool := λ{a b := isGreaterThan (cmp a b)}}
+  : Order A := Order.mkOrd cmp lt gt;
 
-ordNatNamed : Ord Nat :=
+ordNatNamed : Order Nat :=
   mkOrdHelper@{
-    cmp := Ord.compare
+    cmp := Ord.compare;
   };
 
 instance
-ordNat : Ord Nat := mkOrdHelper Ord.compare;
+ordNat : Order Nat := mkOrdHelper Ord.compare;
 
-main : Bool := Ord.lt 1 2;
+main : Bool := Order.lt 1 2;

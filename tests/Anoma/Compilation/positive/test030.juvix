@@ -19,10 +19,7 @@ exp : Nat → Nat → Nat
   | m n := iterate (mult m) n 1;
 
 ackermann : Nat → Nat → Nat
-  | m := iterate λ {f n := iterate f (suc n) 1} m suc;
+  | m := iterate λ{f n := iterate f (suc n) 1} m suc;
 
 main : Nat :=
-  trace (plus 3 7)
-    >-> trace (mult 3 7)
-    >-> trace (exp 3 7)
-    >-> ackermann 1 13;
+  trace (plus 3 7) >-> trace (mult 3 7) >-> trace (exp 3 7) >-> ackermann 1 13;

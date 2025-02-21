@@ -6,8 +6,7 @@ import Stdlib.Debug.Trace open;
 
 terminating
 gcd : Nat → Nat → Nat
-  | a b :=
-    ite (a > b) (gcd b a) (ite (a == 0) b (gcd (mod b a) a));
+  | a b := ite (a > b) (gcd b a) (ite (a == 0) b (gcd (mod b a) a));
 
 main : Nat :=
   trace (gcd (3 * 7 * 2) (7 * 2 * 11))
