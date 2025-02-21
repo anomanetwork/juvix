@@ -2,21 +2,17 @@ module App where
 
 import CommonOptions
 import Data.ByteString qualified as ByteString
-import Data.HashMap.Strict qualified as HashMap
 import GlobalOptions
 import Juvix.Compiler.Backend.Markdown.Error
 import Juvix.Compiler.Core.Data.Module qualified as Core
-import Juvix.Compiler.Core.Translation.FromInternal.Data.Context qualified as Core
+import Juvix.Compiler.Core.Data.TransformationId qualified as Core
 import Juvix.Compiler.Internal.Translation (InternalTypedResult)
 import Juvix.Compiler.Internal.Translation.FromInternal.Analysis.Termination.Checker
-import Juvix.Compiler.Pipeline qualified as Pipeline
 import Juvix.Compiler.Pipeline.Loader.PathResolver
 import Juvix.Compiler.Pipeline.Modular (ModularEff)
 import Juvix.Compiler.Pipeline.Modular.Run qualified as Pipeline.Modular
 import Juvix.Compiler.Pipeline.Root
 import Juvix.Compiler.Pipeline.Run
-import Juvix.Compiler.Store.Extra qualified as Store
-import Juvix.Compiler.Store.Language qualified as Store
 import Juvix.Data.Error qualified as Error
 import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Paths.Base hiding (rootBuildDir)
@@ -356,21 +352,12 @@ runPipelineModular ::
   (Members '[App, EmbedIO, Logger, TaggedLock] r, EntryPointOptions opts) =>
   opts ->
   Maybe (AppPath File) ->
+  Maybe Core.TransformationId ->
   (Core.ModuleTable -> Sem (ModularEff r) a) ->
   Sem r (ModuleId, a)
-runPipelineModular opts input_ f = runPipelineOptions $ do
+runPipelineModular opts input_ checkId f = runPipelineOptions $ do
   entry <- getEntryPoint'' opts input_
-  let p :: Sem (PipelineEff r) Core.CoreResult = Pipeline.upToStoredCore
-  r <- runIOEither entry (inject p) >>= fromRightJuvixError
-  let res = snd r
-      md = res ^. pipelineResult . Core.coreResultModule
-      mtab =
-        over Core.moduleTable (HashMap.insert (md ^. Core.moduleId) md)
-          . Store.toCoreModuleTable (res ^. pipelineResultImportTables)
-          . HashMap.elems
-          $ res ^. pipelineResultImports . Store.moduleTable
-  a <- Pipeline.Modular.runIOEitherPipeline entry (inject (f mtab)) >>= fromRightJuvixError
-  return (md ^. Core.moduleId, a)
+  Pipeline.Modular.runIOEitherModular checkId entry (inject . f) >>= fromRightJuvixError
 
 renderStdOutLn :: forall a r. (Member App r, HasAnsiBackend a, HasTextBackend a) => a -> Sem r ()
 renderStdOutLn txt = renderStdOut txt >> newline

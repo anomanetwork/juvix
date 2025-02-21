@@ -120,19 +120,17 @@ processModuleTable midTarget f mt = do
 
 modularCoreToStripped ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
-  Core.TransformationId ->
   Core.ModuleTable ->
   Sem r Stripped.ModuleTable
-modularCoreToStripped checkId mt =
-  processModuleTable TargetStripped (Pipeline.storedCoreToStripped checkId) mt
+modularCoreToStripped mt =
+  processModuleTable TargetStripped (Pipeline.storedCoreToStripped Core.IdentityTrans) mt
 
 modularCoreToTree ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>
-  Core.TransformationId ->
   Core.ModuleTable ->
   Sem r Tree.ModuleTable
-modularCoreToTree checkId =
-  modularCoreToStripped checkId >=> modularStrippedToTree
+modularCoreToTree =
+  modularCoreToStripped >=> modularStrippedToTree
 
 modularStrippedToTree ::
   (Members '[Files, TaggedLock, Error JuvixError, Reader EntryPoint] r) =>

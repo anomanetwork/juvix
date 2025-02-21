@@ -24,11 +24,14 @@ compileAssertion ::
   Path Abs File ->
   (String -> IO ()) ->
   Assertion
-compileAssertion =
+compileAssertion root' optLevel =
   compileAssertionEntry
     ( set entryPointTarget (Just TargetCNative64)
         . set entryPointPipeline (Just PipelineExec)
+        . set entryPointOptimizationLevel optLevel
     )
+    root'
+    optLevel
 
 compileAssertionEntry ::
   (EntryPoint -> EntryPoint) ->
@@ -42,9 +45,10 @@ compileAssertionEntry ::
 compileAssertionEntry adjustEntry root' optLevel mode mainFile expectedFile step = do
   step "Translate to JuvixTree"
   entryPoint <- adjustEntry <$> testDefaultEntryPointIO root' mainFile
-  r <- testRunIOModular entryPoint (modularCoreToTree Core.CheckExec)
+  r <- testRunIOModular (Just Core.CheckExec) entryPoint modularCoreToTree
   case r of
-    Left e -> assertFailure (prettyString (fromJuvixError @GenericError e))
+    Left e -> do
+      assertFailure (prettyString (fromJuvixError @GenericError e))
     Right (mid, mtab) -> do
       let md = fromJust $ HashMap.lookup mid (mtab ^. Core.moduleTable)
           tab' = Tree.computeCombinedInfoTable md

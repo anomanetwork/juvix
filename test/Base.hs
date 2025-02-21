@@ -15,22 +15,19 @@ import Control.Exception qualified as E
 import Control.Monad.Extra as Monad
 import Data.Algorithm.Diff
 import Data.Algorithm.DiffOutput
-import Data.HashMap.Strict qualified as HashMap
 import GHC.Generics qualified as GHC
 import Juvix.Compiler.Backend (Target (TargetAnoma))
 import Juvix.Compiler.Core qualified as Core
 import Juvix.Compiler.Internal.Translation.FromInternal.Analysis.Termination
 import Juvix.Compiler.Nockma.Language hiding (Path)
 import Juvix.Compiler.Nockma.Translation.FromTree (anomaClosure)
-import Juvix.Compiler.Pipeline qualified as Pipeline
 import Juvix.Compiler.Pipeline.EntryPoint.IO
 import Juvix.Compiler.Pipeline.Loader.PathResolver
 import Juvix.Compiler.Pipeline.Modular
 import Juvix.Compiler.Pipeline.Modular.Run qualified as Pipeline.Modular
 import Juvix.Compiler.Pipeline.Run
-import Juvix.Compiler.Store.Extra qualified as Store
-import Juvix.Compiler.Store.Language qualified as Store
 import Juvix.Data.Effect.TaggedLock
+import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Paths hiding (rootBuildDir)
 import Juvix.Prelude hiding (assert, readProcess)
 import Juvix.Prelude.Env
@@ -119,25 +116,26 @@ testRunIO e =
 testRunIOModular ::
   forall a m.
   (MonadIO m) =>
+  Maybe Core.TransformationId ->
   EntryPoint ->
   (forall r. Core.ModuleTable -> Sem (ModularEff r) a) ->
   m (Either JuvixError (ModuleId, a))
-testRunIOModular entry f = testTaggedLockedToIO $ do
-  r <- runIOEither entry Pipeline.upToStoredCore
-  case r of
-    Left e -> return $ Left e
-    Right (_, res) -> do
-      let md = res ^. pipelineResult . Core.coreResultModule
-          mtab =
-            over Core.moduleTable (HashMap.insert (md ^. Core.moduleId) md)
-              . Store.toCoreModuleTable (res ^. pipelineResultImportTables)
-              . HashMap.elems
-              $ res ^. pipelineResultImports . Store.moduleTable
-      ea <- Pipeline.Modular.runIOEitherPipeline entry (inject (f mtab))
-      case ea of
-        Left e -> return $ Left e
-        Right a ->
-          return $ Right (md ^. Core.moduleId, a)
+testRunIOModular checkId entry f = do
+  entry' <- setEntryPointSHA256 entry
+  testTaggedLockedToIO $
+    Pipeline.Modular.runIOEitherModular checkId entry' f
+
+setEntryPointSHA256 :: (MonadIO m) => EntryPoint -> m EntryPoint
+setEntryPointSHA256 entry =
+  case entry ^. entryPointModulePath of
+    Nothing -> return entry
+    Just sourceFile -> do
+      sha256 <-
+        runM
+          . runFilesIO
+          . SHA256.digestFile
+          $ sourceFile
+      return $ set entryPointSHA256 (Just sha256) entry
 
 testDefaultEntryPointIO :: (MonadIO m) => Path Abs Dir -> Path Abs File -> m EntryPoint
 testDefaultEntryPointIO cwd mainFile =
