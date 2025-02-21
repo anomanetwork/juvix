@@ -2,10 +2,12 @@ module CoercionTargetNotATrait;
 
 trait
 type T A := mkT {a : A};
+open T using {mkT};
 
 type Maybe A :=
   | just A
   | nothing;
+open Maybe;
 
 coercion instance
 inst {A} {{T A}} : Maybe A := nothing;

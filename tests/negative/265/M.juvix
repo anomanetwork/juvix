@@ -4,8 +4,12 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool;
+
 type Pair (A : Type) (B : Type) :=
   mkPair : A → B → Pair A B;
+
+open Pair;
 
 f : _ → _
   | (mkPair false true) := true

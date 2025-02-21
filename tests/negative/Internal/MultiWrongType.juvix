@@ -1,8 +1,10 @@
 module MultiWrongType;
 
 type A := a : A;
+open A;
 
 type B := b : B;
+open B;
 
 f : A := b;
 

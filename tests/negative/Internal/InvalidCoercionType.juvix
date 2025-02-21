@@ -2,6 +2,7 @@ module InvalidCoercionType;
 
 trait
 type T A := mkT {pp : A -> A};
+open T using {mkT};
 
 coercion instance
 coe {A} : T A :=
