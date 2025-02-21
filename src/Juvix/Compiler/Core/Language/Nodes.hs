@@ -299,6 +299,10 @@ instance (Serialize i, Serialize a) => Serialize (App' i a)
 
 instance (NFData i, NFData a) => NFData (App' i a)
 
+instance (Serialize i, Serialize f, Serialize a) => Serialize (Apps' i f a)
+
+instance (NFData i, NFData f, NFData a) => NFData (Apps' i f a)
+
 instance (Serialize i, Serialize a) => Serialize (BuiltinApp' i a)
 
 instance (NFData i, NFData a) => NFData (BuiltinApp' i a)
@@ -334,6 +338,10 @@ instance (NFData bi, NFData a, NFData ty) => NFData (CaseBranch' bi a ty)
 instance (Serialize i, Serialize bi, Serialize a, Serialize ty) => Serialize (Case' i bi a ty)
 
 instance (NFData i, NFData bi, NFData a, NFData ty) => NFData (Case' i bi a ty)
+
+instance (Serialize i, Serialize a) => Serialize (If' i a)
+
+instance (NFData i, NFData a) => NFData (If' i a)
 
 instance (Serialize i, Serialize a) => Serialize (Pi' i a)
 

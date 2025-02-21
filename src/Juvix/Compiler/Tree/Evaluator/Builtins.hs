@@ -1,6 +1,6 @@
 module Juvix.Compiler.Tree.Evaluator.Builtins where
 
-import Juvix.Compiler.Tree.Data.InfoTable.Base
+import Juvix.Compiler.Tree.Data.Module.Base
 import Juvix.Compiler.Tree.Language.Base
 import Juvix.Compiler.Tree.Language.Builtins
 import Juvix.Compiler.Tree.Language.Value
@@ -56,9 +56,9 @@ evalBinop op arg1 arg2 = case op of
       (ValString s1, ValString s2) -> Right $ ValString (s1 <> s2)
       _ -> Left "expected two string arguments"
 
-evalUnop :: InfoTable' t e -> UnaryOp -> Value -> Either ErrorMsg Value
-evalUnop tab op v = case op of
-  OpShow -> Right $ ValString (printValue tab v)
+evalUnop :: Module'' t e -> UnaryOp -> Value -> Either ErrorMsg Value
+evalUnop md op v = case op of
+  OpShow -> Right $ ValString (printValue md v)
   OpStrToInt -> goStringUnop strToInt v
   OpFieldToInt -> goFieldToInt v
   OpIntToField -> goIntToField v
@@ -83,7 +83,7 @@ evalUnop tab op v = case op of
       ValClosure Closure {..} ->
         Right $ ValInteger (fromIntegral argsNum)
         where
-          fi = lookupFunInfo tab _closureSymbol
+          fi = lookupFunInfo md _closureSymbol
           argsNum = fi ^. functionArgsNum - length _closureArgs
       _ ->
         Left "expected a closure"
@@ -98,7 +98,7 @@ evalUnop tab op v = case op of
     goIntToField :: Value -> Either ErrorMsg Value
     goIntToField = \case
       ValInteger i ->
-        Right $ ValField $ fieldFromInteger (tab ^. infoFieldSize) i
+        Right $ ValField $ fieldFromInteger defaultFieldSize i
       _ ->
         Left "expected an integer"
 
@@ -116,10 +116,10 @@ evalUnop tab op v = case op of
       _ ->
         Left "expected a uint8"
 
-printValue :: InfoTable' t e -> Value -> Text
-printValue tab = \case
+printValue :: Module'' t e -> Value -> Text
+printValue md = \case
   ValString s -> s
-  v -> toPlainText . mkAnsiText . PPOutput . doc (defaultOptions tab) $ v
+  v -> toPlainText . mkAnsiText . PPOutput . doc (defaultOptions md) $ v
 
 constantToValue :: Constant -> Value
 constantToValue = \case
@@ -148,7 +148,7 @@ evalBinop' op arg1 arg2 =
   mapRight valueToConstant $
     evalBinop op (constantToValue arg1) (constantToValue arg2)
 
-evalUnop' :: InfoTable' t e -> UnaryOp -> Constant -> Either ErrorMsg Constant
-evalUnop' tab op v =
+evalUnop' :: Module'' t e -> UnaryOp -> Constant -> Either ErrorMsg Constant
+evalUnop' md op v =
   mapRight valueToConstant $
-    evalUnop tab op (constantToValue v)
+    evalUnop md op (constantToValue v)

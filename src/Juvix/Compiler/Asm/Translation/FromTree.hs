@@ -1,24 +1,33 @@
 module Juvix.Compiler.Asm.Translation.FromTree (fromTree) where
 
 import Data.DList qualified as DL
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Extra.Base
 import Juvix.Compiler.Asm.Language
-import Juvix.Compiler.Tree.Data.InfoTable qualified as Tree
+import Juvix.Compiler.Tree.Data.Module qualified as Tree
 import Juvix.Compiler.Tree.Language qualified as Tree
 
 -- DList for O(1) snoc and append
 type Code' = DL.DList Command
 
-fromTree :: Tree.InfoTable -> InfoTable
-fromTree tab =
-  InfoTable
-    { _infoMainFunction = tab ^. Tree.infoMainFunction,
-      _infoFunctions = genCode <$> tab ^. Tree.infoFunctions,
-      _infoInductives = tab ^. Tree.infoInductives,
-      _infoConstrs = tab ^. Tree.infoConstrs,
-      _infoFieldSize = tab ^. Tree.infoFieldSize
+fromTree :: Tree.Module -> Module
+fromTree md =
+  Module
+    { _moduleId = md ^. moduleId,
+      _moduleInfoTable = tab',
+      _moduleImports = md ^. moduleImports,
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = md ^. moduleSHA256
     }
+  where
+    tab = computeCombinedInfoTable md
+    tab' =
+      InfoTable
+        { _infoMainFunction = tab ^. Tree.infoMainFunction,
+          _infoFunctions = genCode <$> tab ^. Tree.infoFunctions,
+          _infoInductives = tab ^. Tree.infoInductives,
+          _infoConstrs = tab ^. Tree.infoConstrs
+        }
 
 -- Generate code for a single function.
 genCode :: Tree.FunctionInfo -> FunctionInfo

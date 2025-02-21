@@ -16,8 +16,8 @@ where
 import Control.Monad.Trans.Class (lift)
 import Data.HashMap.Strict qualified as HashMap
 import Data.List.NonEmpty qualified as NonEmpty
-import Juvix.Compiler.Tree.Data.InfoTable.Base
 import Juvix.Compiler.Tree.Data.InfoTableBuilder.Base
+import Juvix.Compiler.Tree.Data.Module.Base
 import Juvix.Compiler.Tree.Extra.Type
 import Juvix.Compiler.Tree.Keywords.Base
 import Juvix.Compiler.Tree.Language.Base
@@ -38,8 +38,18 @@ localS update a = do
   lift $ put s
   return a'
 
-runParserS :: ParserSig t e d -> Path Abs File -> Text -> Either MegaparsecError (InfoTable' t e)
-runParserS sig fileName input_ = (^. stateInfoTable) <$> runParserS' sig emptyBuilderState fileName input_
+runParserS :: ParserSig t e d -> Path Abs File -> Text -> Either MegaparsecError (Module'' t e)
+runParserS sig fileName input_ = (^. stateModule) <$> runParserS' sig (mkBuilderState (emptyModule mid)) fileName input_
+  where
+    mid =
+      ModuleId
+        { _moduleIdPath = nonEmptyToTopModulePathKey (pure (toFilePath fileName)),
+          _moduleIdPackageId =
+            PackageId
+              { _packageIdName = "$",
+                _packageIdVersion = SemVer 1 0 0 Nothing Nothing
+              }
+        }
 
 runParserS' :: forall t e d. ParserSig t e d -> BuilderState' t e -> Path Abs File -> Text -> Either MegaparsecError (BuilderState' t e)
 runParserS' sig bs fileName input_ = case runParserS'' (parseToplevel @t @e @d) sig bs fileName input_ of

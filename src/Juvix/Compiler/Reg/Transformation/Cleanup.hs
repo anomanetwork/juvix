@@ -5,7 +5,7 @@ import Juvix.Compiler.Reg.Extra.Recursors
 import Juvix.Compiler.Reg.Transformation.Base
 import Juvix.Compiler.Tree.Extra.Rep
 
-cleanup' :: Bool -> InfoTable -> InfoTable
+cleanup' :: Bool -> Module -> Module
 cleanup' bCairo tab = mapT (const (cmap go)) tab
   where
     go :: Code -> Code
@@ -22,5 +22,5 @@ cleanup' bCairo tab = mapT (const (cmap go)) tab
       i : is | bCairo -> updateLiveVars' (const Nothing) i : is
       is -> is
 
-cleanup :: InfoTable -> InfoTable
+cleanup :: Module -> Module
 cleanup = cleanup' False

@@ -21,7 +21,7 @@ runCommand opts = do
           $ Core.toStripped Core.IdentityTrans (Core.moduleFromInfoTable tab)
   tab' <-
     getRight $
-      mapRight (Stripped.fromCore (project gopts ^. Core.optFieldSize) . Core.computeCombinedInfoTable) r
+      mapRight (Stripped.fromCore' . Core.computeCombinedInfoTable) r
   unless (project opts ^. coreStripNoPrint) $ do
     renderStdOut (Core.ppOut opts tab')
   where

@@ -6,7 +6,7 @@ import Juvix.Compiler.Reg.Transformation.Base
 
 type VarMap = HashMap VarRef VarRef
 
-copyPropagate :: InfoTable -> InfoTable
+copyPropagate :: Module -> Module
 copyPropagate = mapT (const goFun)
   where
     goFun :: Code -> Code

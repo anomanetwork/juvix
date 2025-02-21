@@ -4,6 +4,7 @@ module Juvix.Compiler.Pipeline.Driver.Data
   )
 where
 
+import Juvix.Compiler.Core.Data.InfoTable qualified as Core
 import Juvix.Compiler.Pipeline.Loader.PathResolver.ImportTree.Base
 import Juvix.Compiler.Pipeline.Result
 import Juvix.Compiler.Store.Language
@@ -14,6 +15,7 @@ import Prelude (show)
 
 data CompileResult = CompileResult
   { _compileResultModuleTable :: Store.ModuleTable,
+    _compileResultImportTables :: HashMap ModuleId Core.InfoTable,
     _compileResultChanged :: Bool
   }
 
@@ -33,14 +35,16 @@ instance Semigroup CompileResult where
   sconcat l =
     CompileResult
       { _compileResultChanged = any (^. compileResultChanged) l,
-        _compileResultModuleTable = sconcatMap (^. compileResultModuleTable) l
+        _compileResultModuleTable = sconcatMap (^. compileResultModuleTable) l,
+        _compileResultImportTables = sconcatMap (^. compileResultImportTables) l
       }
 
 instance Monoid CompileResult where
   mempty =
     CompileResult
       { _compileResultChanged = False,
-        _compileResultModuleTable = mempty
+        _compileResultModuleTable = mempty,
+        _compileResultImportTables = mempty
       }
 
 data ProcessModuleDecision (r :: [Effect])

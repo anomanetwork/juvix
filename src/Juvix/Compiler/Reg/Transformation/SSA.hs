@@ -120,11 +120,11 @@ computeFunctionSSA =
                  }
            ]
 
-computeSSA :: InfoTable -> InfoTable
+computeSSA :: Module -> Module
 computeSSA = mapT (const computeFunctionSSA)
 
-checkSSA :: InfoTable -> Bool
-checkSSA tab = all (checkFun . (^. functionCode)) (tab ^. infoFunctions)
+checkSSA :: Module -> Bool
+checkSSA md = all (checkFun . (^. functionCode)) (md ^. moduleInfoTable . infoFunctions)
   where
     checkFun :: Code -> Bool
     checkFun is = getAll $ snd $ ifoldF check (mempty, All True) is

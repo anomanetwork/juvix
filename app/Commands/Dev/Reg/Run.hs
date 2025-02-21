@@ -11,7 +11,7 @@ runCommand opts = do
   s <- readFile afile
   case Reg.runParser afile s of
     Left err -> exitJuvixError (JuvixError err)
-    Right tab -> runReg tab
+    Right md -> runReg md
   where
     file :: AppPath File
     file = opts ^. regRunInputFile

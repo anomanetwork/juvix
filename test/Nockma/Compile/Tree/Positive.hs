@@ -11,15 +11,15 @@ import Juvix.Compiler.Tree
 import Tree.Eval.Base
 import Tree.Eval.Positive qualified as Tree
 
-runNockmaAssertion :: Path Abs Dir -> Handle -> Symbol -> InfoTable -> IO ()
-runNockmaAssertion root hout _main tab = do
+runNockmaAssertion :: Path Abs Dir -> Handle -> Symbol -> Module -> IO ()
+runNockmaAssertion root hout _main md = do
   entryPoint <- testDefaultEntryPointNoFileIO root
   let entryPoint' = entryPoint {_entryPointDebug = True}
   anomaRes :: AnomaResult <-
     runM
       . runErrorIO' @JuvixError
       . runReader entryPoint'
-      $ treeToAnoma tab
+      $ treeToAnoma md
   res <-
     runM
       . runOutputSem @(Nockma.Term Natural)

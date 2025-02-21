@@ -65,16 +65,20 @@ computeImplicitArgs = \case
 
 fromInternal ::
   (Members '[NameIdGen, Reader Store.ModuleTable, Error JuvixError] k) =>
+  Maybe Text ->
   InternalTyped.InternalTypedResult ->
   Sem k CoreResult
-fromInternal i = mapError (JuvixError . ErrBadScope) $ do
+fromInternal sha256 i = mapError (JuvixError . ErrBadScope) $ do
   importTab <- asks Store.getInternalModuleTable
   coreImportsTab <- asks Store.computeCombinedCoreInfoTable
-  let md =
+  let imd = i ^. InternalTyped.resultInternalModule
+      md =
         Module
-          { _moduleId = i ^. InternalTyped.resultInternalModule . Internal.internalModuleId,
+          { _moduleId = imd ^. Internal.internalModuleId,
             _moduleInfoTable = mempty,
-            _moduleImportsTable = coreImportsTab
+            _moduleImports = imd ^. Internal.internalModuleImports,
+            _moduleImportsTable = coreImportsTab,
+            _moduleSHA256 = sha256
           }
       tabs = i ^. InternalTyped.resultTypeCheckingTables
   res <-
@@ -90,8 +94,8 @@ fromInternal i = mapError (JuvixError . ErrBadScope) $ do
           reserveLiteralIntToIntSymbol
         let resultModule = i ^. InternalTyped.resultModule
             resultTable =
-              Internal.computeCombinedInfoTable importTab
-                <> i ^. InternalTyped.resultInternalModule . Internal.internalModuleInfoTable
+              i ^. InternalTyped.resultInternalModule . Internal.internalModuleInfoTable
+                <> Internal.computeCombinedInfoTable importTab
         runReader resultTable $
           goModule resultModule
         md' <- getModule
@@ -151,11 +155,12 @@ preInductiveDef i = do
           _paramIsImplicit = False,
           _paramKind = ty'
         }
+  kind <- fromTopIndex $ goExpression (Internal.getInductiveKind i)
   let info =
         InductiveInfo
           { _inductiveLocation = Just $ i ^. Internal.inductiveName . nameLoc,
             _inductiveSymbol = sym,
-            _inductiveKind = mkSmallUniv,
+            _inductiveKind = kind,
             _inductiveConstructors = [],
             _inductiveParams = params',
             _inductivePositive = i ^. Internal.inductivePositive,
@@ -640,7 +645,7 @@ goLet l = goClauses (toList (l ^. Internal.letClauses))
               rest <- goClauses cs
               return (mkLetRec (setInfoPragmas pragmas mempty) items rest)
 
-builtinInductive :: Internal.AxiomDef -> Maybe (forall r. (Members '[InfoTableBuilder] r) => Sem r ())
+builtinInductive :: Internal.AxiomDef -> Maybe (forall r. (Members '[InfoTableBuilder, Reader InternalTyped.TypesTable, Reader InternalTyped.FunctionsTable, Reader InternalTyped.InfoTable, NameIdGen, Error BadScope] r) => Sem r ())
 builtinInductive a =
   case a ^. Internal.axiomBuiltin of
     Nothing -> Nothing
@@ -712,18 +717,19 @@ builtinInductive a =
         Internal.BuiltinByteArrayFromListByte -> Nothing
         Internal.BuiltinByteArrayLength -> Nothing
   where
-    registerInductiveAxiom :: forall r. (Members '[InfoTableBuilder] r) => Maybe BuiltinAxiom -> [(Tag, Text, Type -> Type, Maybe BuiltinConstructor)] -> Sem r ()
+    registerInductiveAxiom :: forall r. (Members '[InfoTableBuilder, Reader InternalTyped.TypesTable, Reader InternalTyped.FunctionsTable, Reader InternalTyped.InfoTable, NameIdGen, Error BadScope] r) => Maybe BuiltinAxiom -> [(Tag, Text, Type -> Type, Maybe BuiltinConstructor)] -> Sem r ()
     registerInductiveAxiom ax ctrs = do
       sym <- freshSymbol
       let name = a ^. Internal.axiomName . nameText
           ty = mkTypeConstr (setInfoName name mempty) sym []
           ctrs' = builtinConstrs sym ty ctrs
+      kind <- fromTopIndex $ goExpression (a ^. Internal.axiomType)
       let _inductiveName = a ^. Internal.axiomName . nameText
           info =
             InductiveInfo
               { _inductiveLocation = Just $ a ^. Internal.axiomName . nameLoc,
                 _inductiveSymbol = sym,
-                _inductiveKind = mkSmallUniv,
+                _inductiveKind = kind,
                 _inductiveConstructors = map (^. constructorTag) ctrs',
                 _inductiveParams = [],
                 _inductivePositive = False,
@@ -736,7 +742,7 @@ builtinInductive a =
 
 goAxiomInductive ::
   forall r.
-  (Members '[InfoTableBuilder, Reader InternalTyped.TypesTable, Reader InternalTyped.FunctionsTable, Reader Internal.InfoTable, NameIdGen] r) =>
+  (Members '[InfoTableBuilder, Reader InternalTyped.TypesTable, Reader InternalTyped.FunctionsTable, Reader Internal.InfoTable, NameIdGen, Error BadScope] r) =>
   Internal.AxiomDef ->
   Sem r ()
 goAxiomInductive a = case builtinInductive a of

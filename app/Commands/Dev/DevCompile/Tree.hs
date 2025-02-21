@@ -3,8 +3,10 @@ module Commands.Dev.DevCompile.Tree where
 import Commands.Base
 import Commands.Dev.DevCompile.Tree.Options
 import Commands.Extra.NewCompile
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Pipeline.Modular (modularCoreToTree)
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Pretty
+import Juvix.Compiler.Tree.Transformation.FilterUnreachable
 
 runCommand ::
   (Members AppEffects r) =>
@@ -14,6 +16,7 @@ runCommand opts = do
   let inputFile = opts ^. treeCompileCommonOptions . compileInputFile
       moutputFile = opts ^. treeCompileCommonOptions . compileOutputFile
   outFile :: Path Abs File <- getOutputFile FileExtJuvixTree inputFile moutputFile
-  res :: InfoTable <- runPipeline opts inputFile upToTree
-  let txt = ppPrint res res
+  (mid, mtab) <- runPipelineModular opts inputFile Nothing modularCoreToTree
+  let md = filterUnreachable (combineInfoTables (lookupModuleTable mtab mid))
+      txt = ppPrint md (md ^. moduleInfoTable)
   writeFileEnsureLn outFile txt

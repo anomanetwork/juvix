@@ -3,12 +3,12 @@ module Asm.Transformation.Base where
 import Asm.Run.Base
 import Asm.Run.Positive qualified as Run
 import Base
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Error
 
 data Test = Test
-  { _testTransformation :: InfoTable -> Either AsmError InfoTable,
-    _testAssertion :: InfoTable -> Assertion,
+  { _testTransformation :: Module -> Either AsmError Module,
+    _testAssertion :: Module -> Assertion,
     _testEval :: Run.PosTest
   }
 

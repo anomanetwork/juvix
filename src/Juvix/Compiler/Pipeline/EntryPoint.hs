@@ -55,7 +55,8 @@ data EntryPoint = EntryPoint
     _entryPointOffline :: Bool,
     _entryPointFieldSize :: Natural,
     _entryPointIsabelleOnlyTypes :: Bool,
-    _entryPointPipeline :: Maybe Pipeline
+    _entryPointPipeline :: Maybe Pipeline,
+    _entryPointSHA256 :: Maybe Text
   }
   deriving stock (Eq, Show)
 
@@ -108,5 +109,6 @@ defaultEntryPointNoFile pkg root =
       _entryPointOffline = False,
       _entryPointFieldSize = defaultFieldSize,
       _entryPointIsabelleOnlyTypes = False,
-      _entryPointPipeline = Nothing
+      _entryPointPipeline = Nothing,
+      _entryPointSHA256 = Nothing
     }

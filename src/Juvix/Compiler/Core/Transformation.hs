@@ -17,7 +17,6 @@ import Juvix.Compiler.Core.Transformation.Check.Anoma
 import Juvix.Compiler.Core.Transformation.Check.Cairo
 import Juvix.Compiler.Core.Transformation.Check.Exec
 import Juvix.Compiler.Core.Transformation.Check.Rust
-import Juvix.Compiler.Core.Transformation.CombineInfoTables (combineInfoTables)
 import Juvix.Compiler.Core.Transformation.ComputeTypeInfo
 import Juvix.Compiler.Core.Transformation.ConvertBuiltinTypes
 import Juvix.Compiler.Core.Transformation.DetectConstantSideConditions

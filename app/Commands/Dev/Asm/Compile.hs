@@ -9,13 +9,14 @@ import Juvix.Compiler.Backend qualified as Backend
 import Juvix.Compiler.Backend.C qualified as C
 import Juvix.Compiler.Casm.Data.Result qualified as Casm
 import Juvix.Compiler.Casm.Pretty qualified as Casm
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Compiler.Reg.Pretty qualified as Reg
 
 runCommand :: forall r. (Members '[EmbedIO, App, TaggedLock] r) => AsmCompileOptions -> Sem r ()
 runCommand opts = do
   file <- getMainFile (Just (opts ^. compileInputFile))
   s <- readFile file
-  tab <- fromRightGenericError (Asm.runParser file s)
+  md <- fromRightGenericError (Asm.runParser file s)
   ep <- getEntryPoint (Just (opts ^. compileInputFile))
   tgt <- getTarget (opts ^. compileTarget)
   let entryPoint :: EntryPoint
@@ -31,9 +32,9 @@ runCommand opts = do
         runReader entryPoint
           . runError @JuvixError
           . asmToReg
-          $ tab
-      tab' <- getRight r
-      let code = Reg.ppPrint tab' tab'
+          $ md
+      md' <- getRight r
+      let code = Reg.ppPrint md' (Reg.computeCombinedInfoTable md')
       writeFileEnsureLn regFile code
     AppTargetCasm -> do
       casmFile <- Compile.outputFile opts
@@ -41,7 +42,7 @@ runCommand opts = do
         runReader entryPoint
           . runError @JuvixError
           . asmToCasm
-          $ tab
+          $ md
       Casm.Result {..} <- getRight r
       writeFileEnsureLn casmFile (toPlainText $ Casm.ppProgram _resultCode)
     AppTargetCairo -> do
@@ -50,7 +51,7 @@ runCommand opts = do
         runReader entryPoint
           . runError @JuvixError
           . asmToCairo
-          $ tab
+          $ md
       res <- getRight r
       liftIO $ JSON.encodeFile (toFilePath cairoFile) res
     _ -> do
@@ -59,7 +60,7 @@ runCommand opts = do
           . run
           . runReader entryPoint
           . runError
-          $ asmToMiniC tab
+          $ asmToMiniC md
       buildDir <- askBuildDir
       ensureDir buildDir
       cFile <- inputCFile file

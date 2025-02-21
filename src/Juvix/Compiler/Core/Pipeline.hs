@@ -37,3 +37,10 @@ toStripped checkId md = do
   let checkId' = if noCheck then IdentityTrans else checkId
   mapReader fromEntryPoint $
     applyTransformations (toStrippedTransformations checkId') md
+
+checkModule :: (Members '[Error JuvixError, Reader EntryPoint] r) => TransformationId -> Module -> Sem r ()
+checkModule checkId md = do
+  noCheck <- asks (^. entryPointNoCheck)
+  let checkId' = if noCheck then IdentityTrans else checkId
+  mapReader fromEntryPoint $
+    void (applyTransformations [CombineInfoTables, FilterUnreachable, checkId'] md)

@@ -1,25 +1,35 @@
 module Juvix.Compiler.Tree.Translation.FromCore where
 
-import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Core.Data.BinderList qualified as BL
-import Juvix.Compiler.Core.Data.Stripped.InfoTable qualified as Core
+import Juvix.Compiler.Core.Data.Stripped.Module qualified as Core
 import Juvix.Compiler.Core.Language.Stripped qualified as Core
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Extra.Base
 import Juvix.Compiler.Tree.Extra.Type
 import Juvix.Compiler.Tree.Language
 
 type BinderList = BL.BinderList
 
-fromCore :: Core.InfoTable -> InfoTable
-fromCore tab =
+fromCore :: Core.Module -> Module
+fromCore md@Core.Module {..} =
+  Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = fromCore' md,
+      _moduleImports = _moduleImports,
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = _moduleSHA256
+    }
+
+fromCore' :: Core.Module -> InfoTable
+fromCore' md =
   InfoTable
     { _infoMainFunction = tab ^. Core.infoMain,
-      _infoFunctions = genCode tab <$> tab ^. Core.infoFunctions,
+      _infoFunctions = genCode md <$> tab ^. Core.infoFunctions,
       _infoInductives = translateInductiveInfo <$> tab ^. Core.infoInductives,
-      _infoConstrs = translateConstructorInfo <$> tab ^. Core.infoConstructors,
-      _infoFieldSize = tab ^. Core.infoFieldSize
+      _infoConstrs = translateConstructorInfo <$> tab ^. Core.infoConstructors
     }
+  where
+    tab = md ^. Core.moduleInfoTable
 
 toTreeOp :: Core.BuiltinOp -> TreeOp
 toTreeOp = \case
@@ -86,8 +96,8 @@ toTreeOp = \case
   Core.OpByteArrayLength -> TreeByteArrayOp OpByteArrayLength
 
 -- Generate code for a single function.
-genCode :: Core.InfoTable -> Core.FunctionInfo -> FunctionInfo
-genCode infoTable fi =
+genCode :: Core.Module -> Core.FunctionInfo -> FunctionInfo
+genCode md fi =
   let argnames = map (Just . (^. Core.argumentName)) (fi ^. Core.functionArgsInfo)
       bl =
         BL.fromList . reverse $
@@ -359,9 +369,7 @@ genCode infoTable fi =
 
     getArgsNum :: Symbol -> Int
     getArgsNum sym =
-      fromMaybe
-        impossible
-        (HashMap.lookup sym (infoTable ^. Core.infoFunctions))
+      Core.lookupFunInfo md sym
         ^. Core.functionArgsNum
 
 -- | Be mindful that JuvixTree types are explicitly uncurried, while

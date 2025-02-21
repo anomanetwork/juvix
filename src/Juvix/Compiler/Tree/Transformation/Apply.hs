@@ -35,14 +35,14 @@ computeFunctionApply blts = umap go
       where
         sym = fromJust $ HashMap.lookup (length args) (blts ^. applyBuiltinsMap)
 
-computeApply :: InfoTable -> InfoTable
-computeApply tab = mapT (const (computeFunctionApply blts)) tab'
-  where
-    (blts, tab') = addApplyBuiltins tab
+computeApply :: Module -> Module
+computeApply =
+  mapT (const (computeFunctionApply applyBuiltins))
+    . over moduleImportsTable (applyBuiltinsModule ^. moduleInfoTable <>)
 
-checkNoCallClosures :: InfoTable -> Bool
-checkNoCallClosures tab =
-  all (ufold (\b bs -> b && and bs) go . (^. functionCode)) (tab ^. infoFunctions)
+checkNoCallClosures :: Module -> Bool
+checkNoCallClosures md =
+  all (ufold (\b bs -> b && and bs) go . (^. functionCode)) (md ^. moduleInfoTable . infoFunctions)
   where
     go :: Node -> Bool
     go = \case

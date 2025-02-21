@@ -6,7 +6,7 @@ where
 
 import Control.Exception qualified as Exception
 import Control.Monad
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Error
 import Juvix.Compiler.Asm.Extra.Base
 import Juvix.Compiler.Asm.Interpreter.Base
@@ -19,14 +19,14 @@ import Juvix.Compiler.Tree.Evaluator.Builtins
 -- value on top of the value stack at exit, i.e., when executing a toplevel
 -- Return. Throws a runtime runtimeError if at exit the value stack has more than one
 -- element.
-runCode :: InfoTable -> FunctionInfo -> IO Val
+runCode :: Module -> FunctionInfo -> IO Val
 runCode = hRunCode stdout
 
-hRunCode :: Handle -> InfoTable -> FunctionInfo -> IO Val
-hRunCode h infoTable = runM . hEvalRuntime h infoTable . runCodeR infoTable
+hRunCode :: Handle -> Module -> FunctionInfo -> IO Val
+hRunCode h md = runM . hEvalRuntime h md . runCodeR md
 
-runCodeR :: (Member Runtime r) => InfoTable -> FunctionInfo -> Sem r Val
-runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueStack
+runCodeR :: (Member Runtime r) => Module -> FunctionInfo -> Sem r Val
+runCodeR md funInfo = goCode (funInfo ^. functionCode) >> popLastValueStack
   where
     goCode :: (Member Runtime r) => Code -> Sem r ()
     goCode = \case
@@ -74,7 +74,7 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
     goInstr :: (Member Runtime r) => Maybe Location -> Instruction -> Code -> Sem r ()
     goInstr loc instr cont = case instr of
       Binop op -> goBinOp (evalBinop op) >> goCode cont
-      Unop op -> goUnop (evalUnop infoTable op) >> goCode cont
+      Unop op -> goUnop (evalUnop md op) >> goCode cont
       Cairo {} -> runtimeError "unsupported: Cairo builtin"
       Push ref -> do
         v <- getVal ref
@@ -89,18 +89,18 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
         goCode cont
       Trace -> do
         v <- topValueStack
-        logMessage (printValue infoTable v)
+        logMessage (printValue md v)
         goCode cont
       Dump -> do
         dumpState
         goCode cont
       Failure -> do
         v <- topValueStack
-        runtimeError $ mappend "failure: " (printValue infoTable v)
+        runtimeError $ mappend "failure: " (printValue md v)
       Prealloc {} ->
         goCode cont
       AllocConstr tag -> do
-        let ci = lookupConstrInfo infoTable tag
+        let ci = lookupConstrInfo md tag
         args <- replicateM (ci ^. constructorArgsNum) popValueStack
         pushValueStack (ValConstr (Constr tag args))
         goCode cont
@@ -200,7 +200,7 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
     getCallDetails :: forall r. (Member Runtime r) => Maybe Location -> InstrCall -> Sem r (Code, Frame)
     getCallDetails loc InstrCall {..} = case _callType of
       CallFun sym -> do
-        let fi = lookupFunInfo infoTable sym
+        let fi = lookupFunInfo md sym
         unless
           (_callArgsNum == fi ^. functionArgsNum)
           (runtimeError "invalid direct call: supplied arguments number not equal to expected arguments number")
@@ -208,7 +208,7 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
         return (fi ^. functionCode, frameFromFunctionInfo loc fi args)
       CallClosure -> do
         cl <- popValueStack >>= closureFromValue
-        let fi = lookupFunInfo infoTable (cl ^. closureSymbol)
+        let fi = lookupFunInfo md (cl ^. closureSymbol)
             clArgs = length (cl ^. closureArgs)
         unless
           (clArgs < fi ^. functionArgsNum)
@@ -245,7 +245,7 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
       v <- popValueStack
       case v of
         ValClosure cl -> do
-          let fi = lookupFunInfo infoTable (cl ^. closureSymbol)
+          let fi = lookupFunInfo md (cl ^. closureSymbol)
           let n = fi ^. functionArgsNum - length (cl ^. closureArgs)
           when
             (n < 0)
@@ -281,32 +281,32 @@ runCodeR infoTable funInfo = goCode (funInfo ^. functionCode) >> popLastValueSta
       Right v -> return v
 
 -- | Interpret JuvixAsm code and the resulting IO actions.
-runCodeIO :: InfoTable -> FunctionInfo -> IO Val
+runCodeIO :: Module -> FunctionInfo -> IO Val
 runCodeIO = hRunCodeIO stdin stdout
 
-hRunCodeIO :: Handle -> Handle -> InfoTable -> FunctionInfo -> IO Val
-hRunCodeIO hin hout infoTable funInfo = do
-  v <- hRunCode hout infoTable funInfo
-  hRunIO hin hout infoTable funInfo v
+hRunCodeIO :: Handle -> Handle -> Module -> FunctionInfo -> IO Val
+hRunCodeIO hin hout md funInfo = do
+  v <- hRunCode hout md funInfo
+  hRunIO hin hout md funInfo v
 
 -- | Interpret IO actions.
-hRunIO :: Handle -> Handle -> InfoTable -> FunctionInfo -> Val -> IO Val
-hRunIO hin hout infoTable funInfo = \case
+hRunIO :: Handle -> Handle -> Module -> FunctionInfo -> Val -> IO Val
+hRunIO hin hout md funInfo = \case
   ValConstr (Constr (BuiltinTag TagReturn) [x]) -> return x
   ValConstr (Constr (BuiltinTag TagBind) [x, f]) -> do
-    x' <- hRunIO hin hout infoTable funInfo x
+    x' <- hRunIO hin hout md funInfo x
     let code = [Instr (CmdInstr (CommandInfo Nothing) (Call (InstrCall CallClosure 1)))]
     let r =
           pushValueStack x'
             >> pushValueStack f
-            >> runCodeR infoTable funInfo {_functionCode = code}
-    x'' <- runM (hEvalRuntime hout infoTable r)
-    hRunIO hin hout infoTable funInfo x''
+            >> runCodeR md funInfo {_functionCode = code}
+    x'' <- runM (hEvalRuntime hout md r)
+    hRunIO hin hout md funInfo x''
   ValConstr (Constr (BuiltinTag TagWrite) [ValString s]) -> do
     hPutStr hout s
     return ValVoid
   ValConstr (Constr (BuiltinTag TagWrite) [arg]) -> do
-    hPutStr hout (ppPrint infoTable arg)
+    hPutStr hout (ppPrint md arg)
     return ValVoid
   ValConstr (Constr (BuiltinTag TagReadLn) []) -> do
     hFlush hout
@@ -328,6 +328,6 @@ toAsmError (RunError {..}) =
         "runtime error: "
           <> _runErrorMsg
           <> "\n\nStacktrace\n----------\n\n"
-          <> ppTrace (_runErrorState ^. runtimeInfoTable) _runErrorState,
+          <> ppTrace (_runErrorState ^. runtimeModule) _runErrorState,
       _asmErrorLoc = _runErrorState ^. runtimeLocation
     }

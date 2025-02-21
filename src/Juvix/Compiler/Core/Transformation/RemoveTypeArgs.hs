@@ -12,7 +12,7 @@ import Juvix.Compiler.Core.Transformation.Base
 convertNode :: Module -> Node -> Node
 convertNode md = convert mempty
   where
-    unsupported :: forall a. Node -> a
+    unsupported :: (HasCallStack) => forall a. Node -> a
     unsupported node = error ("remove type arguments: unsupported node\n\t" <> ppTrace node)
 
     convert :: BinderList Binder -> Node -> Node
@@ -38,11 +38,12 @@ convertNode md = convert mempty
         let (h, args) = unfoldApps node
             ty =
               case h of
-                NVar (Var {..}) ->
+                NVar Var {..} ->
                   BL.lookup _varIndex vars ^. binderType
-                NIdt (Ident {..}) ->
+                NIdt Ident {..} ->
                   let fi = lookupIdentifierInfo md _identSymbol
                    in fi ^. identifierType
+                NBot Bottom {..} -> _bottomType
                 _ -> unsupported node
             args' = filterArgs snd ty args
          in if
@@ -152,7 +153,7 @@ convertInductive md ii =
     tyargs = typeArgs (ii ^. inductiveKind)
     ty' = convertNode md (ii ^. inductiveKind)
 
--- | Remove type arguments and type abstractions.
+-- | Removes type arguments and type abstractions.
 --
 -- Also adjusts the types, removing quantification over types and replacing all
 -- type variables with the dynamic type.

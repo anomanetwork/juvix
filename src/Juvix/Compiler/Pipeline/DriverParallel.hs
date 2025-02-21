@@ -33,7 +33,7 @@ type Node = EntryIndex
 
 mkNodesIndex ::
   forall r.
-  (Members '[PathResolver, Reader EntryPoint] r) =>
+  (Members '[Files, PathResolver, Reader EntryPoint] r) =>
   ImportTree ->
   Sem r (NodesIndex ImportNode Node)
 mkNodesIndex tree =

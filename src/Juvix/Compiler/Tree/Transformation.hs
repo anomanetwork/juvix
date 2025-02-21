@@ -18,10 +18,10 @@ import Juvix.Compiler.Tree.Transformation.Optimize.ConvertUnaryCalls
 import Juvix.Compiler.Tree.Transformation.Optimize.Phase.Main
 import Juvix.Compiler.Tree.Transformation.Validate
 
-applyTransformations :: forall r. (Members '[Error JuvixError, Reader Options] r) => [TransformationId] -> InfoTable -> Sem r InfoTable
+applyTransformations :: forall r. (Members '[Error JuvixError, Reader Options] r) => [TransformationId] -> Module -> Sem r Module
 applyTransformations ts tbl = foldM (flip appTrans) tbl ts
   where
-    appTrans :: TransformationId -> InfoTable -> Sem r InfoTable
+    appTrans :: TransformationId -> Module -> Sem r Module
     appTrans = \case
       IdentityTrans -> return . identity
       IdentityU -> return . identityU

@@ -153,7 +153,7 @@ isImmediate md = \case
   node -> isType md mempty node
 
 isImmediate' :: Node -> Bool
-isImmediate' = isImmediate emptyModule
+isImmediate' = isImmediate (emptyModule defaultModuleId)
 
 isImmediateOrLambda :: Module -> Node -> Bool
 isImmediateOrLambda md node = isImmediate md node || isLambda node
@@ -310,7 +310,7 @@ getSymbols md = gather go mempty
       _ -> acc
 
 getSymbols' :: InfoTable -> Node -> HashSet Symbol
-getSymbols' tab = getSymbols emptyModule {_moduleInfoTable = tab}
+getSymbols' tab = getSymbols (emptyModule defaultModuleId) {_moduleInfoTable = tab}
 
 -- | Prism for NRec
 _NRec :: SimpleFold Node LetRec
@@ -673,7 +673,7 @@ getTableSymbolsMap tab =
     mempty
     (map (getSymbolsMap md) (HashMap.elems $ tab ^. identContext))
   where
-    md = emptyModule {_moduleInfoTable = tab}
+    md = (emptyModule defaultModuleId) {_moduleInfoTable = tab}
 
 getModuleSymbolsMap :: Module -> HashMap Symbol Int
 getModuleSymbolsMap = getTableSymbolsMap . computeCombinedInfoTable

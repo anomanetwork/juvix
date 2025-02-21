@@ -6,7 +6,9 @@ data BoolOp
   = OpIntLt
   | OpIntLe
   | OpEq
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize BoolOp
 
 data BinaryOp
   = OpBool BoolOp
@@ -20,7 +22,9 @@ data BinaryOp
   | OpFieldMul
   | OpFieldDiv
   | OpStrConcat
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize BinaryOp
 
 isCommutative :: BinaryOp -> Bool
 isCommutative = \case
@@ -54,7 +58,9 @@ data UnaryOp
   | -- | Compute the number of expected arguments for the given closure. JV*
     -- opcode: `argsnum`.
     OpArgsNum
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize UnaryOp
 
 -- | Builtin Cairo operations. Implemented only in the Cairo backend.
 data CairoOp
@@ -64,7 +70,9 @@ data CairoOp
     OpCairoEc
   | -- | Cairo random elliptic curve point generation.
     OpCairoRandomEcPoint
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize CairoOp
 
 -- | Builtin ByteArray operations
 data ByteArrayOp
@@ -72,7 +80,9 @@ data ByteArrayOp
     OpByteArrayFromListUInt8
   | -- | Get the size of a ByteArray
     OpByteArrayLength
-  deriving stock (Eq)
+  deriving stock (Eq, Generic)
+
+instance Serialize ByteArrayOp
 
 cairoOpArgsNum :: CairoOp -> Int
 cairoOpArgsNum = \case
@@ -136,4 +146,6 @@ data AnomaOp
     OpAnomaIsNullifier
   | OpAnomaSetToList
   | OpAnomaSetFromList
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
+
+instance Serialize AnomaOp

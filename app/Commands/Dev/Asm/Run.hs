@@ -11,7 +11,7 @@ runCommand opts = do
   s <- readFile afile
   case Asm.runParser afile s of
     Left err -> exitJuvixError (JuvixError err)
-    Right tab -> runAsm (not (opts ^. asmRunNoValidate)) tab
+    Right md -> runAsm (not (opts ^. asmRunNoValidate)) md
   where
     file :: AppPath File
     file = opts ^. asmRunInputFile

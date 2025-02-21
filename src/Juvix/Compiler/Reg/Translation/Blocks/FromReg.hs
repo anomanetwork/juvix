@@ -1,13 +1,22 @@
 module Juvix.Compiler.Reg.Translation.Blocks.FromReg where
 
-import Juvix.Compiler.Reg.Data.Blocks.InfoTable
-import Juvix.Compiler.Reg.Data.InfoTable qualified as Reg
+import Juvix.Compiler.Reg.Data.Blocks.Module
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Compiler.Reg.Language qualified as Reg
 import Juvix.Compiler.Reg.Language.Blocks
 
-fromReg :: Reg.InfoTable -> InfoTable
-fromReg = over infoFunctions (fmap (over functionCode goCode))
+fromReg :: Reg.Module -> Module
+fromReg md =
+  Module
+    { _moduleId = md ^. moduleId,
+      _moduleInfoTable = tab,
+      _moduleImports = md ^. moduleImports,
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = md ^. moduleSHA256
+    }
   where
+    tab = over infoFunctions (fmap (over functionCode goCode)) (computeCombinedInfoTable md)
+
     goCode :: Reg.Code -> Block
     goCode = fromMaybe emptyBlock . goCode'
 

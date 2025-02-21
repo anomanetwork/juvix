@@ -434,6 +434,7 @@ instance NFData InductiveParameter
 data InductiveDef = InductiveDef
   { _inductiveName :: InductiveName,
     _inductiveBuiltin :: Maybe BuiltinInductive,
+    -- The universe of the inductive type, not the full kind
     _inductiveType :: Expression,
     _inductiveParameters :: [InductiveParameter],
     _inductiveConstructors :: [ConstructorDef],

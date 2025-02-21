@@ -46,7 +46,7 @@ liftTest ReachabilityTest {..} =
   fromTest
     Test
       { _testTransformation = runTransformation (runReader opts . filterUnreachable),
-        _testAssertion = \tab -> unless (nubSort (map (^. functionName) (HashMap.elems (tab ^. infoFunctions))) == nubSort _reachabilityTestReachable) (error "check reachable"),
+        _testAssertion = \md -> unless (nubSort (map (^. functionName) (HashMap.elems (md ^. moduleInfoTable . infoFunctions))) == nubSort _reachabilityTestReachable) (error "check reachable"),
         _testEval = _reachabilityTestEval
       }
   where

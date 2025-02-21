@@ -1,14 +1,14 @@
 module Reg.Transformation.Base where
 
 import Base
-import Juvix.Compiler.Reg.Data.InfoTable
+import Juvix.Compiler.Reg.Data.Module
 import Juvix.Compiler.Reg.Transformation
 import Reg.Parse.Positive qualified as Parse
 import Reg.Run.Base
 
 data Test = Test
   { _testTransformations :: [TransformationId],
-    _testAssertion :: InfoTable -> Assertion,
+    _testAssertion :: Module -> Assertion,
     _testRun :: Parse.PosTest
   }
 

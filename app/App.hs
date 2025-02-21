@@ -4,12 +4,17 @@ import CommonOptions
 import Data.ByteString qualified as ByteString
 import GlobalOptions
 import Juvix.Compiler.Backend.Markdown.Error
+import Juvix.Compiler.Core.Data.Module qualified as Core
+import Juvix.Compiler.Core.Data.TransformationId qualified as Core
 import Juvix.Compiler.Internal.Translation (InternalTypedResult)
 import Juvix.Compiler.Internal.Translation.FromInternal.Analysis.Termination.Checker
 import Juvix.Compiler.Pipeline.Loader.PathResolver
+import Juvix.Compiler.Pipeline.Modular (ModularEff)
+import Juvix.Compiler.Pipeline.Modular.Run qualified as Pipeline.Modular
 import Juvix.Compiler.Pipeline.Root
 import Juvix.Compiler.Pipeline.Run
 import Juvix.Data.Error qualified as Error
+import Juvix.Data.SHA256 qualified as SHA256
 import Juvix.Extra.Paths.Base hiding (rootBuildDir)
 import Juvix.Parser.Error
 import System.Console.ANSI qualified as Ansi
@@ -170,7 +175,20 @@ getEntryPoint' RunAppIOArgs {..} inputFile = do
         | opts ^. globalStdin -> Just <$> liftIO getContents
         | otherwise -> return Nothing
   mainFile <- getMainAppFileMaybe inputFile
-  set entryPointStdin estdin <$> entryPointFromGlobalOptionsPre root ((^. pathPath) <$> mainFile) opts
+  mainFile' <- maybe (return Nothing) (fmap Just . fromAppFile) mainFile
+  sha256 <- maybe (return Nothing) (fmap Just . runFilesIO . SHA256.digestFile) mainFile'
+  set entryPointSHA256 sha256
+    . set entryPointStdin estdin
+    <$> entryPointFromGlobalOptionsPre root ((^. pathPath) <$> mainFile) opts
+
+getEntryPoint'' ::
+  (Members '[App, EmbedIO, TaggedLock] r, EntryPointOptions opts) =>
+  opts ->
+  Maybe (AppPath File) ->
+  Sem r EntryPoint
+getEntryPoint'' opts inputFile = do
+  args <- askArgs
+  applyOptions opts <$> getEntryPoint' args inputFile
 
 runPipelineEither ::
   (Members '[EmbedIO, TaggedLock, Logger, App] r, EntryPointOptions opts) =>
@@ -179,8 +197,7 @@ runPipelineEither ::
   Sem (PipelineEff r) a ->
   Sem r (Either JuvixError (ResolverState, PipelineResult a))
 runPipelineEither opts input_ p = runPipelineOptions $ do
-  args <- askArgs
-  entry <- applyOptions opts <$> getEntryPoint' args input_
+  entry <- getEntryPoint'' opts input_
   runIOEither entry (inject p)
 
 getEntryPointStdin' :: (Members '[EmbedIO, TaggedLock] r) => RunAppIOArgs -> Sem r EntryPoint
@@ -329,6 +346,18 @@ runPipelineSetup p = do
   entry <- getEntryPointStdin' args
   r <- runIOEitherPipeline entry (inject p) >>= fromRightJuvixError
   return (snd r)
+
+runPipelineModular ::
+  forall a r opts.
+  (Members '[App, EmbedIO, Logger, TaggedLock] r, EntryPointOptions opts) =>
+  opts ->
+  Maybe (AppPath File) ->
+  Maybe Core.TransformationId ->
+  (Core.ModuleTable -> Sem (ModularEff r) a) ->
+  Sem r (ModuleId, a)
+runPipelineModular opts input_ checkId f = runPipelineOptions $ do
+  entry <- getEntryPoint'' opts input_
+  Pipeline.Modular.runIOEitherModular checkId entry (inject . f) >>= fromRightJuvixError
 
 renderStdOutLn :: forall a r. (Member App r, HasAnsiBackend a, HasTextBackend a) => a -> Sem r ()
 renderStdOutLn txt = renderStdOut txt >> newline

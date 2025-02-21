@@ -24,9 +24,9 @@ typeCheckingNew ::
   Sem (Termination ': r) InternalResult ->
   Sem r InternalTypedResult
 typeCheckingNew a = do
+  itab :: InternalModuleTable <- getInternalModuleTable <$> ask
   (termin, (res, (bst, checkedModule))) <- runTermination iniTerminationState $ do
     res :: InternalResult <- a
-    itab :: InternalModuleTable <- getInternalModuleTable <$> ask
     stab :: ScopedModuleTable <- getScopedModuleTable <$> ask
     let table :: InfoTable
         table = Internal.computeCombinedInfoTable itab <> computeInternalModuleInfoTable (res ^. Internal.resultModule)
@@ -41,7 +41,7 @@ typeCheckingNew a = do
       . runResultBuilder importCtx
       . mapError (JuvixError @TypeCheckerError)
       $ checkTopModule (res ^. Internal.resultModule)
-  let md = computeInternalModule (bst ^. resultBuilderStateTables) checkedModule
+  let md = computeInternalModule itab (bst ^. resultBuilderStateTables) checkedModule
   return
     InternalTypedResult
       { _resultInternal = res,

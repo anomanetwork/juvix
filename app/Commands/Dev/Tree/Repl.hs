@@ -4,8 +4,8 @@ import Commands.Base hiding (Atom)
 import Commands.Dev.Tree.Repl.Options
 import Control.Exception (throwIO)
 import Control.Monad.State.Strict qualified as State
-import Juvix.Compiler.Tree.Data.InfoTable
 import Juvix.Compiler.Tree.Data.InfoTableBuilder qualified as Tree
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Language
 import Juvix.Compiler.Tree.Pretty (ppPrint)
 import Juvix.Compiler.Tree.Translation.FromSource (parseNodeText', parseText')
@@ -89,7 +89,7 @@ evalNode :: Node -> Repl ()
 evalNode node = do
   sym <- State.gets (^. replStateBuilderState . Tree.stateNextSymbolId)
   State.modify' (over (replStateBuilderState . Tree.stateNextSymbolId) (+ 1))
-  tab <- State.gets (^. replStateBuilderState . Tree.stateInfoTable)
+  md <- State.gets (^. replStateBuilderState . Tree.stateModule)
   let fi =
         FunctionInfo
           { _functionName = "repl:main",
@@ -101,12 +101,12 @@ evalNode node = do
             _functionArgNames = [],
             _functionType = TyDynamic
           }
-  et <- Eval.doEvalDefault tab fi
+  et <- Eval.doEvalDefault md fi
   case et of
     Left e -> error (show e)
     Right v ->
       liftIO $
-        putStrLn (ppPrint tab v)
+        putStrLn (ppPrint md v)
 
 replCommand :: String -> Repl ()
 replCommand input_ = Repline.dontCrash $ do
@@ -132,6 +132,6 @@ runCommand _ = liftIO . (`State.evalStateT` iniState) $ replAction
     iniState :: ReplState
     iniState =
       ReplState
-        { _replStateBuilderState = Tree.emptyBuilderState,
+        { _replStateBuilderState = Tree.mkBuilderState (emptyModule defaultModuleId),
           _replStateLoadedFile = Nothing
         }

@@ -1,11 +1,10 @@
 module Juvix.Compiler.Tree.Transformation.CheckNoByteArray where
 
-import Juvix.Compiler.Tree.Data.InfoTable
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Extra.Recursors
 import Juvix.Compiler.Tree.Transformation.Base
 
-checkNoByteArray :: forall r. (Member (Error TreeError) r) => InfoTable -> Sem r ()
+checkNoByteArray :: forall r. (Member (Error TreeError) r) => Module -> Sem r ()
 checkNoByteArray = walkT checkNode
   where
     checkNode :: Symbol -> Node -> Sem r ()

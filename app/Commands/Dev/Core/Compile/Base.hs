@@ -2,9 +2,9 @@ module Commands.Dev.Core.Compile.Base where
 
 import Commands.Base
 import Commands.Dev.Core.Compile.Options
-import Commands.Dev.Tree.CompileOld.Base (outputAnomaResult)
 import Commands.Extra.Compile qualified as Compile
 import Data.Aeson qualified as JSON
+import Juvix.Compiler.Asm.Data.Module qualified as Asm
 import Juvix.Compiler.Asm.Pretty qualified as Asm
 import Juvix.Compiler.Backend qualified as Backend
 import Juvix.Compiler.Backend.C qualified as C
@@ -13,13 +13,24 @@ import Juvix.Compiler.Casm.Data.Result qualified as Casm
 import Juvix.Compiler.Casm.Pretty qualified as Casm
 import Juvix.Compiler.Core.Data.Module qualified as Core
 import Juvix.Compiler.Core.Data.TransformationId qualified as Core
+import Juvix.Compiler.Nockma.Pretty qualified as Nockma
+import Juvix.Compiler.Nockma.Translation.FromTree qualified as Nockma
+import Juvix.Compiler.Reg.Data.Module qualified as Reg
 import Juvix.Compiler.Reg.Pretty qualified as Reg
+import Juvix.Compiler.Tree.Data.Module qualified as Tree
 import Juvix.Compiler.Tree.Pretty qualified as Tree
 
 data PipelineArg = PipelineArg
   { _pipelineArgOptions :: CompileOptions,
     _pipelineArgModule :: Core.Module
   }
+
+outputAnomaResult :: (Members '[EmbedIO, App] r) => Path Abs File -> Nockma.AnomaResult -> Sem r ()
+outputAnomaResult nockmaFile Nockma.AnomaResult {..} = do
+  let code = Nockma.ppSerialize _anomaClosure
+      prettyNockmaFile = replaceExtensions' [".pretty", ".nockma"] nockmaFile
+  writeFileEnsureLn nockmaFile code
+  writeFileEnsureLn prettyNockmaFile (Nockma.ppPrint _anomaClosure)
 
 getEntry :: (Members '[EmbedIO, App, TaggedLock] r) => PipelineArg -> Sem r EntryPoint
 getEntry PipelineArg {..} = do
@@ -89,8 +100,8 @@ runAsmPipeline pa@PipelineArg {..} = do
       . runError @JuvixError
       . coreToAsm
       $ _pipelineArgModule
-  tab' <- getRight r
-  let code = Asm.ppPrint tab' tab'
+  md' <- getRight r
+  let code = Asm.ppPrint md' (Asm.computeCombinedInfoTable md')
   writeFileEnsureLn asmFile code
 
 runRegPipeline :: (Members '[EmbedIO, App, TaggedLock] r) => PipelineArg -> Sem r ()
@@ -102,8 +113,8 @@ runRegPipeline pa@PipelineArg {..} = do
       . runError @JuvixError
       . coreToReg
       $ _pipelineArgModule
-  tab' <- getRight r
-  let code = Reg.ppPrint tab' tab'
+  md' <- getRight r
+  let code = Reg.ppPrint md' (Reg.computeCombinedInfoTable md')
   writeFileEnsureLn regFile code
 
 runTreePipeline :: (Members '[EmbedIO, App, TaggedLock] r) => PipelineArg -> Sem r ()
@@ -115,8 +126,8 @@ runTreePipeline pa@PipelineArg {..} = do
       . runError @JuvixError
       . coreToTree Core.IdentityTrans
       $ _pipelineArgModule
-  tab' <- getRight r
-  let code = Tree.ppPrint tab' tab'
+  md' <- getRight r
+  let code = Tree.ppPrint md' (Tree.computeCombinedInfoTable md')
   writeFileEnsureLn treeFile code
 
 runAnomaPipeline :: (Members '[EmbedIO, App, TaggedLock] r) => PipelineArg -> Sem r ()

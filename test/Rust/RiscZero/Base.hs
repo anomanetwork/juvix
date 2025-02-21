@@ -34,7 +34,7 @@ compileAssertion tmpDir' root' optLevel mainFile expectedFile step = do
       <$> testDefaultEntryPointIO root' mainFile
   PipelineResult {..} <- snd <$> testRunIO entryPoint upToStoredCore
   step "Translate to RISC0 Rust"
-  case run $ runError @JuvixError $ runReader entryPoint $ storedCoreToRiscZeroRust (_pipelineResult ^. Core.coreResultModule) of
+  case run $ runError @JuvixError $ runReader entryPoint $ storedCoreToRiscZeroRust (Core.combineInfoTables (_pipelineResult ^. Core.coreResultModule)) of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
     Right Result {..} -> do
       let outDir = tmpDir <//> $(mkRelDir "out")

@@ -9,7 +9,7 @@ import Control.Monad.ST
 import Data.HashMap.Strict qualified as HashMap
 import Data.Vector qualified as Vec
 import Data.Vector.Mutable qualified as MV
-import Juvix.Compiler.Reg.Data.InfoTable
+import Juvix.Compiler.Reg.Data.Module
 import Juvix.Compiler.Reg.Error
 import Juvix.Compiler.Reg.Extra.Info
 import Juvix.Compiler.Reg.Interpreter.Base
@@ -22,15 +22,15 @@ type Vars s = MV.MVector s (Maybe Val)
 
 type Args = Vec.Vector Val
 
-runFunction :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> InfoTable -> [Val] -> FunctionInfo -> Sem r Val
-runFunction hout infoTable args0 info0 = do
+runFunction :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> Module -> [Val] -> FunctionInfo -> Sem r Val
+runFunction hout md args0 info0 = do
   r <- catchRunError (runST (goFun args0 info0))
   case r of
     Left err -> throw err
     Right v -> return v
   where
     localVarsNum :: HashMap Symbol Int
-    localVarsNum = HashMap.map (computeLocalVarsNum . (^. functionCode)) (infoTable ^. infoFunctions)
+    localVarsNum = HashMap.map (computeLocalVarsNum . (^. functionCode)) (md ^. moduleInfoTable . infoFunctions)
 
     goFun :: [Val] -> FunctionInfo -> ST s Val
     goFun args info = do
@@ -121,7 +121,7 @@ runFunction hout infoTable args0 info0 = do
       go args tmps instrs
 
     unop :: UnaryOp -> Val -> Val
-    unop op v = case evalUnop infoTable op v of
+    unop op v = case evalUnop md op v of
       Left err -> throwRunError err Nothing
       Right v' -> v'
 
@@ -199,7 +199,7 @@ runFunction hout infoTable args0 info0 = do
           writeVarRef args tmps _instrCallResult val
           go args tmps instrs
           where
-            fi = lookupFunInfo infoTable sym
+            fi = lookupFunInfo md sym
         CallClosure r -> do
           cl <- readVarRef args tmps r
           case cl of
@@ -208,7 +208,7 @@ runFunction hout infoTable args0 info0 = do
               writeVarRef args tmps _instrCallResult val
               go args tmps instrs
               where
-                fi = lookupFunInfo infoTable sym
+                fi = lookupFunInfo md sym
             _ ->
               throwRunError "expected a closure" Nothing
 
@@ -219,13 +219,13 @@ runFunction hout infoTable args0 info0 = do
           case _instrTailCallType of
             CallFun sym -> goFun vals fi
               where
-                fi = lookupFunInfo infoTable sym
+                fi = lookupFunInfo md sym
             CallClosure r -> do
               cl <- readVarRef args tmps r
               case cl of
                 ValClosure (Closure sym vs) -> goFun (vs ++ vals) fi
                   where
-                    fi = lookupFunInfo infoTable sym
+                    fi = lookupFunInfo md sym
                 _ ->
                   throwRunError "expected a closure" Nothing
       | otherwise =
@@ -260,7 +260,7 @@ runFunction hout infoTable args0 info0 = do
             cl' <- goFun (take (fi ^. functionArgsNum) vs') fi
             goClosures cl' (drop (fi ^. functionArgsNum) vs')
         where
-          fi = lookupFunInfo infoTable sym
+          fi = lookupFunInfo md sym
           n = length vs + length vals
       _ ->
         throwRunError "expected a closure" Nothing
@@ -326,19 +326,19 @@ runFunction hout infoTable args0 info0 = do
     printVal :: Val -> Text
     printVal = \case
       ValString s -> s
-      v -> ppPrint infoTable v
+      v -> ppPrint md v
 
-runIO :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> Handle -> InfoTable -> Val -> Sem r Val
-runIO hin hout infoTable = \case
+runIO :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> Handle -> Module -> Val -> Sem r Val
+runIO hin hout md = \case
   ValConstr (Constr (BuiltinTag TagReturn) [x]) ->
     return x
   ValConstr (Constr (BuiltinTag TagBind) [x, f]) -> do
-    x' <- runIO hin hout infoTable x
+    x' <- runIO hin hout md x
     case f of
       ValClosure (Closure sym args) -> do
-        let fi = lookupFunInfo infoTable sym
-        x'' <- runFunction hout infoTable (args ++ [x']) fi
-        runIO hin hout infoTable x''
+        let fi = lookupFunInfo md sym
+        x'' <- runFunction hout md (args ++ [x']) fi
+        runIO hin hout md x''
       _ ->
         throw $
           RegError
@@ -349,7 +349,7 @@ runIO hin hout infoTable = \case
     hPutStr hout s
     return ValVoid
   ValConstr (Constr (BuiltinTag TagWrite) [arg]) -> do
-    hPutStr hout (ppPrint infoTable arg)
+    hPutStr hout (ppPrint md arg)
     return ValVoid
   ValConstr (Constr (BuiltinTag TagReadLn) []) -> do
     hFlush hout
@@ -358,7 +358,7 @@ runIO hin hout infoTable = \case
   val ->
     return val
 
-runFunctionIO :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> Handle -> InfoTable -> [Val] -> FunctionInfo -> Sem r Val
-runFunctionIO hin hout tab args funInfo = do
-  val <- runFunction hout tab args funInfo
-  runIO hin hout tab val
+runFunctionIO :: forall r. (Members '[Error RegError, EmbedIO] r) => Handle -> Handle -> Module -> [Val] -> FunctionInfo -> Sem r Val
+runFunctionIO hin hout md args funInfo = do
+  val <- runFunction hout md args funInfo
+  runIO hin hout md val

@@ -3,7 +3,7 @@ module Juvix.Compiler.Reg.Transformation.Optimize.BranchToIf where
 import Juvix.Compiler.Reg.Extra
 import Juvix.Compiler.Reg.Transformation.Base
 
-convertBranchToIf' :: (BoolOp -> Value -> Value -> Bool) -> InfoTable -> InfoTable
+convertBranchToIf' :: (BoolOp -> Value -> Value -> Bool) -> Module -> Module
 convertBranchToIf' f = mapT (const goFun)
   where
     goFun :: Code -> Code
@@ -38,10 +38,10 @@ convertBranchToIf' f = mapT (const goFun)
               : is'
       is -> is
 
-convertBranchToIf :: InfoTable -> InfoTable
+convertBranchToIf :: Module -> Module
 convertBranchToIf = convertBranchToIf' (\_ _ _ -> True)
 
-convertBranchOnZeroToIf :: InfoTable -> InfoTable
+convertBranchOnZeroToIf :: Module -> Module
 convertBranchOnZeroToIf = convertBranchToIf' check
   where
     check :: BoolOp -> Value -> Value -> Bool

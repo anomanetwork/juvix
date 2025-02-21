@@ -10,7 +10,7 @@ module Juvix.Compiler.Tree.Extra.Type
   )
 where
 
-import Juvix.Compiler.Tree.Data.InfoTable.Base
+import Juvix.Compiler.Tree.Data.Module.Base
 import Juvix.Compiler.Tree.Error
 import Juvix.Compiler.Tree.Extra.Type.Base
 import Juvix.Compiler.Tree.Language.Base
@@ -106,7 +106,7 @@ isSubtype ty1 ty2 =
         (_, TyFun {}) -> False
         (_, TyConstr {}) -> False
 
-unifyTypes :: forall t e r. (Members '[Error TreeError, Reader (Maybe Location), Reader (InfoTable' t e)] r) => Type -> Type -> Sem r Type
+unifyTypes :: forall t e r. (Members '[Error TreeError, Reader (Maybe Location), Reader (Module'' t e)] r) => Type -> Type -> Sem r Type
 unifyTypes ty1 ty2 =
   let (ty1', ty2') = (curryType ty1, curryType ty2)
    in case (ty1', ty2') of
@@ -174,11 +174,11 @@ unifyTypes ty1 ty2 =
     err :: Sem r a
     err = do
       loc <- ask
-      tab <- ask @(InfoTable' t e)
-      throw $ TreeError loc ("not unifiable: " <> ppTrace' (defaultOptions tab) ty1 <> ", " <> ppTrace' (defaultOptions tab) ty2)
+      md <- ask @(Module'' t e)
+      throw $ TreeError loc ("not unifiable: " <> ppTrace' (defaultOptions md) ty1 <> ", " <> ppTrace' (defaultOptions md) ty2)
 
-unifyTypes' :: forall t e r. (Member (Error TreeError) r) => Maybe Location -> InfoTable' t e -> Type -> Type -> Sem r Type
-unifyTypes' loc tab ty1 ty2 =
+unifyTypes' :: forall t e r. (Member (Error TreeError) r) => Maybe Location -> Module'' t e -> Type -> Type -> Sem r Type
+unifyTypes' loc md ty1 ty2 =
   runReader loc $
-    runReader tab $
+    runReader md $
       unifyTypes @t @e ty1 ty2

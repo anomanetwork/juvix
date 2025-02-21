@@ -7,7 +7,7 @@ import Juvix.Compiler.Tree.Evaluator.Builtins
 
 type VarMap = HashMap VarRef Constant
 
-constantPropagate :: InfoTable -> InfoTable
+constantPropagate :: Module -> Module
 constantPropagate = mapT (const goFun)
   where
     goFun :: Code -> Code

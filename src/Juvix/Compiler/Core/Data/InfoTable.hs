@@ -146,13 +146,3 @@ pruneInfoTable' tab =
             )
         )
         tab'
-
-tableIsFragile :: InfoTable -> Bool
-tableIsFragile tab = any isFragile (HashMap.elems $ tab ^. infoIdentifiers)
-  where
-    isFragile :: IdentifierInfo -> Bool
-    isFragile IdentifierInfo {..} =
-      case _identifierPragmas ^. pragmasInline of
-        Just InlineAlways -> True
-        Just InlineCase -> True
-        _ -> False

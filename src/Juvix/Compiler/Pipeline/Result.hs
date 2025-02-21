@@ -1,5 +1,6 @@
 module Juvix.Compiler.Pipeline.Result where
 
+import Juvix.Compiler.Core.Data.InfoTable qualified as Core
 import Juvix.Compiler.Store.Language qualified as Store
 import Juvix.Prelude
 
@@ -10,6 +11,9 @@ data PipelineResult a = PipelineResult
     -- then still both A and B will be in the imports table in the pipeline
     -- result for processing M.
     _pipelineResultImports :: Store.ModuleTable,
+    -- | Core imports table for every transitive import stored in
+    -- _pipelineResultImports.
+    _pipelineResultImportTables :: HashMap ModuleId Core.InfoTable,
     -- | True if the module had to be recompiled. False if the module was loaded
     -- from disk.
     _pipelineResultChanged :: Bool

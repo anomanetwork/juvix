@@ -28,7 +28,7 @@ compileAssertion root' optLevel mainFile expectedFile step = do
       <$> testDefaultEntryPointIO root' mainFile
   PipelineResult {..} <- snd <$> testRunIO entryPoint upToStoredCore
   step "Translate to Rust"
-  case run $ runError @JuvixError $ runReader entryPoint $ storedCoreToRust (_pipelineResult ^. Core.coreResultModule) of
+  case run $ runError @JuvixError $ runReader entryPoint $ storedCoreToRust (Core.combineInfoTables (_pipelineResult ^. Core.coreResultModule)) of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
     Right Result {..} -> do
       withTempDir'

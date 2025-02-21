@@ -23,4 +23,7 @@ parseAsm = do
   pure AsmOptions {..}
 
 instance EntryPointOptions (AsmOptions k) where
-  applyOptions = applyOptions . (^. asmCompileCommonOptions)
+  applyOptions opts =
+    set entryPointPipeline (Just PipelineExec)
+      . set entryPointTarget (Just TargetAsm)
+      . applyOptions (opts ^. asmCompileCommonOptions)

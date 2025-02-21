@@ -1,22 +1,31 @@
-module Juvix.Compiler.Core.Translation.Stripped.FromCore (fromCore) where
+module Juvix.Compiler.Core.Translation.Stripped.FromCore (fromCore, fromCore') where
 
 import Data.HashMap.Strict qualified as HashMap
 import Juvix.Compiler.Core
-import Juvix.Compiler.Core.Data.Stripped.InfoTable qualified as Stripped
+import Juvix.Compiler.Core.Data.Stripped.Module qualified as Stripped
 import Juvix.Compiler.Core.Extra.Stripped.Base qualified as Stripped
 import Juvix.Compiler.Core.Info.LocationInfo
 import Juvix.Compiler.Core.Info.NameInfo
 import Juvix.Compiler.Core.Language.Stripped qualified as Stripped
 import Juvix.Compiler.Core.Pretty
 
-fromCore :: Natural -> InfoTable -> Stripped.InfoTable
-fromCore fsize tab =
+fromCore :: Module -> Stripped.Module
+fromCore Module {..} =
+  Stripped.Module
+    { _moduleId = _moduleId,
+      _moduleInfoTable = fromCore' _moduleInfoTable,
+      _moduleImports = _moduleImports,
+      _moduleImportsTable = mempty,
+      _moduleSHA256 = _moduleSHA256
+    }
+
+fromCore' :: InfoTable -> Stripped.InfoTable
+fromCore' tab =
   Stripped.InfoTable
     { _infoMain = tab ^. infoMain,
       _infoFunctions = fmap (translateFunctionInfo tab) (tab' ^. infoIdentifiers),
       _infoInductives = fmap translateInductiveInfo (tab' ^. infoInductives),
-      _infoConstructors = fmap translateConstructorInfo (tab' ^. infoConstructors),
-      _infoFieldSize = fsize
+      _infoConstructors = fmap translateConstructorInfo (tab' ^. infoConstructors)
     }
   where
     tab' =
@@ -180,7 +189,7 @@ translateFunctionInfo tab IdentifierInfo {..} =
         _functionIsExported = _identifierIsExported
       }
   where
-    body = fromJust $ HashMap.lookup _identifierSymbol (tab ^. identContext)
+    body = lookupTabIdentifierNode tab _identifierSymbol
 
 translateArgInfo :: Binder -> Stripped.ArgumentInfo
 translateArgInfo Binder {..} =
@@ -283,13 +292,18 @@ translateNode node = case node of
           (translateNode _caseValue)
           (map translateCaseBranch _caseBranches)
           (fmap translateNode _caseDefault)
+  NBot {} ->
+    unitNode
   _
     | isType' node ->
-        Stripped.mkConstr (Stripped.ConstrInfo "()" Nothing Stripped.TyDynamic) (BuiltinTag TagTrue) []
+        unitNode
   _ ->
     unsupported
   where
-    unsupported :: a
+    unitNode :: Stripped.Node
+    unitNode = Stripped.mkConstr (Stripped.ConstrInfo "()" Nothing Stripped.TyDynamic) (BuiltinTag TagTrue) []
+
+    unsupported :: (HasCallStack) => a
     unsupported = error "Core to Core.Stripped: unsupported node"
 
     translateIf :: Node -> Node -> Node -> Stripped.Node

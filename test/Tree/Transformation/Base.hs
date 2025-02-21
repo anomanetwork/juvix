@@ -1,14 +1,14 @@
 module Tree.Transformation.Base where
 
 import Base
-import Juvix.Compiler.Tree.Data.InfoTable
+import Juvix.Compiler.Tree.Data.Module
 import Juvix.Compiler.Tree.Transformation
 import Tree.Eval.Base
 import Tree.Eval.Positive qualified as Eval
 
 data Test = Test
   { _testTransformations :: [TransformationId],
-    _testAssertion :: InfoTable -> Assertion,
+    _testAssertion :: Module -> Assertion,
     _testEval :: Eval.PosTest
   }
 

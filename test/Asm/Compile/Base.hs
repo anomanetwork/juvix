@@ -1,7 +1,7 @@
 module Asm.Compile.Base where
 
 import Base
-import Juvix.Compiler.Asm.Data.InfoTable
+import Juvix.Compiler.Asm.Data.Module
 import Juvix.Compiler.Asm.Error
 import Juvix.Compiler.Asm.Options
 import Juvix.Compiler.Asm.Translation.FromSource
@@ -9,10 +9,10 @@ import Juvix.Compiler.Backend.C qualified as C
 import Juvix.Compiler.Pipeline qualified as Pipeline
 import Runtime.Base qualified as Runtime
 
-asmCompileAssertion' :: EntryPoint -> Int -> InfoTable -> Path Abs File -> Path Abs File -> Text -> (String -> IO ()) -> Assertion
-asmCompileAssertion' entryPoint optLevel tab mainFile expectedFile stdinText step = do
+asmCompileAssertion' :: EntryPoint -> Int -> Module -> Path Abs File -> Path Abs File -> Text -> (String -> IO ()) -> Assertion
+asmCompileAssertion' entryPoint optLevel md mainFile expectedFile stdinText step = do
   step "Generate C code"
-  case run $ runReader entryPoint' $ runError @JuvixError $ Pipeline.asmToMiniC tab of
+  case run $ runReader entryPoint' $ runError @JuvixError $ Pipeline.asmToMiniC md of
     Left e -> do
       let err :: AsmError = fromJust (fromJuvixError e)
       assertFailure ("code generation failed:" <> "\n" <> unpack (err ^. asmErrorMsg))
@@ -42,6 +42,6 @@ asmCompileAssertion root' mainFile expectedFile stdinText step = do
   s <- readFile mainFile
   case runParser mainFile s of
     Left err -> assertFailure (show err)
-    Right tab -> do
+    Right md -> do
       entryPoint <- testDefaultEntryPointIO root' mainFile
-      asmCompileAssertion' entryPoint 3 tab mainFile expectedFile stdinText step
+      asmCompileAssertion' entryPoint 3 md mainFile expectedFile stdinText step
