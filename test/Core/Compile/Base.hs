@@ -6,15 +6,10 @@ import Core.Eval.Base
 import Core.Eval.Positive qualified as Eval
 import GHC.Base (seq)
 import Juvix.Compiler.Asm.Pretty qualified as Asm
-import Juvix.Compiler.Asm.Translation.FromTree qualified as Asm
 import Juvix.Compiler.Core.Data.Module
-import Juvix.Compiler.Core.Data.TransformationId
-import Juvix.Compiler.Core.Extra.Utils
 import Juvix.Compiler.Core.Pipeline
 import Juvix.Compiler.Core.Translation.FromSource
-import Juvix.Compiler.Core.Translation.Stripped.FromCore qualified as Stripped
 import Juvix.Compiler.Pipeline.EntryPoint qualified as EntryPoint
-import Juvix.Compiler.Tree.Translation.FromCore qualified as Tree
 import Juvix.Data.PPOutput
 
 newtype Test = Test
@@ -50,14 +45,11 @@ coreCompileAssertion' ::
   Assertion
 coreCompileAssertion' entryPoint optLevel tab mainFile expectedFile stdinText step = do
   step "Translate to JuvixAsm"
-  case run . runReader entryPoint' . runError $ toStripped CheckExec (moduleFromInfoTable tab) of
+  case run . runReader entryPoint' . runError $ storedCoreToAsm (moduleFromInfoTable tab) of
     Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
-    Right m -> do
-      let tab0 = computeCombinedInfoTable m
-      assertBool "Check info table" (checkInfoTable tab0)
-      let md' = Asm.fromTree . Tree.fromCore $ Stripped.fromCore m
-      length (fromText (Asm.ppPrint md' (computeCombinedInfoTable md')) :: String) `seq`
-        Asm.asmCompileAssertion' entryPoint' optLevel md' mainFile expectedFile stdinText step
+    Right md -> do
+      length (fromText (Asm.ppPrint md (computeCombinedInfoTable md)) :: String) `seq`
+        Asm.asmCompileAssertion' entryPoint' optLevel md mainFile expectedFile stdinText step
   where
     entryPoint' = entryPoint {_entryPointOptimizationLevel = optLevel}
 

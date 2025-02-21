@@ -20,7 +20,7 @@ treeEvalAssertion ::
   (Module -> Assertion) ->
   (String -> IO ()) ->
   Assertion
-treeEvalAssertion = treeEvalAssertionParam evalAssertion
+treeEvalAssertion = treeEvalAssertionParam doEvalAssertion
 
 treeEvalAssertionParam ::
   (Handle -> Symbol -> Module -> IO ()) ->
@@ -47,24 +47,36 @@ treeEvalAssertionParam evalParam mainFile expectedFile trans testTrans step = do
             Left err -> assertFailure (prettyString (fromJuvixError @GenericError err))
             Right md -> do
               testTrans md
-              case md ^. moduleInfoTable . infoMainFunction of
-                Just sym -> do
-                  withTempDir'
-                    ( \dirPath -> do
-                        let outputFile = dirPath <//> $(mkRelFile "out.out")
-                        hout <- openFile (toFilePath outputFile) WriteMode
-                        step "Evaluate"
-                        evalParam hout sym md
-                        hClose hout
-                        actualOutput <- readFile outputFile
-                        step "Compare expected and actual program output"
-                        expected <- readFile expectedFile
-                        assertEqDiffText ("Check: RUN output = " <> toFilePath expectedFile) actualOutput expected
-                    )
-                Nothing -> assertFailure "no 'main' function"
+              treeEvalAssertionParam' evalParam md expectedFile step
 
-evalAssertion :: Handle -> Symbol -> Module -> IO ()
-evalAssertion hout sym md = do
+treeEvalAssertionParam' ::
+  (Handle -> Symbol -> Module -> IO ()) ->
+  Module ->
+  Path Abs File ->
+  (String -> IO ()) ->
+  Assertion
+treeEvalAssertionParam' evalParam md expectedFile step =
+  case md ^. moduleInfoTable . infoMainFunction of
+    Just sym -> do
+      withTempDir'
+        ( \dirPath -> do
+            let outputFile = dirPath <//> $(mkRelFile "out.out")
+            hout <- openFile (toFilePath outputFile) WriteMode
+            step "Evaluate"
+            evalParam hout sym md
+            hClose hout
+            actualOutput <- readFile outputFile
+            step "Compare expected and actual program output"
+            expected <- readFile expectedFile
+            assertEqDiffText ("Check: RUN output = " <> toFilePath expectedFile) actualOutput expected
+        )
+    Nothing -> assertFailure "no 'main' function"
+
+treeEvalAssertion' :: Module -> Path Abs File -> (String -> IO ()) -> Assertion
+treeEvalAssertion' = treeEvalAssertionParam' doEvalAssertion
+
+doEvalAssertion :: Handle -> Symbol -> Module -> IO ()
+doEvalAssertion hout sym md = do
   r' <- doEval hout md (lookupFunInfo md sym)
   case r' of
     Left err -> do

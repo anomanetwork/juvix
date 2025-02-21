@@ -153,7 +153,7 @@ convertInductive md ii =
     tyargs = typeArgs (ii ^. inductiveKind)
     ty' = convertNode md (ii ^. inductiveKind)
 
--- | Remove type arguments and type abstractions.
+-- | Removes type arguments and type abstractions.
 --
 -- Also adjusts the types, removing quantification over types and replacing all
 -- type variables with the dynamic type.

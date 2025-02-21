@@ -1,9 +1,14 @@
 module Compilation.Base where
 
 import Base
-import Core.Compile.Base
-import Core.Eval.Base
+import Data.HashMap.Strict qualified as HashMap
+import Juvix.Compiler.Backend
 import Juvix.Compiler.Core qualified as Core
+import Juvix.Compiler.Pipeline.Modular (modularCoreToTree)
+import Juvix.Compiler.Tree.Data.Module qualified as Tree
+import Juvix.Prelude.Pretty
+import Tree.Compile.Base
+import Tree.Eval.Base
 
 data CompileAssertionMode
   = EvalOnly
@@ -19,7 +24,11 @@ compileAssertion ::
   Path Abs File ->
   (String -> IO ()) ->
   Assertion
-compileAssertion = compileAssertionEntry (set entryPointPipeline (Just PipelineExec))
+compileAssertion =
+  compileAssertionEntry
+    ( set entryPointTarget (Just TargetCNative64)
+        . set entryPointPipeline (Just PipelineExec)
+    )
 
 compileAssertionEntry ::
   (EntryPoint -> EntryPoint) ->
@@ -31,16 +40,20 @@ compileAssertionEntry ::
   (String -> IO ()) ->
   Assertion
 compileAssertionEntry adjustEntry root' optLevel mode mainFile expectedFile step = do
-  step "Translate to JuvixCore"
+  step "Translate to JuvixTree"
   entryPoint <- adjustEntry <$> testDefaultEntryPointIO root' mainFile
-  PipelineResult {..} <- snd <$> testRunIO entryPoint upToStoredCore
-  let tab' = Core.computeCombinedInfoTable (_pipelineResult ^. Core.coreResultModule)
-      evalAssertion = coreEvalAssertion' EvalModePlain tab' mainFile expectedFile step
-      compileAssertion' stdinText = coreCompileAssertion' entryPoint optLevel tab' mainFile expectedFile stdinText step
-  case mode of
-    EvalOnly -> evalAssertion
-    CompileOnly stdinText -> compileAssertion' stdinText
-    EvalAndCompile -> evalAssertion >> compileAssertion' ""
+  r <- testRunIOModular entryPoint (modularCoreToTree Core.CheckExec)
+  case r of
+    Left e -> assertFailure (prettyString (fromJuvixError @GenericError e))
+    Right (mid, mtab) -> do
+      let md = fromJust $ HashMap.lookup mid (mtab ^. Core.moduleTable)
+          tab' = Tree.computeCombinedInfoTable md
+          evalAssertion = treeEvalAssertion' (Tree.moduleFromInfoTable tab') expectedFile step
+          compileAssertion' stdinText = treeCompileAssertion' entryPoint optLevel tab' mainFile expectedFile stdinText step
+      case mode of
+        EvalOnly -> evalAssertion
+        CompileOnly stdinText -> compileAssertion' stdinText
+        EvalAndCompile -> evalAssertion >> compileAssertion' ""
 
 compileErrorAssertion ::
   Path Abs Dir ->
