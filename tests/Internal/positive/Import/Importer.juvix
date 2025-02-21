@@ -4,5 +4,3 @@ import Stdlib.Prelude open;
 import Importee open;
 
 main : Nat := f;
-
-end;

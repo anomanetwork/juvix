@@ -3,10 +3,14 @@ module TypeParamAxiom;
 import Stdlib.Data.Nat open;
 
 axiom X : Type;
+
 axiom B : Type -> Type;
 
-type A := mkA {
-  a : B X;
-};
+type A :=
+  mkA@{
+    a : B X;
+  };
+
+open A using {mkA} public;
 
 main : Nat := 0;

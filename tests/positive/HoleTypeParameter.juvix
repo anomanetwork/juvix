@@ -3,3 +3,5 @@ module HoleTypeParameter;
 type List' (A : _) :=
   | nil'
   | cons' A (List' A);
+
+open List' using {nil'; cons'} public;

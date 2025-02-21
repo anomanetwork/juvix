@@ -27,6 +27,8 @@ type Tree (A : Type) :=
       right : Tree A;
     };
 
+open Tree using {leaf; node} public;
+
 mirror {A} : (tree : Tree A) -> Tree A
   | tree@(leaf _) := tree
   | (node x l r) := node x (mirror r) (mirror l);

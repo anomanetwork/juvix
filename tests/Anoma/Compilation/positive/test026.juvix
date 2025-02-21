@@ -5,6 +5,8 @@ import Stdlib.Prelude open;
 
 type Queue (A : Type) := queue : List A → List A → Queue A;
 
+open Queue using {queue} public;
+
 qfst : {A : Type} → Queue A → List A
   | (queue x _) := x;
 

@@ -4,3 +4,5 @@ builtin nat
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+
+open Nat using {zero; suc} public;

@@ -10,9 +10,9 @@ main : Nat :=
     a := fun;
     b :=
       fun@{
-          b := 3
-        }
+        b := 3;
+      }
         * fun@{
-          b := fun {2}
-        }
+            b := fun {2};
+          };
   };

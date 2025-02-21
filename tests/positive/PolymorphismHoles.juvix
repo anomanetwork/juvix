@@ -1,105 +1,105 @@
 module PolymorphismHoles;
 
-type Pair (A : Type) (B : Type) :=
-  mkPair : A → B → Pair A B;
+-- type Pair (A : Type) (B : Type) :=
+--   mkPair : A → B → Pair A B;
 
-type Nat :=
-  | zero : Nat
-  | suc : Nat → Nat;
+-- type Nat :=
+--   | zero : Nat
+--   | suc : Nat → Nat;
 
-type List (A : Type) :=
-  | nil : List A
-  | cons : A → List A → List A;
+-- type List (A : Type) :=
+--   | nil : List A
+--   | cons : A → List A → List A;
 
-type Bool :=
-  | false : Bool
-  | true : Bool;
+-- type Bool :=
+--   | false : Bool
+--   | true : Bool;
 
-id : (A : Type) → A → A
-  | _ a := a;
+-- id : (A : Type) → A → A
+--   | _ a := a;
 
-terminating
-undefined : (A : Type) → A
-  | A := undefined A;
+-- terminating
+-- undefined : (A : Type) → A
+--   | A := undefined A;
 
-add : Nat → Nat → Nat
-  | zero b := b
-  | (suc a) b := suc (add a b);
+-- add : Nat → Nat → Nat
+--   | zero b := b
+--   | (suc a) b := suc (add a b);
 
-fst : (A : Type) → (B : Type) → Pair A B → A
-  | _ _ (mkPair a b) := a;
+-- fst : (A : Type) → (B : Type) → Pair A B → A
+--   | _ _ (mkPair a b) := a;
 
-p : Pair Bool Bool := mkPair true false;
+-- p : Pair Bool Bool := mkPair true false;
 
-swap : (A : Type) → (B : Type) → Pair A B → Pair B A
-  | A B (mkPair a b) := mkPair b a;
+-- swap : (A : Type) → (B : Type) → Pair A B → Pair B A
+--   | A B (mkPair a b) := mkPair b a;
 
-curry
-  : (A : Type)
-    → (B : Type)
-    → (C : Type)
-    → (Pair A B → C)
-    → A
-    → B
-    → C
-  | A B C f a b := f (mkPair a b);
+-- curry
+--   : (A : Type)
+--     → (B : Type)
+--     → (C : Type)
+--     → (Pair A B → C)
+--     → A
+--     → B
+--     → C
+--   | A B C f a b := f (mkPair a b);
 
-ap : (A : Type) → (B : Type) → (A → B) → A → B
-  | A B f a := f a;
+-- ap : (A : Type) → (B : Type) → (A → B) → A → B
+--   | A B f a := f a;
 
-headDef : (A : Type) → A → List A → A
-  | _ d nil := d
-  | A _ (cons h _) := h;
+-- headDef : (A : Type) → A → List A → A
+--   | _ d nil := d
+--   | A _ (cons h _) := h;
 
-ite : (A : Type) → Bool → A → A → A
-  | _ true tt _ := tt
-  | _ false _ ff := ff;
+-- ite : (A : Type) → Bool → A → A → A
+--   | _ true tt _ := tt
+--   | _ false _ ff := ff;
 
-filter : (A : Type) → (A → Bool) → List A → List A
-  | _ f nil := nil
-  | _ f (cons x xs) :=
-    ite _ (f x) (cons x (filter _ f xs)) (filter _ f xs);
+-- filter : (A : Type) → (A → Bool) → List A → List A
+--   | _ f nil := nil
+--   | _ f (cons x xs) :=
+--     ite _ (f x) (cons x (filter _ f xs)) (filter _ f xs);
 
-map : (A : Type) → (B : Type) → (A → B) → List _ → List _
-  | _ _ f nil := nil
-  | _ _ f (cons x xs) := cons (f x) (map _ _ f xs);
+-- map : (A : Type) → (B : Type) → (A → B) → List _ → List _
+--   | _ _ f nil := nil
+--   | _ _ f (cons x xs) := cons (f x) (map _ _ f xs);
 
-zip
-  : (A : Type)
-    → (B : Type)
-    → List A
-    → List B
-    → List (Pair A B)
-  | A _ nil _ := nil
-  | _ _ _ nil := nil
-  | _ _ (cons a as) (cons b bs) := nil;
+-- zip
+--   : (A : Type)
+--     → (B : Type)
+--     → List A
+--     → List B
+--     → List (Pair A B)
+--   | A _ nil _ := nil
+--   | _ _ _ nil := nil
+--   | _ _ (cons a as) (cons b bs) := nil;
 
-zipWith
-  : (A : Type)
-    → (B : Type)
-    → (C : Type)
-    → (A → B → C)
-    → List A
-    → List B
-    → List C
-  | _ _ C f nil _ := nil
-  | _ _ C f _ nil := nil
-  | _ _ _ f (cons a as) (cons b bs) :=
-    cons (f a b) (zipWith _ _ _ f as bs);
+-- zipWith
+--   : (A : Type)
+--     → (B : Type)
+--     → (C : Type)
+--     → (A → B → C)
+--     → List A
+--     → List B
+--     → List C
+--   | _ _ C f nil _ := nil
+--   | _ _ C f _ nil := nil
+--   | _ _ _ f (cons a as) (cons b bs) :=
+--     cons (f a b) (zipWith _ _ _ f as bs);
 
-rankn : ((A : Type) → A → A) → Bool → Nat → Pair Bool Nat
-  | f b n := mkPair (f _ b) (f _ n);
+-- rankn : ((A : Type) → A → A) → Bool → Nat → Pair Bool Nat
+--   | f b n := mkPair (f _ b) (f _ n);
 
--- currying
-trankn : Pair Bool Nat := rankn id false zero;
+-- -- currying
+-- trankn : Pair Bool Nat := rankn id false zero;
 
-l1 : List Nat := cons zero nil;
+-- l1 : List Nat := cons zero nil;
 
-pairEval : (A : Type) → (B : Type) → Pair (A → B) A → B
-  | _ _ (mkPair f x) := f x;
+-- pairEval : (A : Type) → (B : Type) → Pair (A → B) A → B
+--   | _ _ (mkPair f x) := f x;
 
-main : Nat :=
-  headDef
-    _
-    (pairEval _ _ (mkPair (add zero) zero))
-    (zipWith _ _ _ add l1 l1);
+-- main : Nat :=
+--   headDef
+--     _
+--     (pairEval _ _ (mkPair (add zero) zero))
+--     (zipWith _ _ _ add l1 l1);

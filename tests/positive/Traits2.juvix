@@ -2,36 +2,49 @@ module Traits2;
 
 trait
 type Functor (f : Type -> Type) :=
-  mkFunctor {fmap : {A B : Type} -> (A -> B) -> f A -> f B};
+  mkFunctor@{
+    fmap : {A B : Type} -> (A -> B) -> f A -> f B;
+  };
+
+open Functor using {mkFunctor} public;
 
 trait
 type Monad (f : Type -> Type) :=
-  mkMonad {
+  mkMonad@{
     functor : Functor f;
     return : {A : Type} -> A -> f A;
-    bind : {A B : Type} -> f A -> (A -> f B) -> f B
+    bind : {A B : Type} -> f A -> (A -> f B) -> f B;
   };
+
+open Monad using {mkMonad} public;
 
 trait
 type Semigroup (a : Type) :=
-  mkSemigroup {sconcat : a -> a -> a};
+  mkSemigroup@{
+    sconcat : a -> a -> a;
+  };
+
+open Semigroup using {mkSemigroup} public;
 
 import Stdlib.Data.Fixity open;
 
 syntax operator <> additive;
-<> : {A : Type} -> {{Semigroup A}} -> A -> A -> A :=
-  Semigroup.sconcat;
+<> : {A : Type} -> {{Semigroup A}} -> A -> A -> A := Semigroup.sconcat;
 
 trait
 type Monoid (a : Type) :=
-  mkMonoid {
+  mkMonoid@{
     semigroup : Semigroup a;
-    mempty : a
+    mempty : a;
   };
+
+open Monoid using {mkMonoid} public;
 
 type Maybe (a : Type) :=
   | nothing
   | just a;
+
+open Maybe using {nothing; just} public;
 
 Maybe-fmap {A B : Type} (f : A -> B) : Maybe A -> Maybe B
   | nothing := nothing
@@ -51,8 +64,7 @@ syntax operator >>= bind;
     -> (A -> M B)
     -> M B := Monad.bind;
 
-Maybe-bind
-  {A B : Type} : Maybe A -> (A -> Maybe B) -> Maybe B
+Maybe-bind {A B : Type} : Maybe A -> (A -> Maybe B) -> Maybe B
   | nothing _ := nothing
   | (just a) f := f a;
 
@@ -61,7 +73,7 @@ Maybe-Monad : Monad Maybe :=
   mkMonad@{
     return := just;
     bind := Maybe-bind;
-    functor := Maybe-Functor
+    functor := Maybe-Functor;
   };
 
 import Stdlib.Data.Bool open;
@@ -71,8 +83,7 @@ import Stdlib.Data.Pair open;
 ×-fmap {A B C : Type} (f : B -> C) : Pair A B -> Pair A C
   | (a, b) := a, f b;
 
-×-Functor : {A : Type} -> Functor (Pair A) :=
-  mkFunctor ×-fmap;
+×-Functor : {A : Type} -> Functor (Pair A) := mkFunctor ×-fmap;
 
 ×-bind
   {A : Type}
@@ -82,44 +93,40 @@ import Stdlib.Data.Pair open;
   | (a, b) f := case f b of a', b' := a <> a', b';
 
 instance
-×-Monad
-  {A : Type}
-  {{Semigroup A}}
-  {{Monoid A}}
-  : Monad (Pair A) :=
+×-Monad {A : Type} {{Semigroup A}} {{Monoid A}} : Monad (Pair A) :=
   mkMonad@{
     bind := ×-bind;
-    return := λ {b := Monoid.mempty, b};
-    functor := ×-Functor
+    return := λ{b := Monoid.mempty, b};
+    functor := ×-Functor;
   };
 
-type Reader (r a : Type) := mkReader {runReader : r -> a};
+type Reader (r a : Type) :=
+  mkReader@{
+    runReader : r -> a;
+  };
 
-Reader-fmap
-  {R A B : Type} (f : A -> B) : Reader R A -> Reader R B
+open Reader using {mkReader} public;
+
+Reader-fmap {R A B : Type} (f : A -> B) : Reader R A -> Reader R B
   | (mkReader ra) := mkReader (f << ra);
 
-Reader-Functor-NoNamed {R : Type} : Functor (Reader R) :=
-  mkFunctor Reader-fmap;
+Reader-Functor-NoNamed {R : Type} : Functor (Reader R) := mkFunctor Reader-fmap;
 
 instance
 Reader-Functor {R : Type} : Functor (Reader R) :=
   mkFunctor@{
     fmap {A B : Type} (f : A -> B) : Reader R A -> Reader R B
-      | (mkReader ra) := mkReader (f << ra)
+      | (mkReader ra) := mkReader (f << ra);
   };
 
 instance
 Reader-Monad {R : Type} : Monad (Reader R) :=
   mkMonad@{
     functor := Reader-Functor;
-    return {A : Type} (a : A) : Reader R A :=
-      mkReader (const a);
-    bind
-      {A B : Type}
-      : Reader R A -> (A -> Reader R B) -> Reader R B
+    return {A : Type} (a : A) : Reader R A := mkReader (const a);
+    bind {A B : Type} : Reader R A -> (A -> Reader R B) -> Reader R B
       | (mkReader ra) arb :=
         let
           open Reader;
-        in mkReader λ {r := runReader (arb (ra r)) r}
+        in mkReader λ{r := runReader (arb (ra r)) r};
   };

@@ -3,4 +3,3 @@ module BuiltinBool;
 import Stdlib.Prelude open;
 
 main : Bool := true || false;
-

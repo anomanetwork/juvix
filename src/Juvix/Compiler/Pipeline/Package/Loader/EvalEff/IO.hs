@@ -136,6 +136,7 @@ loadPackage' packagePath = do
     . runEvalFileEffIO
     . runPackagePathResolver rootPath
     . runTopModuleNameChecker
+    . runReader noMigration
     . evalModuleInfoCachePackageDotJuvix
     $ (^. pipelineResult) <$> processFileToStoredCore (packageEntryPoint entry)
   where

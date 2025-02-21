@@ -9,7 +9,19 @@ data PackageId = PackageId
   }
   deriving stock (Show, Ord, Eq, Data, Generic)
 
+newtype MainPackageId = MainPackageId
+  { _mainPackageId :: PackageId
+  }
+  deriving stock (Show, Ord, Eq, Data, Generic)
+
 makeLenses ''PackageId
+makeLenses ''MainPackageId
+
+inMainPackage :: (Members '[Reader PackageId, Reader MainPackageId] r) => Sem r Bool
+inMainPackage = do
+  m <- ask
+  p <- ask
+  return (m ^. mainPackageId . packageIdName == p ^. packageIdName)
 
 packageBaseId :: PackageId
 packageBaseId =

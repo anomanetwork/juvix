@@ -2,6 +2,12 @@ module Other;
 
 type T1 := mkT1;
 
+open T1 using {mkT1} public;
+
 type T2 := mkT2;
 
+open T2 using {mkT2} public;
+
 type T3 := mkT3;
+
+open T3 using {mkT3} public;

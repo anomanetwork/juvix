@@ -9,6 +9,8 @@ phead {A} {{Partial}} : List A -> A
 
 type Queue (A : Type) := queue : List A → List A → Queue A;
 
+open Queue using {queue} public;
+
 qfst : {A : Type} → Queue A → List A
   | (queue x _) := x;
 
@@ -46,8 +48,7 @@ empty : {A : Type} → Queue A := queue nil nil;
 
 terminating
 g {{Partial}} : List Nat → Queue Nat → List Nat
-  | acc q :=
-    ite (is_empty q) acc (g (front q :: acc) (pop_front q));
+  | acc q := ite (is_empty q) acc (g (front q :: acc) (pop_front q));
 
 f {{Partial}} : Nat → Queue Nat → List Nat
   | zero q := g nil q
@@ -55,9 +56,7 @@ f {{Partial}} : Nat → Queue Nat → List Nat
 
 printListNatLn : List Nat → IO
   | nil := printStringLn "nil"
-  | (h :: t) :=
-    printNat h >>> printString " :: " >>> printListNatLn t;
+  | (h :: t) := printNat h >>> printString " :: " >>> printListNatLn t;
 
-main : IO :=
-  printListNatLn (runPartial λ {{{_}} := f 100 empty});
+main : IO := printListNatLn (runPartial λ{{{_}} := f 100 empty});
 -- list of numbers from 1 to 100

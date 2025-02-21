@@ -5,6 +5,10 @@ axiom String : Type;
 
 type A := a : A;
 
+open A using {a} public;
+
 type B := b : B;
+
+open B using {b} public;
 
 f : String := "a";

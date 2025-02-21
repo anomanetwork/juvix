@@ -4,4 +4,8 @@ type List (A : Type) : Type :=
   | nil : List A
   | cons : A -> List A -> List A;
 
+open List using {nil; cons} public;
+
 type RoseTree (A : Type) : Type := node : A -> List (RoseTree A) -> RoseTree A;
+
+open RoseTree using {node} public;

@@ -3,4 +3,3 @@ module IntegerLiteral;
 import Stdlib.Prelude open;
 
 main : Nat := 1;
-

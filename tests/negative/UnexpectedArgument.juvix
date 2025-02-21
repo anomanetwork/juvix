@@ -1,6 +1,7 @@
 module UnexpectedArgument;
 
 type T := t : T;
+open T;
 
 f (a : T) : T := t;
 

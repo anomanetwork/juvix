@@ -3,8 +3,7 @@ module test005;
 
 import Stdlib.Prelude open;
 
-S {A B C} (x : A → B → C) (y : A → B) (z : A) : C :=
-  x z (y z);
+S {A B C} (x : A → B → C) (y : A → B) (z : A) : C := x z (y z);
 
 K {A B} (x : A) (_ : B) : A := x;
 

@@ -1,7 +1,9 @@
 module DefaultTypeError;
 
 type T := mkT;
+open T;
 
 type U := mkU;
+open U;
 
 g {a : T := mkU} : T := a;

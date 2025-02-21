@@ -34,10 +34,6 @@ end;
 tt : Nat := t;
 
 x : Nat :=
-  t
-    * Local.t
-    * Local.Nested.t
-    * Nested.Nested2.Nested.t
-    * Public.Nested.t;
+  t * Local.t * Local.Nested.t * Nested.Nested2.Nested.t * Public.Nested.t;
 
 main : Nat := x;

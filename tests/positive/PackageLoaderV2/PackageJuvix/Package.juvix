@@ -4,5 +4,5 @@ import PackageDescription.V2 open;
 
 package : Package :=
   defaultPackage@{
-    name := "package-juvix"
+    name := "package-juvix";
   };

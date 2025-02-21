@@ -1,12 +1,14 @@
 module RepeatedFieldPattern;
 
 type T := t;
+open T;
 
 type R :=
   mkR {
     a : T;
     b : T
   };
+open R;
 
 f : R -> T
   | mkR@{a := x; a := y} := x;

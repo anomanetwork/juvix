@@ -10,6 +10,8 @@ type Tree :=
   | node2 : Tree → Tree → Tree
   | node3 : Tree → Tree → Tree → Tree;
 
+open Tree using {leaf; node1; node2; node3} public;
+
 terminating
 gen : Nat → Tree
   | zero := leaf

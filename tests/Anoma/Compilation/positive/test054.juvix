@@ -18,7 +18,7 @@ sum : List Nat → Nat
     };
 
 sum' : List Nat → Nat
-  | xs := myfor λ {acc x := acc + x} 0 xs;
+  | xs := myfor λ{acc x := acc + x} 0 xs;
 
 lst : List Nat := 1 :: 2 :: 3 :: 4 :: 5 :: nil;
 
@@ -32,7 +32,14 @@ myfor2 : {A B C : Type} → (A → B → C → A) → A → List B → List C �
     };
 
 syntax iterator myzip2 {init := 2; range := 2};
-myzip2 : {A A' B C : Type} → (A → A' → B → C → Pair A A') → A → A' → List B → List C → Pair A A'
+myzip2
+  : {A A' B C : Type}
+    → (A → A' → B → C → Pair A A')
+    → A
+    → A'
+    → List B
+    → List C
+    → Pair A A'
   | f a b xs ys :=
     myfor (acc, acc' := a, b) (x, y in zip xs ys) {
       f acc acc' x y

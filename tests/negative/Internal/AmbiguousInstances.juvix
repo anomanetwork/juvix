@@ -1,11 +1,14 @@
 module AmbiguousInstances;
 
 type Unit := unit;
+open Unit;
 
 type Box A B := box A B;
+open Box;
 
 trait
 type T A := mkT {pp : A → A};
+open T using {mkT};
 
 instance
 unitT : T Unit :=

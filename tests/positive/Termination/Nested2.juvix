@@ -7,6 +7,8 @@ type MyList A :=
       next : MyList A;
     };
 
+open MyList using {myNil; myCons} public;
+
 go {A B} (f : A -> B) : MyList A -> MyList B
   | myNil := myNil
   | myCons@{elem; next} :=

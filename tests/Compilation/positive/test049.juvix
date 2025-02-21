@@ -4,40 +4,40 @@ module test049;
 import Stdlib.Prelude open;
 
 f : Int -> Nat
-  | (negSuc n) := n
-  | (ofNat n) := n;
+  | (Int.negSuc n) := n
+  | (Int.ofNat n) := n;
 
 main : IO :=
   printStringLn (intToString 1)
     >>> printStringLn (intToString -1)
-    >>> printIntLn (ofNat 1)
-    >>> printIntLn (negSuc 0)
-    >>> printIntLn (ofNat (suc zero))
-    >>> printIntLn (negSuc zero)
+    >>> printIntLn (Int.ofNat 1)
+    >>> printIntLn (Int.negSuc 0)
+    >>> printIntLn (Int.ofNat (suc zero))
+    >>> printIntLn (Int.negSuc zero)
     >>> printStringLn (natToString (f 1))
     >>> printNatLn (f -1)
-    >>> printNatLn (f (ofNat (suc zero)))
-    >>> printNatLn (f (negSuc (suc zero)))
+    >>> printNatLn (f (Int.ofNat (suc zero)))
+    >>> printNatLn (f (Int.negSuc (suc zero)))
     >>> printBoolLn (-1 == -2)
     >>> printBoolLn (-1 == -1)
     >>> printBoolLn (1 == 1)
     >>> printBoolLn (-1 == 1)
     >>> printIntLn (-1 + 1)
-    >>> printIntLn (negNat (suc zero))
+    >>> printIntLn (Int.negNat (suc zero))
     >>> printIntLn
       (let
-        g : Nat -> Int := negNat;
+        g : Nat -> Int := Int.negNat;
       in g (suc zero))
-    >>> printIntLn (neg -1)
+    >>> printIntLn (Int.neg -1)
     >>> printIntLn
       (let
-        g : Int -> Int := neg;
+        g : Int -> Int := Int.neg;
       in g -1)
     >>> printIntLn (-2 * 2)
     >>> printIntLn (div 4 -2)
     >>> printIntLn (2 - 2)
-    >>> printBoolLn (nonNeg 0)
-    >>> printBoolLn (nonNeg -1)
+    >>> printBoolLn (Int.nonNeg 0)
+    >>> printBoolLn (Int.nonNeg -1)
     >>> printIntLn (mod -5 -2)
     >>> printBoolLn (0 < 0)
     >>> printBoolLn (0 <= 0)

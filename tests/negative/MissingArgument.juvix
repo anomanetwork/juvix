@@ -2,6 +2,8 @@ module MissingArgument;
 
 type T := t : T;
 
+open T using {t} public;
+
 f (a : T) (b : T) : T := t;
 
 x : T :=

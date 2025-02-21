@@ -8,7 +8,7 @@ sum : Nat → Nat :=
   let
     sum' : Nat → Nat
       | zero := zero
-      | (suc n) := suc n + sum' n
+      | (suc n) := suc n + sum' n;
   in sum';
 
 mutrec : Nat :=
@@ -19,9 +19,6 @@ mutrec : Nat :=
     g (x : Nat) : Nat := ite (x < 1) 1 (x + h (sub x 1));
     terminating
     h (x : Nat) : Nat := ite (x < 1) 1 (x * f (sub x 1));
-  in trace (f 5)
-    >-> trace (f 10)
-    >-> trace (g 5)
-    >-> h 5;
+  in trace (f 5) >-> trace (f 10) >-> trace (g 5) >-> h 5;
 
 main : Nat := trace (sum 1000) >-> mutrec;

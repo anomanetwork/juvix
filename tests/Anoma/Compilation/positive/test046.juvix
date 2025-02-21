@@ -12,6 +12,6 @@ id' : Ty
 -- In PR https://github.com/anoma/juvix/pull/2545 we had to slightly modify
 -- the `fun` definition. The previous version is kept here as a comment.
 -- fun : {A : Type} → A → Ty := id λ {_ := id'};
-fun {A : Type} : A → Ty := id { _ -> {C : Type} → C → C } λ {_ := id'};
+fun {A : Type} : A → Ty := id {_ -> {C : Type} → C → C} λ{_ := id'};
 
 main : Nat := fun 5 {Nat} 7;

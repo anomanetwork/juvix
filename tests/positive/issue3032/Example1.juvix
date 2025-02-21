@@ -5,11 +5,15 @@ type T :=
     t : R;
   };
 
+open T using {mkT} public;
+
 x1 : T -> R := T.t;
 
 type R :=
   mkR@{
     r : T;
   };
+
+open R using {mkR} public;
 
 y1 : R -> T := R.r;

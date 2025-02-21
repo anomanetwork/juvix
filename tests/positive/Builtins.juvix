@@ -5,8 +5,6 @@ import Stdlib.Prelude open;
 f : String -> IO
   | s :=
     printStringLn
-      (natToString (stringToNat "290" + 3)
-        ++str natToString 7
-        ++str s);
+      (natToString (stringToNat "290" + 3) ++str natToString 7 ++str s);
 
 main : IO := readLn f;

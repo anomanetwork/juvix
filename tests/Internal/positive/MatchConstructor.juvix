@@ -1,14 +1,15 @@
 module MatchConstructor;
 
-import Stdlib.Prelude open hiding {toNat};
+import Stdlib.Prelude open;
 
 type Foo :=
   | foo1 : Nat → Foo
   | foo2 : Foo;
+
+open Foo using {foo1; foo2} public;
 
 toNat : Foo → Nat
   | (foo1 n) := n
   | foo2 := zero;
 
 main : Nat := toNat (foo1 200);
-

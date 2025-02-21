@@ -6,6 +6,9 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+open Bool public;
+
 not : Bool → Bool
   | true := false
   | false := true;

@@ -1,5 +1,6 @@
 module NotARecord;
 
 type T := t;
+open T using {t};
 
 f : T := t @T{x := 1};

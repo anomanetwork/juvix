@@ -13,4 +13,8 @@ type Tree (A : Type) :=
        (Tree A)
        (Tree A);
 
+open Tree using {node} public;
+
 type Foo := mkFoo (Tree Foo);
+
+open Foo using {mkFoo} public;

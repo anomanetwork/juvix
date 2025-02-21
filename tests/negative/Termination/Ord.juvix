@@ -8,6 +8,8 @@ type Ord :=
   | SOrd : Ord -> Ord
   | Lim : (ℕ -> Ord) -> Ord;
 
+open Ord public;
+
 addord : Ord -> Ord -> Ord
   | ZOrd y := y
   | (SOrd x) y := SOrd (addord x y)

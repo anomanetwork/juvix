@@ -28,7 +28,6 @@ hiding -- Hide some names
   Bool;
   true;
   false;
-  mkShow;
   module Show;
 };
 
@@ -217,6 +216,8 @@ exampleFunction2
 positive
 type T0 (A : Type) := c0 : (A -> T0 A) -> T0 A;
 
+open T0 using {c0} public;
+
 -- Single Lambda clause
 idLambda : {A : Type} -> A -> A := λ{x := x};
 
@@ -233,10 +234,13 @@ f : Nat -> Nat :=
   };
 
 module Patterns;
+  open ×;
 
   syntax operator × functor;
   syntax operator , pair;
   type × (A : Type) (B : Type) := , : A → B → A × B;
+
+  open × using {,} public;
 
   f : Nat × Nat × Nat × Nat -> Nat
     | (a, b, c, d) := a;
@@ -302,6 +306,8 @@ module Comments;
     -- comment before pipe
     | blue : color;
 
+  open color using {black; white; red; blue} public;
+
   axiom a5 : Type;
 
   open Patterns -- before using
@@ -313,6 +319,8 @@ module Comments;
   };
 
   type list (A : Type) : Type := cons A (list A);
+
+  open list using {cons} public;
 end;
 
 module EmptyRecords;
@@ -320,7 +328,9 @@ module EmptyRecords;
 
   type T := mkT@{};
 
-  x : T := mkT@{};
+  open T using {mkT} public;
+
+  x : T := T.mkT@{};
 
   isZero : Nat -> Bool
     | zero := true
@@ -329,7 +339,7 @@ end;
 
 --- Traits
 module Traits;
-  import Stdlib.Prelude open hiding {Show; mkShow; module Show};
+  import Stdlib.Prelude open hiding {Show; module Show};
 
   trait
   type Show A :=
@@ -337,21 +347,23 @@ module Traits;
       show : A → String;
     };
 
+  open Show using {mkShow} public;
+
   instance
   showStringI : Show String :=
-    mkShow@{
+    Show.mkShow@{
       show := id;
     };
 
   instance
   showBoolI : Show Bool :=
-    mkShow@{
+    Show.mkShow@{
       show := λ{x := ite x "true" "false"};
     };
 
   instance
   showNatI : Show Nat :=
-    mkShow@{
+    Show.mkShow@{
       show := natToString;
     };
 
@@ -363,7 +375,7 @@ module Traits;
 
   instance
   showListI {A} {{Show A}} : Show (List A) :=
-    mkShow@{
+    Show.mkShow@{
       show := showList;
     };
 
@@ -373,7 +385,7 @@ module Traits;
 
   instance
   showMaybeI {A} {{Show A}} : Show (Maybe A) :=
-    mkShow@{
+    Show.mkShow@{
       show := showMaybe;
     };
 
@@ -381,7 +393,7 @@ module Traits;
     | x := Show.show x;
 
   f' {A} : {{Show A}} → A → String
-    | {{mkShow s}} x := s x;
+    | {{Show.mkShow s}} x := s x;
 
   f'' {A} : {{Show A}} → A → String
     | {{M}} x := Show.show {{M}} x;
@@ -403,6 +415,8 @@ module OperatorRecord;
       * : A -> A -> A;
     };
 
+  open Natural using {myNatural} public;
+
   open Natural;
 
   calc {A : Type} {{Natural A}} (n m : A) : A :=
@@ -420,6 +434,8 @@ module RecordFieldPragmas;
       {-# inline: false #-}
       psnd : B;
     };
+
+  open Pr using {mkPr} public;
 end;
 
 module MultiConstructorRecord;
@@ -432,6 +448,8 @@ module MultiConstructorRecord;
         left : Tree A;
         right : Tree A;
       };
+
+  open Tree using {leaf; node} public;
 end;
 
 longLongLongArg : Int := 0;
@@ -550,12 +568,16 @@ module TypeModule;
     toNat : Rec -> Nat := a;
   end;
 
+  open Rec using {mk} public;
+
   recId : Nat -> Nat := Rec.fromNat >> Rec.toNat;
 
   type S := mS
   -- empty with module
   with
   end;
+
+  open S using {mS} public;
 end;
 
 {-hi

@@ -4,12 +4,15 @@ import Stdlib.Prelude open;
 
 trait
 type T1 A B C := mkT1;
+open T1;
 
 trait
 type T2 A B := mkT2;
+open T2;
 
 trait
 type T3 A := mkT3;
+open T3;
 
 coercion instance
 coe1 {A B} {{T2 A B}} : T3 A := mkT3;

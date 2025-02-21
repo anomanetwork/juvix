@@ -10,26 +10,34 @@ type Expression :=
   | Lam String Expression
   | App Expression Expression;
 
+open Expression using {Const; Str; Var; Lam; App} public;
+
 axiom undefined : {A : Type} -> A;
 
-Environment : Type := List (Pair String Expression) ;
+Environment : Type := List (Pair String Expression);
 
 type Return :=
   | RNatural Nat
   | RString String;
 
-terminating eval (env : Environment) : Expression -> Maybe Return
-  | (Const x) := RNatural x          |> just
-  | (Str str) := RString str         |> just
+open Return using {RNatural; RString} public;
+
+terminating
+eval (env : Environment) : Expression -> Maybe Return
+  | (Const x) := RNatural x |> just
+  | (Str str) := RString str |> just
   | (App f x) := eval-lookup env f x
   | (Var var) := lookup-var env var >>= eval env
   | _ := undefined;
 
-eval-lookup (env : Environment) (f : Expression) (x : Expression) : Maybe Return :=
-  let recursive : _ -- Expression -> Return
-      | (Lam variable body) := eval ((variable , x) :: env) body
+eval-lookup
+  (env : Environment) (f : Expression) (x : Expression) : Maybe Return :=
+  let
+    recursive : _
+      -- Expression -> Return
+      | (Lam variable body) := eval ((variable, x) :: env) body
       | _ := undefined;
   in recursive f;
 
-lookup-var (env : Environment) (to-lookup : String) : Maybe Expression
-  := (snd <$> find \{ x := fst x == to-lookup } env);
+lookup-var (env : Environment) (to-lookup : String) : Maybe Expression :=
+  snd <$> find \{x := fst x == to-lookup} env;

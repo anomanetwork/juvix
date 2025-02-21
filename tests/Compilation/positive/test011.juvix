@@ -10,6 +10,4 @@ fib' : Nat → Nat → Nat → Nat
 fib : Nat → Nat := fib' 0 1;
 
 main : IO :=
-  printNatLn (fib 10)
-    >>> printNatLn (fib 100)
-    >>> printNatLn (fib 1000);
+  printNatLn (fib 10) >>> printNatLn (fib 100) >>> printNatLn (fib 1000);

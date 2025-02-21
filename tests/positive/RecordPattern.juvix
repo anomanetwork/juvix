@@ -1,12 +1,16 @@
 module RecordPattern;
 
 type Pair (A B : Type) :=
-  mkPair {
+  mkPair@{
     fst : A;
-    snd : B
+    snd : B;
   };
 
+open Pair using {mkPair} public;
+
 type T := t;
+
+open T using {t} public;
 
 partialMatch : Pair T T -> T
   | mypair@mkPair@{snd := t} := t;
@@ -18,14 +22,16 @@ swapPun {A B : Type} : Pair A B -> Pair B A
   | mkPair@{fst; snd} := mkPair snd fst;
 
 type Sum (A B : Type) :=
-  | inj1 {
+  | inj1@{
       fst : A;
-      snd : B
+      snd : B;
     }
-  | inj2 {
+  | inj2@{
       fst : A;
-      snd2 : B
+      snd2 : B;
     };
+
+open Sum using {inj1; inj2} public;
 
 sumSwap {A B : Type} : Sum A B -> Sum B A
   | inj1@{fst; snd := y} := inj2 y fst

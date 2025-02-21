@@ -4,7 +4,7 @@ module test007;
 import Stdlib.Prelude open;
 
 map' {A B} (f : A → B) : List A → List B :=
-  \ {
+  \{
     | nil := nil
     | (h :: t) := f h :: map' f t
   };

@@ -5,14 +5,16 @@ import Stdlib.Prelude open;
 
 type Stream := cons : Nat → (Unit → Stream) → Stream;
 
+open Stream using {cons} public;
+
 force : (Unit → Stream) → Stream
   | f := f unit;
 
 terminating
 sfilter : (Nat → Bool) → (Unit → Stream) → Unit → Stream
   | p s unit :=
-    case force s of {cons h t :=
-      ite (p h) (cons h (sfilter p t)) (force (sfilter p t))};
+    case force s of
+      cons h t := ite (p h) (cons h (sfilter p t)) (force (sfilter p t));
 
 shead : Stream → Nat
   | (cons h _) := h;
@@ -34,13 +36,10 @@ indivisible : Nat → Nat → Bool
 terminating
 eratostenes : (Unit → Stream) → Unit → Stream
   | s unit :=
-    case force s of {cons n t :=
-      cons n (eratostenes (sfilter (indivisible n) t))};
+    case force s of
+      cons n t := cons n (eratostenes (sfilter (indivisible n) t));
 
 primes : Unit → Stream := eratostenes (numbers 2);
 
 main : Nat :=
-  snth 10 primes
-    + snth 50 primes
-    + snth 100 primes
-    + snth 200 primes;
+  snth 10 primes + snth 50 primes + snth 100 primes + snth 200 primes;

@@ -12,6 +12,8 @@ type Board :=
     squares : List (List Square);
   };
 
+open Board using {mkBoard} public;
+
 --- Returns the list of numbers corresponding to the empty ;Square;s
 possibleMoves : (list : List Square) -> List Nat
   | nil := nil

@@ -102,6 +102,6 @@ commit_intent : Transaction :=
   };
 
 main : TransactionRequest :=
-  trace trivial_true_commitment >->
-  TransactionRequest.fromTransaction
-    (Transaction.compose nullify_intent_eph commit_intent);
+  trace trivial_true_commitment
+    >-> TransactionRequest.fromTransaction
+      (Transaction.compose nullify_intent_eph commit_intent);

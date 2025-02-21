@@ -4,8 +4,9 @@ module test028;
 import Stdlib.Prelude open;
 import Stdlib.Debug.Trace open;
 
-type Stream :=
-  | cons : Nat → (Unit → Stream) → Stream;
+type Stream := | cons : Nat → (Unit → Stream) → Stream;
+
+open Stream using {cons} public;
 
 force : (Unit → Stream) → Stream
   | f := f unit;
@@ -14,8 +15,7 @@ terminating
 sfilter : (Nat → Bool) → (Unit → Stream) → Unit → Stream
   | p s unit :=
     case force s of
-      cons h t :=
-        ite (p h) (cons h (sfilter p t)) (force (sfilter p t));
+      cons h t := ite (p h) (cons h (sfilter p t)) (force (sfilter p t));
 
 shead : Stream → Nat
   | (cons h _) := h;
@@ -38,11 +38,8 @@ terminating
 eratostenes : (Unit → Stream) → Unit → Stream
   | s unit :=
     case force s of
-      cons n t :=
-        cons n (eratostenes (sfilter (indivisible n) t));
+      cons n t := cons n (eratostenes (sfilter (indivisible n) t));
 
 primes : Unit → Stream := eratostenes (numbers 2);
 
-main (n1 n2 : Nat) : Nat :=
-  trace (snth n1 primes)
-    >-> snth n2 primes;
+main (n1 n2 : Nat) : Nat := trace (snth n1 primes) >-> snth n2 primes;

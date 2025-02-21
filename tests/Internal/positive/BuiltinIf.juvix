@@ -3,4 +3,3 @@ module BuiltinIf;
 import Stdlib.Prelude open;
 
 main : Bool := ite false (and false) (and true) true;
-

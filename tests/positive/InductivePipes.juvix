@@ -2,7 +2,11 @@ module InductivePipes;
 
 type T := t : T;
 
+open T using {t} public;
+
 type T2 :=
   | t1 : T2
   | t2 : T2
   | t3 : T2;
+
+open T2 using {t1; t2; t3} public;

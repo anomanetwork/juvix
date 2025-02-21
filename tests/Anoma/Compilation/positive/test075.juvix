@@ -8,10 +8,11 @@ axiom anomaEncode : {A : Type} -> A -> Nat;
 
 main : Nat :=
   -- jam 0 == 2
-  trace (anomaEncode 0)
-  -- jam [1 2 0] == 84081
-  >-> trace (anomaEncode [1;2])
-  -- jam [1 2] == 4657
-  >-> trace (anomaEncode (1 , 2))
-  -- jam 1 == 12
-  >-> anomaEncode false;
+      trace
+      (anomaEncode 0)
+    -- jam [1 2 0] == 84081
+    >-> trace (anomaEncode [1; 2])
+    -- jam [1 2] == 4657
+    >-> trace (anomaEncode (1, 2))
+    -- jam 1 == 12
+    >-> anomaEncode false;

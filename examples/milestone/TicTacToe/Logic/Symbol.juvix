@@ -10,9 +10,11 @@ type Symbol :=
   | --- The cross token
     X;
 
+open Symbol using {O; X} public;
+
 instance
 eqSymbolI : Eq Symbol :=
-  mkEq@{
+  Eq.mk@{
     isEqual (sym1 sym2 : Symbol) : Bool :=
       case sym1, sym2 of
         | O, O := true

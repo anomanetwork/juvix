@@ -4,18 +4,32 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
+open Bool using {true; false} public;
+
 type T := t : T;
+
+open T using {t} public;
 
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
+open Nat using {zero; suc} public;
+
 f : _
   | false false := true
-  | true _ := false;
+  | _ _ := false;
 
-type Pair (A : Type) (B : Type) :=
-  mkPair : A → B → Pair A B;
+type Pair (A : Type) (B : Type) := mkPair : A → B → Pair A B;
+
+open Pair using {mkPair} public;
+
+open Pair using {mkPair} public;
 
 g : _
-  | (mkPair (mkPair zero false) true) := mkPair false zero;
+  | (mkPair (mkPair zero false) true) := mkPair false zero
+  | _ := mkPair false zero;

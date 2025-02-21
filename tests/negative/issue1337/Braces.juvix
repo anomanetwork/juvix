@@ -4,5 +4,7 @@ type Nat :=
   | O : Nat
   | S : Nat -> Nat;
 
+open Nat;
+
 fun : Nat -> Nat
   | (S {S {x}}) := x;

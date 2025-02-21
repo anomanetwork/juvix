@@ -1,10 +1,13 @@
 module RepeatedNamedArgumentsPuns;
 
 type Bool := true;
+open Bool;
 
 type T := mkT@{
   a : Bool
 };
+
+open T;
 
 f (a : Bool) : T := mkT@{
  a;

@@ -3,7 +3,12 @@ module Identity;
 import Monad open;
 import Functor open;
 
-type Identity (a : Type) := mkIdentity {runIdentity : a};
+type Identity (a : Type) :=
+  mkIdentity@{
+    runIdentity : a;
+  };
+
+open Identity using {mkIdentity} public;
 
 open Identity public;
 
@@ -11,7 +16,7 @@ instance
 Identity-Functor : Functor Identity :=
   mkFunctor@{
     <$> {A B : Type} (f : A -> B) : Identity A -> Identity B
-      | (mkIdentity a) := mkIdentity (f a)
+      | (mkIdentity a) := mkIdentity (f a);
   };
 
 instance
@@ -19,7 +24,6 @@ Identity-Monad : Monad Identity :=
   mkMonad@{
     functor := Identity-Functor;
     return {A : Type} (a : A) : Identity A := mkIdentity a;
-    >>= {A B : Type}
-      : Identity A -> (A -> Identity B) -> Identity B
-      | (mkIdentity a) f := f a
+    >>= {A B : Type} : Identity A -> (A -> Identity B) -> Identity B
+      | (mkIdentity a) f := f a;
   };

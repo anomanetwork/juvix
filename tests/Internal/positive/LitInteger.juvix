@@ -8,4 +8,3 @@ nilNat : List Nat := nil;
 
 cons : Nat -> List Nat -> List Nat
   | a xs := a :: xs;
-

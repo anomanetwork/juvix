@@ -5,5 +5,5 @@ import PackageDescription.V2 open;
 package : Package :=
   defaultPackage@{
     name := "dep2";
-    dependencies := []
+    dependencies := [];
   };

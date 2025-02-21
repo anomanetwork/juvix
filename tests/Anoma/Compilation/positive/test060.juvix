@@ -4,22 +4,25 @@ module test060;
 import Stdlib.Prelude open hiding {fst};
 
 type Triple (A B C : Type) :=
-  mkTriple {
+  mkTriple@{
     fst : A;
     snd : B;
-    thd : C
+    thd : C;
   };
+
+open Triple using {mkTriple} public;
 
 type Pair' (A B : Type) :=
-  mkPair {
+  mkPair@{
     fst : A;
-    snd : B
+    snd : B;
   };
 
+open Pair' using {mkPair} public;
+
 mf : Pair' (Pair' Bool (List Nat)) (List Nat) → Bool
-  | mkPair@{fst := mkPair@{fst; snd := nil};
-           snd := zero :: _} := fst
-  | x := case x of {_ := false};
+  | mkPair@{fst := mkPair@{fst; snd := nil}; snd := zero :: _} := fst
+  | x := case x of _ := false;
 
 main : Triple Nat Nat Nat :=
   let
@@ -27,7 +30,7 @@ main : Triple Nat Nat Nat :=
     p' : Triple Nat Nat Nat :=
       p@Triple{
         fst := Triple.fst p + 1;
-        snd := Triple.snd p * 3 + Triple.thd p + Triple.fst p
+        snd := Triple.snd p * 3 + Triple.thd p + Triple.fst p;
       };
     f : Triple Nat Nat Nat -> Triple Nat Nat Nat :=
       \{p := p@Triple{fst := Triple.fst p * 10}};
@@ -35,11 +38,11 @@ main : Triple Nat Nat Nat :=
     (mf
       mkPair@{
         fst := mkPair true nil;
-        snd := 0 :: nil
+        snd := 0 :: nil;
       })
     (f p')
     mkTriple@{
       fst := 0;
       thd := 0;
-      snd := 0
+      snd := 0;
     };

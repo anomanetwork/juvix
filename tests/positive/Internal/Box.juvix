@@ -2,7 +2,11 @@ module Box;
 
 type Box (A : Type) := box : A → Box A;
 
+open Box using {box} public;
+
 type T := t : T;
+
+open T using {t} public;
 
 b : Box _ := box t;
 

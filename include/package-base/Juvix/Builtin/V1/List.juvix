@@ -2,7 +2,7 @@ module Juvix.Builtin.V1.List;
 
 import Juvix.Builtin.V1.Fixity open;
 
-syntax operator :: cons;
+syntax operator List.:: cons;
 --- Inductive list.
 builtin list
 type List (A : Type) :=
@@ -10,3 +10,5 @@ type List (A : Type) :=
     nil
   | --- An element followed by a list
     :: A (List A);
+
+open List using {nil; ::} public;

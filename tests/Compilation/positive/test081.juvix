@@ -11,8 +11,9 @@ f (n : Nat) : Nat :=
   if
     | n == 0 := 0
     | else :=
-      let terminating x := f (sub n 1)
-      in
-      g \{_ := x};
+      let
+        terminating
+        x := f (sub n 1);
+      in g \{_ := x};
 
 main : Nat := f 10000;

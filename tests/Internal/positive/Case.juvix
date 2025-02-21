@@ -16,5 +16,4 @@ andList : List Bool → Bool
       | x :: xs := x && andList xs;
 
 main : IO :=
-  printBoolLn (not' false)
-    >>> printBoolLn (andList (true :: false :: nil));
+  printBoolLn (not' false) >>> printBoolLn (andList (true :: false :: nil));

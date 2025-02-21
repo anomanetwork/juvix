@@ -2,9 +2,15 @@ module E5;
 
 type T0 (A : Type) := c0 : (A -> T0 A) -> T0 A;
 
+open T0 using {c0} public;
+
 axiom B : Type;
 
 type T1 (A : Type) := c1 : (B -> T0 A) -> T1 A;
 
+open T1 using {c1} public;
+
 positive
 type T2 := c2 : (B -> B -> T1 T2) -> T2;
+
+open T2 using {c2} public;

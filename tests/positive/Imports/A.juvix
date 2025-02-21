@@ -4,8 +4,11 @@ syntax fixity i3 := binary;
 
 module M;
   module N;
-    syntax operator t i3;
+    syntax operator T.t i3;
+
     type T := t : T -> T -> T;
+
+    open T using {t} public;
   end;
 
   syntax fixity add := binary {assoc := right; above := [i3]};
@@ -17,4 +20,4 @@ end;
 import M;
 
 f : M.N.T -> M.N.T
-  | (a M.N.t b) := a M.N.t b;
+  | (a M.N.T.t b) := a M.N.T.t b;

@@ -9,6 +9,4 @@ fib' : Nat -> Nat -> Nat -> Nat
 fib (n : Nat) : Nat := fib' n zero (suc zero);
 
 main : IO :=
-  printNatLn
-    (fib
-      (suc (suc (suc (suc (suc (suc (suc (suc (suc zero))))))))));
+  printNatLn (fib (suc (suc (suc (suc (suc (suc (suc (suc (suc zero))))))))));

@@ -9,10 +9,12 @@ open O;
 module N;
   module O;
     type T := A : T;
+
+    open T using {A} public;
   end;
 end;
 
 open N.O;
 
 fun : T → T
-  | A := T;
+  | T.A := T.A;

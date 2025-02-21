@@ -14,5 +14,4 @@ main : IO :=
       | zero := true
       | (suc n) := not (odd n);
     plusOne (n : Ty) : Ty := n + 1;
-  in printBoolLn (odd (plusOne 13))
-    >>> printBoolLn (even (plusOne 12));
+  in printBoolLn (odd (plusOne 13)) >>> printBoolLn (even (plusOne 12));

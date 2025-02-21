@@ -1,15 +1,19 @@
 module AmbiguousCoercions;
 
 type Unit := unit;
+open Unit;
 
 trait
 type T A := mkT {pp : A → A};
+open T using {mkT};
 
 trait
 type T1 A := mkT1 {pp : A → A};
+open T1 using {mkT1};
 
 trait
 type T2 A := mkT2 {pp : A → A};
+open T2 using {mkT2};
 
 instance
 unitT1 : T1 Unit :=

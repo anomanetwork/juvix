@@ -47,7 +47,8 @@ goProject ::
   (Members (Reader MarkdownOptions ': AppEffects) r) =>
   Sem r ()
 goProject = runPipelineOptions . runPipelineSetup $ do
-  res :: [ProcessedNode ScoperResult] <- processProjectUpToScoping
+  mpkg <- asks (^. entryPointMainPackageId)
+  res :: [ProcessedNode ScoperResult] <- runReader mpkg processProjectUpToScoping
   forM_ res (goScoperResult . (^. processedNodeData))
 
 goScoperResult :: (Members (Reader MarkdownOptions ': AppEffects) r) => Scoper.ScoperResult -> Sem r ()

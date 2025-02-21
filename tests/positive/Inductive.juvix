@@ -1,3 +1,5 @@
 module Inductive;
 
 type T := t : T;
+
+open T using {t} public;

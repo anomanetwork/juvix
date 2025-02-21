@@ -8,7 +8,6 @@ LambdaTy : Type -> Type := Lambda';
 
 AppTy : Type -> Type := App';
 
-syntax operator :+: additive;
 --- An ;Expr'; is an expression in our language.
 type Expr' (v : Type) :=
   | ! : v -> Expr' v
@@ -17,12 +16,19 @@ type Expr' (v : Type) :=
   | :+: : Expr' v -> Expr' v -> Expr' v
   | num : Nat -> Expr' v;
 
+open Expr' using {!; lam; app; :+:; num} public;
+
+syntax operator :+: additive;
+
 --- A ;Lambda'; is a lambda function.
 type Lambda' (v : Type) := mkLambda : Expr' v -> Lambda' v;
 
+open Lambda' using {mkLambda} public;
+
 --- An ;App'; is an application of two ;Expr';.
-type App' (v : Type) :=
-  mkApp : Expr' v -> Expr' v -> App' v;
+type App' (v : Type) := mkApp : Expr' v -> Expr' v -> App' v;
+
+open App' using {mkApp} public;
 
 Expr : Type := Expr' Nat;
 
@@ -33,13 +39,16 @@ App : Type := App' Nat;
 ValTy : Type -> Type := Val';
 
 --- A ;Closure'; is a context (;List; of ;ValTy;) and an ;Expr'; in that context.
-type Closure' (v : Type) :=
-  mkClosure : List (ValTy v) -> Expr' v -> Closure' v;
+type Closure' (v : Type) := mkClosure : List (ValTy v) -> Expr' v -> Closure' v;
+
+open Closure' using {mkClosure} public;
 
 --- A ;Val'; is either a ;Closure'; or a ;Nat;.
 type Val' (v : Type) :=
   | vnum : Nat -> Val' v
   | closure : Closure' v -> Val' v;
+
+open Val' using {vnum; closure} public;
 
 Val : Type := Val' Nat;
 
@@ -50,13 +59,11 @@ type Either (a : Type) (b : Type) :=
   | left : a -> Either a b
   | right : b -> Either a b;
 
+open Either using {left; right} public;
+
 syntax operator >>= seq;
 --- Monadic binding for ;Either;.
->>=
-  : {e a b : Type}
-    -> Either e a
-    -> (a -> Either e b)
-    -> Either e b
+>>= : {e a b : Type} -> Either e a -> (a -> Either e b) -> Either e b
   | (left e) _ := left e
   | (right a) f := f a;
 
@@ -68,6 +75,8 @@ type Error :=
     ExpectedNat : Val -> Error
   | --- A lambda was expected.
     ExpectedLambda : Error;
+
+open Error using {ScopeError; ExpectedNat; ExpectedLambda} public;
 
 --- Returns the first item of a ;List;, if it exists.
 headMay : {a : Type} -> List a -> Maybe a
@@ -93,25 +102,21 @@ eval : Expr -> Either Error Val
         | _ := left ExpectedLambda;
       terminating
       go : List Val -> Expr -> Either Error Val
-        | ctx (! v) :=
-          maybe (left (ScopeError v ctx)) right (index ctx v)
+        | ctx (! v) := maybe (left (ScopeError v ctx)) right (index ctx v)
         | ctx (app (mkApp fun x)) :=
           let
             terminating
             applyClosure : Closure -> Either Error Val
               | (mkClosure closCtx body) :=
-                go ctx x >>= λ {| x' := go (x' :: closCtx) body};
+                go ctx x >>= λ{| x' := go (x' :: closCtx) body};
           in go ctx fun >>= getClosure >>= applyClosure
-        | ctx (lam (mkLambda body)) :=
-          right (closure (mkClosure ctx body))
+        | ctx (lam (mkLambda body)) := right (closure (mkClosure ctx body))
         | _ (num n) := right (vnum n)
         | ctx (l :+: r) :=
           go ctx l
             >>= getNat
-            >>= λ {| l' :=
-              go ctx r
-                >>= getNat
-                >>= λ {| r' := right (vnum (l' + r'))}};
+            >>= λ{| l' :=
+              go ctx r >>= getNat >>= λ{| r' := right (vnum (l' + r'))}};
     in go nil topExpr;
 
 --- Evaluate an ;Expr; and try to extract a ;Nat;.

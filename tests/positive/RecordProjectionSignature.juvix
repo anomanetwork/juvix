@@ -8,6 +8,8 @@ type R A :=
     fun : (n : A) -> A;
   };
 
+open R using {mkR} public;
+
 f {{R Nat}} : Nat :=
   R.fun@{
     n := 1;

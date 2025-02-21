@@ -1,6 +1,7 @@
 module UnexpectedArgumentWildcard;
 
 type T := t : T;
+open T;
 
 f (a : T) : {_ : Type} -> (b : T) -> T
   | b := t;

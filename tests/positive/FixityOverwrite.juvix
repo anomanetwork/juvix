@@ -4,9 +4,16 @@ import Stdlib.Data.Fixity as F;
 
 type T : Type := t;
 
+open T using {t} public;
+open T;
+
 module P;
+  open Pair public;
+
   syntax operator , F.pair;
   type Pair := , T T;
+
+  open Pair using {,} public;
 
   p1 : Pair := t, t;
 end;
@@ -27,6 +34,9 @@ end;
 module After;
   type Pair := , T T;
 
+  open Pair using {,} public;
+  open Pair;
+
   -- An operator definition takes effect only on statements that come after it
   p1 : Pair := , t t;
 
@@ -37,6 +47,9 @@ end;
 
 module Other;
   type Pair := , T T;
+
+  open Pair using {,} public;
+  open Pair;
 
   syntax operator , F.pair;
   syntax alias ! := ,;

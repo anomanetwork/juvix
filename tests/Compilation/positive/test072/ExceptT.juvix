@@ -11,13 +11,14 @@ type Either (a b : Type) :=
   | left a
   | right b;
 
+open Either using {left; right} public;
+
 instance
 Either-Functor {err} : Functor (Either err) :=
   mkFunctor@{
-    <$>
-      {A B : Type} (f : A -> B) : Either err A -> Either err B
+    <$> {A B : Type} (f : A -> B) : Either err A -> Either err B
       | (left e) := left e
-      | (right r) := right (f r)
+      | (right r) := right (f r);
   };
 
 instance
@@ -26,43 +27,33 @@ Either-Monad {err} : Monad (Either err) :=
     functor := Either-Functor;
     return {A : Type} (a : A) : Either err A := right a;
     >>=
-      {A B : Type}
-      (x : Either err A)
-      (f : A -> Either err B)
-      : Either err B :=
+      {A B : Type} (x : Either err A) (f : A -> Either err B) : Either err B :=
       case x of
         | left e := left e
-        | right r := f r
+        | right r := f r;
   };
 
 type ExceptT (Err : Type) (M : Type → Type) (A : Type) :=
-  mkExceptT {runExceptT : M (Either Err A)};
+  mkExceptT@{
+    runExceptT : M (Either Err A);
+  };
+
+open ExceptT using {mkExceptT} public;
 
 instance
 ExceptT-Functor
-  {Err : Type}
-  {M : Type -> Type}
-  {{Functor M}}
-  : Functor (ExceptT Err M) :=
+  {Err : Type} {M : Type -> Type} {{Functor M}} : Functor (ExceptT Err M) :=
   mkFunctor@{
-    <$>
-      {A B : Type}
-      (f : A -> B)
-      : ExceptT Err M A -> ExceptT Err M B
-      | (mkExceptT x) :=
-        mkExceptT ((Functor.<$>) ((Functor.<$>) f) x)
+    <$> {A B : Type} (f : A -> B) : ExceptT Err M A -> ExceptT Err M B
+      | (mkExceptT x) := mkExceptT ((Functor.<$>) ((Functor.<$>) f) x);
   };
 
 instance
 ExceptT-Monad
-  {Err : Type}
-  {M : Type -> Type}
-  {{Monad M}}
-  : Monad (ExceptT Err M) :=
+  {Err : Type} {M : Type -> Type} {{Monad M}} : Monad (ExceptT Err M) :=
   mkMonad@{
     functor := MMonad.functor;
-    return {A} (a : A) : ExceptT Err M A :=
-      mkExceptT (MMonad.return (right a));
+    return {A} (a : A) : ExceptT Err M A := mkExceptT (MMonad.return (right a));
     >>=
       {A B}
       (x : ExceptT Err M A)
@@ -70,26 +61,20 @@ ExceptT-Monad
       : ExceptT Err M B :=
       mkExceptT
         (ExceptT.runExceptT x
-          MMonad.>>= λ {a :=
+          MMonad.>>= λ{a :=
             case a of
               | left e := MMonad.return (left e)
-              | right r := ExceptT.runExceptT (f r)})
+              | right r := ExceptT.runExceptT (f r)});
   };
 
 instance
 ExceptT-MonadError
-  {Err}
-  {M : Type -> Type}
-  {{mon : Monad M}}
-  : MonadError Err (ExceptT Err M) :=
+  {Err} {M : Type -> Type} {{mon : Monad M}} : MonadError Err (ExceptT Err M) :=
   mkMonadError@{
     monad := ExceptT-Monad;
     throw {A} (err : Err) : ExceptT Err M A :=
-      mkExceptT (MMonad.return (left err))
+      mkExceptT (MMonad.return (left err));
   };
 
-runExcept
-  {Err A}
-  {M : Type -> Type}
-  : ExceptT Err M A -> M (Either Err A)
+runExcept {Err A} {M : Type -> Type} : ExceptT Err M A -> M (Either Err A)
   | (mkExceptT x) := x;

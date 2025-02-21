@@ -6,4 +6,4 @@ import A;
 
 two : Nat := 1 + 1;
 
-foo : A.Foo := A.bar;
+foo : A.Foo := A.Foo.bar;

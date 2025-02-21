@@ -2,4 +2,6 @@ module BuiltinInductive;
 
 type MyString := str;
 
+open MyString using {str} public;
+
 main : Type := MyString;

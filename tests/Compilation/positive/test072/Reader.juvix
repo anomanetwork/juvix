@@ -4,26 +4,28 @@ import Monad open;
 import Functor open;
 import Stdlib.Function open;
 
-type Reader (r a : Type) := mkReader {runReader : r -> a};
+type Reader (r a : Type) :=
+  mkReader@{
+    runReader : r -> a;
+  };
+
+open Reader using {mkReader} public;
 
 instance
 Reader-Functor {R : Type} : Functor (Reader R) :=
   mkFunctor@{
     <$> {A B : Type} (f : A -> B) : Reader R A -> Reader R B
-      | (mkReader ra) := mkReader (f << ra)
+      | (mkReader ra) := mkReader (f << ra);
   };
 
 instance
 Reader-Monad {R : Type} : Monad (Reader R) :=
   mkMonad@{
     functor := Reader-Functor;
-    return {A : Type} (a : A) : Reader R A :=
-      mkReader (const a);
-    >>=
-      {A B : Type}
-      : Reader R A -> (A -> Reader R B) -> Reader R B
+    return {A : Type} (a : A) : Reader R A := mkReader (const a);
+    >>= {A B : Type} : Reader R A -> (A -> Reader R B) -> Reader R B
       | (mkReader ra) arb :=
         let
           open Reader;
-        in mkReader λ {r := runReader (arb (ra r)) r}
+        in mkReader λ{r := runReader (arb (ra r)) r};
   };

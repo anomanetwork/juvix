@@ -5,14 +5,20 @@ import Stdlib.Data.Unit open;
 
 trait
 type MonadState (S : Type) (M : Type -> Type) :=
-  mkMonadState {
+  mkMonadState@{
     monad : Monad M;
     get : M S;
-    put : S -> M Unit
+    put : S -> M Unit;
   };
+
+open MonadState using {mkMonadState} public;
 
 open MonadState public;
 
-modify {S : Type} {M : Type → Type} {{Monad M}} {{MonadState
-  S
-  M}} (f : S → S) : M Unit := get >>= λ {s := put (f s)};
+modify
+  {S : Type}
+  {M : Type → Type}
+  {{Monad M}}
+  {{MonadState S M}}
+  (f : S → S)
+  : M Unit := get >>= λ{s := put (f s)};

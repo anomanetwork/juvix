@@ -2,6 +2,7 @@ module InfixErrorP;
 
   syntax fixity pair := binary;
 
+  open Pair;
   syntax operator , pair;
 
   type Pair :=
@@ -9,5 +10,4 @@ module InfixErrorP;
 
   fst : Pair → Type
     | (x , ) := x;
-
 end;

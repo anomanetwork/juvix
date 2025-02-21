@@ -16,7 +16,4 @@ terminating
 h : Nat → Nat
   | x := ite (x < 1) 1 (x * f (sub x 1));
 
-main : IO :=
-  printNatLn (f 5)
-    >>> printNatLn (f 10)
-    >>> printNatLn (f 20);
+main : IO := printNatLn (f 5) >>> printNatLn (f 10) >>> printNatLn (f 20);

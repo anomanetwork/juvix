@@ -3,4 +3,3 @@ module LitStringIO;
 import Stdlib.Prelude open;
 
 main : IO := printStringLn "hello";
-

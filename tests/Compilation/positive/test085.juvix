@@ -14,6 +14,8 @@ type NTree :=
   | NLeaf
   | NNode NTree Nat NTree;
 
+open NTree using {NLeaf; NNode} public;
+
 deriving instance
 ntreeEq : Eq NTree;
 
@@ -21,11 +23,15 @@ type Tree A :=
   | Leaf
   | Node (Tree A) A (Tree A);
 
+open Tree using {Leaf; Node} public;
+
 deriving instance
 treeEqI {A} {{Eq A}} : Eq (Tree A);
 
 t1 : Tree Nat := Node (Node Leaf 0 Leaf) 1 Leaf;
+
 t2 : Tree Nat := Node (Node Leaf 1 Leaf) 1 Leaf;
+
 t3 : Tree Nat := Node Leaf 1 (Node Leaf 0 Leaf);
 
 main : IO :=

@@ -7,6 +7,8 @@ type Tree :=
   | leaf : Tree
   | node : Tree → Tree → Tree;
 
+open Tree using {leaf; node} public;
+
 gen : Nat → Tree
   | zero := leaf
   | (suc zero) := node leaf leaf
@@ -25,17 +27,15 @@ f : Tree → Nat
       l : Tree := g l';
       r : Tree := g r';
       terminating
-      a :
-        Nat :=
-          case l of
-            | leaf := 1
-            | node l r := f l + f r;
+      a : Nat :=
+        case l of
+          | leaf := 1
+          | node l r := f l + f r;
       terminating
-      b :
-        Nat :=
-          case r of
-            | node l r := f l + f r
-            | _ := 2;
+      b : Nat :=
+        case r of
+          | node l r := f l + f r
+          | _ := 2;
     in a * b;
 
 isNode : Tree → Bool
@@ -43,4 +43,3 @@ isNode : Tree → Bool
   | leaf := false;
 
 main : Nat := f (gen 10);
-

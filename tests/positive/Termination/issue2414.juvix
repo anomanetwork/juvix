@@ -8,6 +8,8 @@ type T :=
     tt : T;
   };
 
+open T using {mkT} public;
+
 f {{T}} : Nat → Nat
   | zero := zero
   | (suc n) := f n;

@@ -4,7 +4,9 @@ syntax fixity fmap := binary {assoc := left};
 
 trait
 type Functor (f : Type -> Type) :=
-  mkFunctor {
+  mkFunctor@{
     syntax operator <$> fmap;
-    <$> : {A B : Type} -> (A -> B) -> f A -> f B
+    <$> : {A B : Type} -> (A -> B) -> f A -> f B;
   };
+
+open Functor using {mkFunctor} public;

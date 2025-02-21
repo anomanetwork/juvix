@@ -4,20 +4,15 @@ import Stdlib.Data.Fixity open;
 
 syntax operator << composition;
 
-<<
-  : {A : Type}
-    → {B : Type}
-    → {C : Type}
-    → (B → C)
-    → (A → B)
-    → A
-    → C
+<< : {A : Type} → {B : Type} → {C : Type} → (B → C) → (A → B) → A → C
   | {_} {B} {_} f g x := f (g x);
 
 builtin nat
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+
+open Nat using {zero; suc} public;
 
 syntax operator + additive;
 
@@ -27,8 +22,11 @@ builtin nat-plus
   | (suc a) b := suc (a + b);
 
 syntax operator × functor;
-syntax operator , pair;
 type × (A : Type) (B : Type) := , : A → B → A × B;
+
+open × using {,} public;
+
+syntax operator , pair;
 
 fst : {A : Type} → {B : Type} → A × B → A
   | p@(a, _) := a;
@@ -38,8 +36,8 @@ snd : {A : Type} → {B : Type} → A × B → B
 
 lambda : Nat → Nat → Nat
   | x :=
-    λ {
-      a@(suc _) := a + x + zero
+    λ{
+      | a@(suc _) := a + x + zero
       | zero := zero
     };
 

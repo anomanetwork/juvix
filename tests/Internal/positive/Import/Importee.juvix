@@ -3,5 +3,3 @@ module Importee;
 import Stdlib.Prelude open;
 
 f : Nat := 1;
-
-end;

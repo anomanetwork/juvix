@@ -1,15 +1,27 @@
 module test079;
 
-+ : Nat -> Nat -> Nat
-  | _ _ := zero;
-
 type Nat :=
   | zero
   | suc Nat;
 
-type Box := mkBox {unbox : Nat};
+open Nat using {zero; suc} public;
 
-type Foldable := mkFoldable {for : {B : Type} -> (B -> Nat -> B) -> B -> Box -> B};
++ : Nat -> Nat -> Nat
+  | _ _ := zero;
+
+type Box :=
+  mkBox@{
+    unbox : Nat;
+  };
+
+open Box using {mkBox} public;
+
+type Foldable :=
+  mkFoldable@{
+    for : {B : Type} -> (B -> Nat -> B) -> B -> Box -> B;
+  };
+
+open Foldable using {mkFoldable} public;
 
 one : Nat := zero;
 
@@ -24,7 +36,7 @@ foldableBoxNatI : Foldable :=
           go : Nat -> B
             | zero := ini
             | _ := go x;
-        in go x
+        in go x;
   };
 
-main : Nat := for foldableBoxNatI λ {_ y := y} one (mkBox zero);
+main : Nat := for foldableBoxNatI λ{_ y := y} one (mkBox zero);

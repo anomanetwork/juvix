@@ -9,9 +9,17 @@ type Bool :=
   | false : Bool
   | true : Bool;
 
+open Bool using {false; true} public;
+
+open Bool;
+
 type Nat :=
   | zero : Nat
   | suc : Nat -> Nat;
+
+open Nat using {zero; suc} public;
+
+open Nat;
 
 not : Bool -> Bool
   | false := true
@@ -27,18 +35,22 @@ odd : Nat -> Bool
 
 syntax fixity cmp := binary {};
 syntax operator ==1 cmp;
+syntax operator ==2 cmp;
+
 ==1 : Nat -> Nat -> Bool
   | zero zero := true
   | (suc a) (suc b) := a ==2 b
   | _ _ := false;
 
-syntax operator ==2 cmp;
 ==2 : Nat -> Nat -> Bool
   | zero zero := true
   | (suc a) (suc b) := a ==1 b
   | _ _ := false;
 
 module MutualTypes;
+  open Tree;
+  open Forest;
+
   isNotEmpty {a : Type} (t : Tree a) : Bool := not (isEmpty t);
 
   isEmpty {a : Type} : (t : Tree a) -> Bool
@@ -49,7 +61,11 @@ module MutualTypes;
     | empty : Tree a
     | node : a -> Forest a -> Tree a;
 
+  open Tree using {empty; node} public;
+
   type Forest (a : Type) :=
     | nil : Forest a
     | cons : Tree a -> Forest a;
+
+  open Forest using {nil; cons} public;
 end;

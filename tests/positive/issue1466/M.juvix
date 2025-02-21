@@ -4,6 +4,8 @@ type ℕ :=
   | z : ℕ
   | s : ℕ → ℕ;
 
+open ℕ using {z; s} public;
+
 nat : Type := ℕ;
 
 nat2 : Type := nat;

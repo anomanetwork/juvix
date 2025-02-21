@@ -1,3 +1,5 @@
 module Base2;
 
 type Foo := foo : Foo;
+
+open Foo using {foo} public;

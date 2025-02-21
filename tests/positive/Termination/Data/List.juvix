@@ -10,6 +10,8 @@ type List (A : Type) :=
   | nil : List A
   | cons : A → List A → List A;
 
+open List using {nil; cons} public;
+
 -- Do not remove implicit arguments. Useful for testing.
 foldr : {A : Type} → {B : Type} → (A → B → B) → B → List A → B
   | _ z nil := z

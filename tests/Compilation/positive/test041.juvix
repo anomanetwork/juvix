@@ -5,6 +5,8 @@ import Stdlib.Prelude open;
 
 type BoxedString := boxed : String -> BoxedString;
 
+open BoxedString using {boxed} public;
+
 printBoxedString : BoxedString -> IO
   | (boxed s) := printStringLn s;
 

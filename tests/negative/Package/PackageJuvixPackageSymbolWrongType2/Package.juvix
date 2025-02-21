@@ -3,5 +3,6 @@ module Package;
 import Stdlib.Prelude open;
 
 type Package := p;
+open Package;
 
 package : Package := p;

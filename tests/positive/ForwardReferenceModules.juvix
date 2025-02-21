@@ -6,6 +6,8 @@ module ImportantStuffFirst;
   --- N-Ary tree.
   type Tree (A : Type) := node : A -> Forest A -> Tree A;
 
+  open Tree using {node} public;
+
   open List public;
 end;
 
@@ -18,6 +20,8 @@ module List;
       nil : List a
     | --- An element followed by a list
       :: : a → List a → List a;
+
+  open List using {nil; ::} public;
 
   axiom LA : Type;
 end;

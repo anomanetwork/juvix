@@ -5,11 +5,10 @@ import Stdlib.Prelude open;
 import Stdlib.Debug open;
 
 map' {A B} (f : A → B) : List A → List B :=
-  \ {
+  \{
     | nil := nil
     | (h :: t) := f h :: map' f t
   };
-
 
 -- TODO: Restore when anoma backend supports strings
 -- terminating
@@ -25,6 +24,6 @@ main : List Nat :=
     >-> trace (tail lst)
     >-> trace (head 0 (tail lst))
     >-> trace (map ((+) 1) lst)
-    >-> map' ((+) 1) lst
-    -- TODO: Restore when anoma backend supports strings
-    -- >-> runPartial λ {{{_}} := map'' ((+) 1) lst};
+    >-> map' ((+) 1) lst;
+-- TODO: Restore when anoma backend supports strings
+-- >-> runPartial λ {{{_}} := map'' ((+) 1) lst};

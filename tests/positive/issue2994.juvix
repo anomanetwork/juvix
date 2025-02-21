@@ -2,11 +2,20 @@ module issue2994;
 
 type T := t;
 
+open T using {t} public;
+
 type Maybe (a : Type) :=
   | nothing
   | just a;
 
+open Maybe using {nothing; just} public;
+
 trait
-type SomeTrait A := mkSomeTrait {baz : A -> T};
+type SomeTrait A :=
+  mkSomeTrait@{
+    baz : A -> T;
+  };
+
+open SomeTrait using {mkSomeTrait} public;
 
 bar {{SomeTrait T}} (value : T) {maybeValue : Maybe T := nothing} : T := t;

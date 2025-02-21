@@ -4,5 +4,5 @@ import PackageDescription.V2 open;
 
 package : Package :=
   defaultPackage@{
-    name := "test073"
+    name := "test073";
   };

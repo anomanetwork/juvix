@@ -9,6 +9,12 @@ type Expr (V : Type) :=
   | lam : LambdaTy V -> Expr V
   | app : AppTy V -> Expr V;
 
+open Expr using {var; lam; app} public;
+
 type Lambda (V : Type) := mkLambda : Expr V -> Lambda V;
 
+open Lambda using {mkLambda} public;
+
 type App (V : Type) := mkApp : Expr V -> Expr V -> App V;
+
+open App using {mkApp} public;

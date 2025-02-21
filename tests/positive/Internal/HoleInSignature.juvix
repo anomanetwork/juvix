@@ -1,13 +1,20 @@
 module HoleInSignature;
 
-type Pair (A : Type) (B : Type) :=
-  mkPair : A → B → Pair A B;
+type Pair (A : Type) (B : Type) := mkPair : A → B → Pair A B;
+
+open Pair using {mkPair} public;
+
+open Pair using {mkPair} public;
 
 type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
+open Bool using {true; false} public;
+
 p : Pair _ _ := mkPair true false;
 
-p2 : (A : Type) → (B : Type) → _ → B → Pair A _
-  | _ _ a b := mkPair a b;
+p2 : (A : _) → (B : _) → A → B → Pair A B
+  | A B a b := mkPair a b;

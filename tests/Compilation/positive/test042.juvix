@@ -6,6 +6,8 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
 builtin string
 axiom String : Type;
 
@@ -13,6 +15,8 @@ builtin nat
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+
+open Nat using {zero; suc} public;
 
 builtin string-to-nat
 axiom stringToNat : String -> Nat;

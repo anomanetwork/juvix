@@ -2,8 +2,12 @@ module UnexpectedFieldUpdate;
 
 type T := t;
 
+open T;
+
 type R := mkR {
  r : T;
 };
+
+open R;
 
 f : R := (mkR t) @R{x := 1};

@@ -7,7 +7,7 @@ sum : Nat → Nat :=
   let
     sum' : Nat → Nat
       | zero := zero
-      | (suc n) := suc n + sum' n
+      | (suc n) := suc n + sum' n;
   in sum';
 
 mutrec : IO :=

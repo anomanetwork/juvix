@@ -5,3 +5,5 @@ builtin bool
 type Bool :=
   | false
   | true;
+
+open Bool using {false; true} public;

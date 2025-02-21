@@ -3,10 +3,11 @@ module test041;
 
 import Stdlib.Prelude open;
 
-type BoxedList :=
-  | boxed (List Nat);
+type BoxedList := | boxed (List Nat);
+
+open BoxedList using {boxed} public;
 
 sumBoxedList : BoxedList -> Nat
   | (boxed l) := for (acc := 0) (x in l) (acc + x);
 
-main : Nat := sumBoxedList (boxed [1;2;3]);
+main : Nat := sumBoxedList (boxed [1; 2; 3]);

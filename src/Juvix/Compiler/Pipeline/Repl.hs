@@ -36,9 +36,11 @@ upToInternalExpression p = do
   scopeTable <- gets (^. artifactScopeTable)
   mtab <- gets (^. artifactModuleTable)
   pkg <- asks (^. entryPointPackageId)
+  mpkg <- asks (^. entryPointMainPackageId)
   runScoperScopeArtifacts
     . runStateArtifacts artifactScoperState
     . runReader pkg
+    . runReader mpkg
     $ runNameIdGenArtifacts (Scoper.scopeCheckExpression (Store.getScopedModuleTable mtab) scopeTable p)
       >>= runNameIdGenArtifacts
         . runReader scopeTable
@@ -62,10 +64,12 @@ expressionUpToAtomsScoped fp txt = do
   scopeTable <- gets (^. artifactScopeTable)
   mtab <- gets (^. artifactModuleTable)
   pkg <- asks (^. entryPointPackageId)
+  mpkg <- asks (^. entryPointMainPackageId)
   runScoperScopeArtifacts
     . runStateArtifacts artifactScoperState
     . runNameIdGenArtifacts
     . runReader pkg
+    . runReader mpkg
     $ Parser.expressionFromTextSource fp txt
       >>= Scoper.scopeCheckExpressionAtoms (Store.getScopedModuleTable mtab) scopeTable
 
@@ -77,10 +81,12 @@ scopeCheckExpression p = do
   scopeTable <- gets (^. artifactScopeTable)
   mtab <- gets (^. artifactModuleTable)
   pkg <- asks (^. entryPointPackageId)
+  mpkg <- asks (^. entryPointMainPackageId)
   runNameIdGenArtifacts
     . runScoperScopeArtifacts
     . runStateArtifacts artifactScoperState
     . runReader pkg
+    . runReader mpkg
     $ Scoper.scopeCheckExpression (Store.getScopedModuleTable mtab) scopeTable p
 
 parseReplInput ::
@@ -128,12 +134,14 @@ registerImport i = do
   scopeTable <- gets (^. artifactScopeTable)
   mtab'' <- gets (^. artifactModuleTable)
   pkg <- asks (^. entryPointPackageId)
+  mpkg <- asks (^. entryPointMainPackageId)
   void
     . runNameIdGenArtifacts
     . runScoperScopeArtifacts
     . runStateArtifacts artifactScoperState
     . runReader pkg
-    $ Scoper.scopeCheckImport (Store.getScopedModuleTable mtab'') scopeTable i
+    . runReader mpkg
+    $ Scoper.scopeCheckReplImport (Store.getScopedModuleTable mtab'') scopeTable i
 
 fromInternalExpression :: (Members '[State Artifacts, Error JuvixError] r) => Internal.Expression -> Sem r Core.Node
 fromInternalExpression exp = do

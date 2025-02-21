@@ -3,14 +3,13 @@ module Mutual;
 import Stdlib.Prelude open;
 
 odd : _
-  
+
   | zero := false
   | (suc n) := even n;
 
 even : _
-  
+
   | zero := true
   | (suc n) := odd n;
 
 main : Bool := even (suc (suc (suc zero)));
-

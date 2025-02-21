@@ -3,10 +3,12 @@ module Records2;
 import Stdlib.Data.Nat open;
 
 type Pair (A B : Type) :=
-  mkPair {
+  mkPair@{
     pfst : A;
-    psnd : B
+    psnd : B;
   };
+
+open Pair using {mkPair} public;
 
 main : Pair Nat Nat :=
   let

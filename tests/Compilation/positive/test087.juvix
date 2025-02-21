@@ -15,12 +15,16 @@ type T :=
   | Three
   | Four;
 
+open T using {One; Two; Three; Four} public;
+
 deriving instance
 ordT : Ord T;
 
 type Tree (A : Type) :=
   | leaf
   | node (Tree A) A (Tree A);
+
+open Tree using {leaf; node} public;
 
 deriving instance
 ordTree {A} {{Ord A}} : Ord (Tree A);

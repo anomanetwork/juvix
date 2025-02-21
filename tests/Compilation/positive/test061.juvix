@@ -1,10 +1,15 @@
 --- Traits
 module test061;
 
-import Stdlib.Prelude open hiding {Show; mkShow; module Show};
+import Stdlib.Prelude open hiding {Show; module Show};
 
 trait
-type Show A := mkShow {show : A → String};
+type Show A :=
+  mkShow@{
+    show : A → String;
+  };
+
+open Show using {mkShow} public;
 
 Show' : Type -> Type := Show;
 
@@ -13,19 +18,19 @@ Bool' : Type := Bool;
 instance
 showStringI : Show String :=
   mkShow@{
-    show := id
+    show := id;
   };
 
 instance
 showBoolI : Show' Bool' :=
   mkShow@{
-    show (x : Bool) : String := ite x "true" "false"
+    show (x : Bool) : String := ite x "true" "false";
   };
 
 instance
 showNatI : Show Nat :=
   mkShow@{
-    show := natToString
+    show := natToString;
   };
 
 g : {A : Type} → {{Show A}} → Nat := 5;
@@ -35,7 +40,7 @@ showListI {A} {{Show' A}} : Show (List A) :=
   mkShow@{
     show : List A → String
       | nil := "nil"
-      | (h :: t) := Show.show h ++str " :: " ++str show t
+      | (h :: t) := Show.show h ++str " :: " ++str show t;
   };
 
 instance
@@ -43,7 +48,7 @@ showMaybeI {A} {{Show A}} : Show (Maybe A) :=
   mkShow@{
     show : Maybe A → String
       | (just x) := "just (" ++str Show.show x ++str ")"
-      | nothing := "nothing"
+      | nothing := "nothing";
   };
 
 f {A} {{Show A}} : A → String
@@ -68,21 +73,30 @@ showBoolFunI : Show (Bool → Bool) :=
       let
         b1 : Bool := f true;
         b2 : Bool := f false;
-      in "\\{ true := " ++str Show.show b1 ++str " | false := " ++str Show.show b2 ++str " }"
+      in "\\{ true := "
+        ++str Show.show b1
+        ++str " | false := "
+        ++str Show.show b2
+        ++str " }";
   };
 
 instance
 showPairI {A B} {{Show A}} {{Show' B}} : Show' (Pair A B) :=
-  mkShow λ {(x, y) := Show.show x ++str ", " ++str Show.show y};
+  mkShow λ{(x, y) := Show.show x ++str ", " ++str Show.show y};
 
 trait
-type T A := mkT {a : A};
+type T A :=
+  mkT@{
+    a : A;
+  };
+
+open T using {mkT} public;
 
 instance
 tNatI : T Nat := mkT 0;
 
 instance
-tFunI {A} {{T A}} : T (A -> A) := mkT \ {a := a};
+tFunI {A} {{T A}} : T (A -> A) := mkT \{a := a};
 
 main : IO :=
   printStringLn (Show.show true)
@@ -98,15 +112,15 @@ main : IO :=
     >>> printStringLn (f'3 "abba")
     >>> printStringLn
       (f'3@{
-          M := mkShow λ {x := x ++str "!"}
-        }
+        M := mkShow λ{x := x ++str "!"};
+      }
         "abba")
     >>> printStringLn (f5 "abba" 3)
     >>> printStringLn (Show.show {{_}} ["a"; "b"; "c"; "d"])
-    >>> printStringLn (Show.show λ {x := not x})
+    >>> printStringLn (Show.show λ{x := not x})
     >>> printStringLn (Show.show (3, [1; 2 + T.a 0]))
-    >>> (for (acc := 0) ((x, _) in [1, 1; 2, 2; 3, 3]) {
-          acc + x
-         }
-         |> Show.show
-         |> printStringLn);
+    >>> (for (acc := 0) (x, _ in [1, 1; 2, 2; 3, 3]) {
+        acc + x
+      }
+      |> Show.show
+      |> printStringLn);

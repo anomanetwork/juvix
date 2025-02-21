@@ -8,6 +8,8 @@ type Maybe A :=
   | nothing
   | just A;
 
+open Maybe using {nothing; just} public;
+
 fromMaybe {A} (default : A) : Maybe A -> A
   | nothing := default
   | (just a) := a;

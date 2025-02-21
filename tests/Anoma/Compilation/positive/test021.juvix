@@ -17,5 +17,4 @@ power' : Nat → Nat → Nat → Nat
 
 power : Nat → Nat → Nat := power' 1;
 
-main : Nat :=
-  trace (power 2 3) >-> trace (power 3 7) >-> power 5 11;
+main : Nat := trace (power 2 3) >-> trace (power 3 7) >-> power 5 11;

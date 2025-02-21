@@ -5,29 +5,30 @@ import Functor open;
 import Stdlib.Data.Pair open;
 
 type State (S A : Type) :=
-  mkState {runState : S -> Pair A S};
+  mkState@{
+    runState : S -> Pair A S;
+  };
+
+open State using {mkState} public;
 
 instance
 State-Functor {S : Type} : Functor (State S) :=
   mkFunctor@{
     <$> {A B : Type} (f : A -> B) : State S A -> State S B
-      | (mkState S→A×S) :=
-        mkState λ {s := case S→A×S s of a, s := f a, s}
+      | (mkState S→A×S) := mkState λ{s := case S→A×S s of a, s := f a, s};
   };
 
 instance
 State-Monad {S : Type} : Monad (State S) :=
   mkMonad@{
     functor := State-Functor;
-    return {A : Type} (a : A) : State S A :=
-      mkState λ {s := a, s};
-    >>=
-      {A B : Type} : State S A -> (A -> State S B) -> State S B
+    return {A : Type} (a : A) : State S A := mkState λ{s := a, s};
+    >>= {A B : Type} : State S A -> (A -> State S B) -> State S B
       | (mkState s→s×a) a→Ss×b :=
         mkState
-          λ {s :=
+          λ{s :=
             case s→s×a s of
-              a, s1 := case a→Ss×b a of mkState s→s×b := s→s×b s1}
+              a, s1 := case a→Ss×b a of mkState s→s×b := s→s×b s1};
   };
 
 import MonadState open;
@@ -37,6 +38,6 @@ instance
 State-MonadState {S : Type} : MonadState S (State S) :=
   mkMonadState@{
     monad := State-Monad;
-    get : State S S := mkState λ {s := s, s};
-    put (s : S) : State S Unit := mkState λ {_ := unit, s}
+    get : State S S := mkState λ{s := s, s};
+    put (s : S) : State S Unit := mkState λ{_ := unit, s};
   };

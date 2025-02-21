@@ -3,10 +3,17 @@ module NamedArgLet;
 import Stdlib.Data.Nat open;
 import Stdlib.Data.Pair open;
 
-type R := mkR@{
-  x : Nat;
-};
+type R :=
+  mkR@{
+    x : Nat;
+  };
 
-f (p : Pair Nat Nat) : R := mkR@{
-  x := let (x, y) := p in x;
-};
+open R using {mkR} public;
+
+f (p : Pair Nat Nat) : R :=
+  mkR@{
+    x :=
+      let
+        (x, y) := p;
+      in x;
+  };

@@ -17,6 +17,8 @@ type Package :=
     buildDir : Maybe String
   };
 
+open Package using {mkPackage} public;
+
 --- A ;SemVer; defines a version that conforms to the Semantic Versioning specification.
 type SemVer :=
   mkSemVer {
@@ -27,11 +29,13 @@ type SemVer :=
     meta : Maybe String
   };
 
+open SemVer using {mkSemVer} public;
+
 --- A ;Dependency; defines a Juvix package dependency.
 type Dependency :=
   | --- A filesystem path to another Juvix Package.
     path {path : String}
-  | --- A ;git; repository containing a Juvix package at its root
+  | --- A git repository containing a Juvix package at its root
     git {
       -- A name for this dependency
       name : String;
@@ -40,8 +44,10 @@ type Dependency :=
       -- The git ref to checkout
       ref : String
     }
-  | --- The ;defaultStdlib; that is bundled with the Juvix compiler.
+  | --- The default Stdlib that is bundled with the Juvix compiler.
     defaultStdlib;
+
+open Dependency using {path; git; defaultStdlib} public;
 
 --- The default version used in `defaultPackage`.
 defaultVersion : SemVer := mkVersion 0 0 0;

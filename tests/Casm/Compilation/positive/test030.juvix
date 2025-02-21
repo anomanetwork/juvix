@@ -18,6 +18,6 @@ exp : Nat → Nat → Nat
   | m n := iterate (mult m) n 1;
 
 ackermann : Nat → Nat → Nat
-  | m := iterate λ {f n := iterate f (suc n) 1} m suc;
+  | m := iterate λ{f n := iterate f (suc n) 1} m suc;
 
 main : Nat := plus 3 7 + mult 3 7 + exp 3 7 + ackermann 2 13;
