@@ -1,11 +1,22 @@
 -- constructor printing
 module test055;
 
-import Stdlib.Prelude open;
+import Juvix.Builtin.V1.Fixity open;
+import Juvix.Builtin.V1.Trait.FromNatural open public;
+import Juvix.Builtin.V1.Nat open;
+import Juvix.Builtin.V1.List open;
 
 type Pair' := pair : Nat -> Nat -> Pair';
 
 open Pair' using {pair} public;
+
+syntax operator Pair., pair;
+
+--- Inductive pair. I.e. a tuple with two components.
+builtin pair
+type Pair (A B : Type) := , : A → B → Pair A B;
+
+open Pair using {,} public;
 
 main : Pair (List (Pair Pair' Nat)) (List Pair') :=
   (pair 1 2, 3) :: (pair 2 3, 4) :: nil, pair 1 2 :: pair 2 3 :: nil;

@@ -1602,9 +1602,9 @@ checkInductiveDef reserved = do
   registerInductive @$> indDef
   return indDef
   where
-    -- note that the constructor name is not bound here
     checkConstructorDef :: S.Symbol -> S.Symbol -> ConstructorDef 'Parsed -> Sem r (ConstructorDef 'Scoped)
-    checkConstructorDef inductiveName' constructorName' ConstructorDef {..} = do
+    checkConstructorDef inductiveName' constructorNameNoFixity ConstructorDef {..} = do
+      constructorName' <- getFixityAndIterator constructorNameNoFixity
       doc' <- mapM checkJudoc _constructorDoc
       rhs' <- checkRhs _constructorRhs
       registerConstructor
@@ -1631,7 +1631,7 @@ checkInductiveDef reserved = do
                   { _rhsRecordStatements = fields',
                     _rhsRecordDelim
                   }
-          registerConstructorSignature (constructorName' ^. S.nameId) (mkRecordNameSignature rhs')
+          registerConstructorSignature (constructorNameNoFixity ^. S.nameId) (mkRecordNameSignature rhs')
           return rhs'
           where
             checkRecordStatements :: [RecordStatement 'Parsed] -> Sem r [RecordStatement 'Scoped]
@@ -2161,12 +2161,12 @@ reserveInductive d = do
         NonEmpty.prependList
           (d ^.. inductiveBuiltin . _Just . withLocParam . to builtinConstructors . each . to Just)
           (NonEmpty.repeat Nothing)
-  let regConstrs :: Sem r (NonEmpty S.Symbol) = do
+  let registerConstrs :: Sem r (NonEmpty S.Symbol) = do
         constrs <- mapM (uncurry reserveConstructor) (mzip builtinConstrs (d ^. inductiveConstructors))
         ignoreFail (registerRecordType (head constrs) i)
         return constrs
   m <- defineInductiveModule d
-  constrs <- reserveTypeLocalModule regConstrs m
+  constrs <- reserveTypeLocalModule registerConstrs m
   let r =
         ReservedInductiveDef
           { _reservedInductiveDef = d,
@@ -2267,11 +2267,11 @@ reserveTypeLocalModule ::
   (Sem r constrs) ->
   Module 'Parsed 'ModuleLocal ->
   Sem r constrs
-reserveTypeLocalModule mreserveConstructors Module {..} = do
+reserveTypeLocalModule reserveConstructors Module {..} = do
   _modulePath' :: S.Symbol <- reserveLocalModuleSymbol _modulePath
   (cs :: constrs, resModule :: ReservedModule, minfo :: ModuleExportInfo) <- withLocalScope $ do
     inheritScope _modulePath
-    cs <- mreserveConstructors
+    cs <- reserveConstructors
     b <- reserveStatements _moduleBody
     export <- genExportInfo
     reserved <- gets (^. scopeReserved)
