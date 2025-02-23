@@ -128,6 +128,7 @@ runIOEitherPipeline' entry a = do
     . runTopModuleNameChecker
     . runReader (opts ^. pipelineImportStrategy)
     . withImportTree (entry ^. entryPointModulePath)
+    . runMigration
     . evalModuleInfoCacheHelper
     $ a
 
@@ -233,6 +234,7 @@ runReplPipelineIOEither' lockMode entry = do
       . runTopModuleNameChecker
       . runReader defaultImportScanStrategy
       . withImportTree (entry ^. entryPointModulePath)
+      . runMigration
       . evalModuleInfoCacheHelper
       $ processFileToStoredCore entry
   return $ case eith of

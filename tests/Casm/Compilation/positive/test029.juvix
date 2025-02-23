@@ -8,9 +8,4 @@ ack : Nat → Nat → Nat
   | (suc m) zero := ack m 1
   | (suc m) (suc n) := ack m (ack (suc m) n);
 
-main : Nat :=
-  ack 0 7
-    + ack 1 7
-    + ack 1 13
-    + ack 2 7
-    + ack 2 13;
+main : Nat := ack 0 7 + ack 1 7 + ack 1 13 + ack 2 7 + ack 2 13;

@@ -61,6 +61,8 @@ bool_fun' (x y z : Bool) : Bool := (x && y) || z;
 --- A type of Queues
 type Queue (A : Type) := queue : List A -> List A -> Queue A;
 
+open Queue using {queue} public;
+
 qfst : {A : Type} → Queue A → List A
   | (queue x _) := x;
 
@@ -107,6 +109,8 @@ type Either' A B :=
   | --- Right constructor
     Right' B;
 
+open Either' using {Left'; Right'} public;
+
 -- Records
 
 {-# isabelle-ignore: true #-}
@@ -116,11 +120,15 @@ type R' :=
     r2' : Nat;
   };
 
+open R' using {mkR'} public;
+
 type R :=
   mkR@{
     r1 : Nat;
     r2 : Nat;
   };
+
+open R using {mkR} public;
 
 r : R := mkR 0 1;
 

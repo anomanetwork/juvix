@@ -5,8 +5,7 @@ import Stdlib.Prelude open;
 terminating
 loop (dummy : Nat) : Nat := loop dummy;
 
-e : Nat := (ite (3 > 0) 1 (loop 0)) + (ite (2 < 1) (loop 0) (ite (7 >= 8) (loop 0) 1));
+e : Nat :=
+  ite (3 > 0) 1 (loop 0) + ite (2 < 1) (loop 0) (ite (7 >= 8) (loop 0) 1);
 
 main : IO := printNatLn e;
-
-end;

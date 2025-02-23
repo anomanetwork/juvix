@@ -8,6 +8,8 @@ type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
 syntax fixity additive := binary {assoc := left};
 
 syntax operator + additive;

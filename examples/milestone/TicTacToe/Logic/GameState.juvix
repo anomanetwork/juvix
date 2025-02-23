@@ -12,12 +12,16 @@ type Error :=
   | --- a fatal occurred
     terminate : String → Error;
 
+open Error using {noError; continue; terminate} public;
+
 type GameState :=
   mkGameState@{
     board : Board;
     player : Symbol;
     error : Error;
   };
+
+open GameState using {mkGameState} public;
 
 --- Textual representation of a ;GameState;
 showGameState (state : GameState) : String := showBoard (GameState.board state);

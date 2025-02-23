@@ -2,15 +2,25 @@ module Simple;
 
 type T := tt : T;
 
+open T using {tt} public;
+
+open T;
+
 someT : T := tt;
 
 type Bool :=
   | false : Bool
   | true : Bool;
 
+open Bool using {false; true} public;
+open Bool;
+
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
+
+open Nat using {zero; suc} public;
+open Nat;
 
 syntax fixity cmp := binary;
 syntax fixity add := binary {assoc := left; above := [cmp]};
@@ -29,10 +39,13 @@ syntax operator + add;
   | zero b := b
   | (suc a) b := suc (a + b);
 
-syntax operator :: cons;
+syntax operator List.:: cons;
+
 type List :=
   | nil : List
   | :: : Nat → List → List;
+
+open List using {nil; ::} public;
 
 foldr : (Nat → Nat → Nat) → Nat → List → Nat
   | _ v nil := v

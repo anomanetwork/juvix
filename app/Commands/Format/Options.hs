@@ -5,11 +5,26 @@ import CommonOptions
 data FormatOptions = FormatOptions
   { _formatInput :: Maybe (AppPath FileOrDir),
     _formatCheck :: Bool,
+    _formatMigration :: Migration,
     _formatInPlace :: Bool
   }
   deriving stock (Data)
 
 makeLenses ''FormatOptions
+
+parseMigration :: Parser Migration
+parseMigration = do
+  m <-
+    optional $
+      option
+        (enumReader (Proxy @Migrate))
+        ( long "migration"
+            <> metavar "MIGRATION"
+            <> completer (enumCompleter (Proxy @Migrate))
+            <> help "Migrates files in a project (doesn't work in single file mode or stdin)"
+        )
+
+  pure (Migration m)
 
 parseInputFileOrDir :: Parser (AppPath FileOrDir)
 parseInputFileOrDir = do
@@ -26,6 +41,7 @@ parseInputFileOrDir = do
 parseFormat :: Parser FormatOptions
 parseFormat = do
   _formatInput <- optional parseInputFileOrDir
+  _formatMigration <- parseMigration
   _formatCheck <-
     switch
       ( long "check"

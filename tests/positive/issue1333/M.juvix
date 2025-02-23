@@ -1,3 +1,5 @@
 module M;
 
 type T (A : Type) := c : T _;
+
+open T using {c} public;

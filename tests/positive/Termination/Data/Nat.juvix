@@ -7,6 +7,9 @@ type ℕ :=
   | zero : ℕ
   | suc : ℕ → ℕ;
 
+open ℕ using {zero; suc} public;
+open ℕ public;
+
 syntax operator + add;
 
 + : ℕ → ℕ → ℕ

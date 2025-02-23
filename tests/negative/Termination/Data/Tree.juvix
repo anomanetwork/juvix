@@ -4,6 +4,8 @@ type Tree (A : Type) :=
   | leaf : Tree A
   | branch : Tree A → Tree A → Tree A;
 
+open Tree using {leaf; branch} public;
+
 f : (A : Type) → Tree A → Tree A → Tree A
   | A x leaf := x
   | A x (branch y z) := f A (f A x y) z;

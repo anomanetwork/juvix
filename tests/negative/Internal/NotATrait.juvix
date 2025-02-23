@@ -4,4 +4,6 @@ type Maybe A :=
   | just A
   | nothing;
 
+open Maybe;
+
 f {A} {{Maybe A}} : Maybe A := nothing;

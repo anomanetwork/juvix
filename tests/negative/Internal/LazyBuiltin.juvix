@@ -4,6 +4,7 @@ builtin bool
 type Bool :=
   | false : Bool
   | true : Bool;
+open Bool;
 
 builtin bool-if
 ite : {A : Type} -> Bool -> A -> A -> A

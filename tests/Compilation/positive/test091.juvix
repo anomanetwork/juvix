@@ -8,26 +8,33 @@ import Stdlib.Prelude open;
 -------------------------------------------------------------------------------
 
 trait
-type State A (E : Type -> Type) := mkState@{
-  put : A -> E Unit;
-  get : E A;
-};
+type State A (E : Type -> Type) :=
+  mkState@{
+    put : A -> E Unit;
+    get : E A;
+  };
 
-inc {E : Type -> Type} {{Monad E}} {{State Nat E}} : E Nat := do {
-  s <- State.get;
-  State.put 1;
-  pure s
-};
+open State using {mkState} public;
 
-modify {S} {E : Type → Type} {{Monad E}} {{State S E}} (f : S → S) : E Unit := do {
-  s <- State.get;
-  State.put (f s)
-};
+inc {E : Type -> Type} {{Monad E}} {{State Nat E}} : E Nat :=
+  do {
+    s <- State.get;
+    State.put 1;
+    pure s;
+  };
+
+modify {S} {E : Type → Type} {{Monad E}} {{State S E}} (f : S → S) : E Unit :=
+  do {
+    s <- State.get;
+    State.put (f s);
+  };
 
 type StateT (S : Type) (M : Type → Type) (A : Type) :=
   mkStateT@{
     runStateT : S → M (Pair A S);
   };
+
+open StateT using {mkStateT} public;
 
 runState
   {S A : Type} {M : Type → Type} (s : S) (m : StateT S M A) : M (Pair A S) :=
@@ -80,8 +87,7 @@ StateT-Monad
   };
 
 instance
-StateT-State
-  {S : Type} {M : Type → Type} {{Monad M}} : State S (StateT S M) :=
+StateT-State {S : Type} {M : Type → Type} {{Monad M}} : State S (StateT S M) :=
   mkState@{
     get : StateT S M S := mkStateT λ{s := Applicative.pure (s, s)};
     put (s : S) : StateT S M Unit :=
@@ -92,18 +98,21 @@ coercion instance
 StateT-State-trans
   {A B} {E : Type -> Type} {{Monad E}} {{State A E}} : State A (StateT B E) :=
   mkState@{
-    get : StateT B E A := mkStateT@{
-      runStateT (s : B) : E (Pair A B) := do {
-        a <- State.get;
-        Applicative.pure (a, s);
-      }
-    };
+    get : StateT B E A :=
+      mkStateT@{
+        runStateT (s : B) : E (Pair A B) :=
+          do {
+            a <- State.get;
+            Applicative.pure (a, s);
+          };
+      };
     put (a : A) : StateT B E Unit :=
       mkStateT@{
-        runStateT (s : B) : E (Pair Unit B) := do {
-          State.put a;
-          Applicative.pure (unit, s);
-        };
+        runStateT (s : B) : E (Pair Unit B) :=
+          do {
+            State.put a;
+            Applicative.pure (unit, s);
+          };
       };
   };
 
@@ -117,10 +126,14 @@ type Reader (S : Type) (E : Type -> Type) :=
     ask : E S;
   };
 
+open Reader using {mkReader} public;
+
 type ReaderT (S : Type) (M : Type → Type) (A : Type) :=
   mkReaderT@{
     runReaderT : S → M A;
   };
+
+open ReaderT using {mkReaderT} public;
 
 runReader {S A : Type} {M : Type → Type} (r : S) (m : ReaderT S M A) : M A :=
   ReaderT.runReaderT m r;
@@ -167,12 +180,10 @@ ReaderT-Reader
   };
 
 instance
-ReaderT-State
-  {A B} {E : Type -> Type} {{State A E}} : State A (ReaderT B E) :=
+ReaderT-State {A B} {E : Type -> Type} {{State A E}} : State A (ReaderT B E) :=
   mkState@{
     get : ReaderT B E A := mkReaderT (const State.get);
-    put (s : A) : ReaderT B E Unit :=
-      mkReaderT (const (State.put s));
+    put (s : A) : ReaderT B E Unit := mkReaderT (const (State.put s));
   };
 
 coercion instance
@@ -186,12 +197,14 @@ instance
 StateT-Reader
   {A B} {E : Type -> Type} {{Monad E}} {{Reader A E}} : Reader A (StateT B E) :=
   mkReader@{
-    ask : StateT B E A := mkStateT@{
-      runStateT (s : B) : E (Pair A B) := do {
-        a <- Reader.ask;
-        pure (a, s);
+    ask : StateT B E A :=
+      mkStateT@{
+        runStateT (s : B) : E (Pair A B) :=
+          do {
+            a <- Reader.ask;
+            pure (a, s);
+          };
       };
-    };
   };
 
 -------------------------------------------------------------------------------
@@ -202,6 +215,8 @@ type Identity (a : Type) :=
   mkIdentity@{
     run : a;
   };
+
+open Identity using {mkIdentity} public;
 
 open Identity public;
 
@@ -231,64 +246,55 @@ Identity-Monad : Monad Identity :=
 -- Test
 -------------------------------------------------------------------------------
 
-readAndAdd {E : Type -> Type} {{Monad E}} {{Reader Nat E}} {{State Nat E}} : E Nat :=
+readAndAdd
+  {E : Type -> Type} {{Monad E}} {{Reader Nat E}} {{State Nat E}} : E Nat :=
   do {
     s <- Reader.ask;
     modify ((+) s);
-    State.get
+    State.get;
   };
 
-add (x y : Nat) : Nat :=
-  readAndAdd
-  |> runReader y
-  |> runState x
-  |> run
-  |> fst;
+add (x y : Nat) : Nat := readAndAdd |> runReader y |> runState x |> run |> fst;
 
-add' (x y : Nat) : Nat :=
-  readAndAdd
-  |> runState x
-  |> runReader y
-  |> run
-  |> fst;
+add' (x y : Nat) : Nat := readAndAdd |> runState x |> runReader y |> run |> fst;
 
-type MyNat := mkMyNat@{
-  theNat : Nat;
-};
+type MyNat :=
+  mkMyNat@{
+    theNat : Nat;
+  };
 
-getAndAdd {E : Type -> Type} {{Monad E}} {{State MyNat E}} {{State Nat E}} : E Nat :=
+open MyNat using {mkMyNat} public;
+
+getAndAdd
+  {E : Type -> Type} {{Monad E}} {{State MyNat E}} {{State Nat E}} : E Nat :=
   do {
     s <- MyNat.theNat <$> State.get;
     modify ((+) s);
-    State.get
+    State.get;
   };
 
 addS (x y : Nat) : Nat :=
-  getAndAdd
-  |> evalState (mkMyNat y)
-  |> evalState x
-  |> run;
+  getAndAdd |> evalState (mkMyNat y) |> evalState x |> run;
 
 addS' (x y : Nat) : Nat :=
-  getAndAdd
-  |> evalState x
-  |> evalState (mkMyNat y)
-  |> run;
+  getAndAdd |> evalState x |> evalState (mkMyNat y) |> run;
 
-readAndAddMul {E : Type -> Type} {{Monad E}} {{Reader Nat E}} {{Reader MyNat E}} {{State Nat E}} : E Nat :=
+readAndAddMul
+  {E : Type -> Type}
+  {{Monad E}}
+  {{Reader Nat E}}
+  {{Reader MyNat E}}
+  {{State Nat E}}
+  : E Nat :=
   do {
     s <- MyNat.theNat <$> Reader.ask;
     s' <- readAndAdd;
     modify ((+) (s * s'));
-    State.get
+    State.get;
   };
 
 addMul (x y z : Nat) : Nat :=
-  readAndAddMul
-  |> runReader (mkMyNat z)
-  |> runReader y
-  |> evalState x
-  |> run;
+  readAndAddMul |> runReader (mkMyNat z) |> runReader y |> evalState x |> run;
 
 main : Nat := addS' (addS (add 1 2) (addMul 1 3 5)) (add' 2 1);
 -- result = 3 + 24 + 3 = 30

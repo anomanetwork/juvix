@@ -5,6 +5,9 @@ import Stdlib.Data.Fixity open;
 -- aliases are allowed to forward reference, but they themselves cannot be
 -- forward referenced
 syntax alias Boolean := Bool;
+
+open Bool;
+
 syntax alias ⊥ := false;
 syntax alias ⊤ := true;
 
@@ -12,6 +15,8 @@ syntax alias ⊤ := true;
 type Bool :=
   | false
   | true;
+
+open Bool using {false; true} public;
 
 not : Boolean -> Boolean
   | ⊥ := ⊤
@@ -49,6 +54,8 @@ or3' (a b c : Binary) : Binary := (a ||| b) ||| c;
 
 type Pair := mkPair Binary Binary;
 
+open Pair using {mkPair} public;
+
 syntax alias , := mkPair;
 syntax operator , pair;
 
@@ -65,11 +72,13 @@ localAlias : Binary -> Binary
 syntax alias g' := g;
 
 terminating
-f (b : Binary) : Binary := case b of
-  | zero := g' one
-  | one := zero;
+f (b : Binary) : Binary :=
+  case b of
+    | zero := g' one
+    | one := zero;
 
 terminating
-g (b : Binary) : Binary := case b of
-  | zero := f one
-  | one := zero;
+g (b : Binary) : Binary :=
+  case b of
+    | zero := f one
+    | one := zero;

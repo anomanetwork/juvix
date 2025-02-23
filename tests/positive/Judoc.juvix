@@ -9,6 +9,8 @@ type T :=
   --- document constructor
   t : T;
 
+open T using {t} public;
+
 --- blah ;id A; and ;A A id T A id; this is another ;id id id; example
 --- hahahah
 --- and another one ;T;

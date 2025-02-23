@@ -7,14 +7,15 @@ import Functor open using {module Functor as MFunctor};
 import Stdlib.Data.Pair open;
 
 type StateT (S : Type) (M : Type → Type) (A : Type) :=
-  mkStateT {runStateT : S → M (Pair A S)};
+  mkStateT@{
+    runStateT : S → M (Pair A S);
+  };
+
+open StateT using {mkStateT} public;
 
 runState
-  {S A : Type}
-  {M : Type → Type}
-  (s : S)
-  (m : StateT S M A)
-  : M (Pair A S) := StateT.runStateT m s;
+  {S A : Type} {M : Type → Type} (s : S) (m : StateT S M A) : M (Pair A S) :=
+  StateT.runStateT m s;
 
 evalState
   {S A : Type}
@@ -26,41 +27,30 @@ evalState
 
 instance
 StateT-Functor
-  {S : Type}
-  {M : Type → Type}
-  {{func : Functor M}}
-  : Functor (StateT S M) :=
+  {S : Type} {M : Type → Type} {{func : Functor M}} : Functor (StateT S M) :=
   mkFunctor@{
     <$> {A B : Type} (f : A → B) : StateT S M A → StateT S M B
       | (mkStateT S→M⟨A×S⟩) :=
         let
           open MFunctor;
-        in mkStateT
-          λ {s := λ {(a, s') := f a, s'} MFunctor.<$> S→M⟨A×S⟩ s}
+        in mkStateT λ{s := λ{(a, s') := f a, s'} MFunctor.<$> S→M⟨A×S⟩ s};
   };
 
 instance
 StateT-Monad
-  {S : Type}
-  {M : Type → Type}
-  {{mon : Monad M}}
-  : Monad (StateT S M) :=
+  {S : Type} {M : Type → Type} {{mon : Monad M}} : Monad (StateT S M) :=
   mkMonad@{
     functor :=
       StateT-Functor@{
-        func := MMonad.functor
+        func := MMonad.functor;
       };
     return {A : Type} (a : A) : StateT S M A :=
-      mkStateT λ {s := MMonad.return (a, s)};
-    >>=
-      {A B : Type}
-      (x : StateT S M A)
-      (f : A → StateT S M B)
-      : StateT S M B :=
+      mkStateT λ{s := MMonad.return (a, s)};
+    >>= {A B : Type} (x : StateT S M A) (f : A → StateT S M B) : StateT S M B :=
       mkStateT
-        λ {s :=
+        λ{s :=
           StateT.runStateT x s
-            MMonad.>>= λ {(a, s') := StateT.runStateT (f a) s'}}
+            MMonad.>>= λ{(a, s') := StateT.runStateT (f a) s'}};
   };
 
 import MonadState open;
@@ -68,14 +58,9 @@ import Stdlib.Data.Unit open;
 
 instance
 StateT-MonadState
-  {S : Type}
-  {M : Type → Type}
-  {{Monad M}}
-  : MonadState S (StateT S M) :=
+  {S : Type} {M : Type → Type} {{Monad M}} : MonadState S (StateT S M) :=
   mkMonadState@{
     monad := StateT-Monad;
-    get : StateT S M S :=
-      mkStateT λ {s := MMonad.return (s, s)};
-    put (s : S) : StateT S M Unit :=
-      mkStateT λ {_ := MMonad.return (unit, s)}
+    get : StateT S M S := mkStateT λ{s := MMonad.return (s, s)};
+    put (s : S) : StateT S M Unit := mkStateT λ{_ := MMonad.return (unit, s)};
   };

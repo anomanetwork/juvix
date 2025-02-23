@@ -10,12 +10,16 @@ type TransactionCandidate :=
     transactionFunction : Unit -> Transaction;
   };
 
+open TransactionCandidate using {mkTransactionCandidate} public;
+
 module TransactionRequest;
 
   type TransactionRequest :=
     mkTransactionRequest@{
       payload : Unit -> TransactionCandidate;
     };
+
+  open TransactionRequest using {mkTransactionRequest} public;
 
   fromTransaction (tx : Transaction) : TransactionRequest :=
     mkTransactionRequest@{

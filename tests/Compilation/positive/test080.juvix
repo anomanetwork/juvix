@@ -7,40 +7,51 @@ import Stdlib.System.IO open;
 import Stdlib.Data.Maybe open;
 
 trait
-type Functor (f : Type -> Type) := mkFunctor {map : {A B : Type} -> (A -> B) -> f A -> f B};
+type Functor (f : Type -> Type) :=
+  mkFunctor@{
+    map : {A B : Type} -> (A -> B) -> f A -> f B;
+  };
+
+open Functor using {mkFunctor} public;
 
 trait
 type Applicative (f : Type -> Type) :=
-  mkApplicative {
+  mkApplicative@{
     {{ApplicativeFunctor}} : Functor f;
     pure : {A : Type} -> A -> f A;
-    ap : {A B : Type} -> f (A -> B) -> f A -> f B
+    ap : {A B : Type} -> f (A -> B) -> f A -> f B;
   };
+
+open Applicative using {mkApplicative} public;
 
 trait
 type Monad (f : Type -> Type) :=
-  mkMonad {
+  mkMonad@{
     {{MonadApplicative}} : Applicative f;
 
     builtin monad-bind
-    bind : {A B : Type} -> f A -> (A -> f B) -> f B
+    bind : {A B : Type} -> f A -> (A -> f B) -> f B;
   };
+
+open Monad using {mkMonad} public;
 
 open Functor;
 open Applicative;
 open Monad;
 
 syntax operator >>= seq;
->>= {A B} {f : Type -> Type} {{Monad f}} (x : f A) (g : A -> f B) : f B := bind x g;
+>>= {A B} {f : Type -> Type} {{Monad f}} (x : f A) (g : A -> f B) : f B :=
+  bind x g;
 
-monadMap {A B} {f : Type -> Type} {{Monad f}} (g : A -> B) (x : f A) : f B := map g x;
+monadMap {A B} {f : Type -> Type} {{Monad f}} (g : A -> B) (x : f A) : f B :=
+  map g x;
 
 instance
 maybeFunctor : Functor Maybe :=
   mkFunctor@{
     map {A B} (f : A -> B) : Maybe A -> Maybe B
       | nothing := nothing
-      | (just x) := just (f x)
+      | (just x) := just (f x);
   };
 
 instance
@@ -49,7 +60,7 @@ maybeApplicative : Applicative Maybe :=
     pure := just;
     ap {A B} : Maybe (A -> B) -> Maybe A -> Maybe B
       | (just f) (just x) := just (f x)
-      | _ _ := nothing
+      | _ _ := nothing;
   };
 
 instance
@@ -57,7 +68,7 @@ maybeMonad : Monad Maybe :=
   mkMonad@{
     bind {A B} : Maybe A -> (A -> Maybe B) -> Maybe B
       | nothing _ := nothing
-      | (just a) f := f a
+      | (just a) f := f a;
   };
 
 minusOne : Nat -> Maybe Nat

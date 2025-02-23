@@ -2,10 +2,18 @@ module Puns;
 
 type A := a;
 
+open A using {a} public;
+
+open A;
+
 type B := b;
 
+open B using {b} public;
+
+open B;
+
 type S :=
-  mkS@{
+  mk@{
     fieldA : A;
     fieldB : B;
     fieldC : A;
@@ -13,10 +21,12 @@ type S :=
     fieldE : B;
   };
 
+open S using {mk} public;
+
 f (fieldA : A) (fieldB : B) : S :=
   let
     fieldD := b;
-  in mkS@{
+  in S.mk@{
        fieldC := fieldA;
        fieldA;
        fieldB;

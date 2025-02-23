@@ -10,6 +10,8 @@ type List (A : Type) :=
   | nil : List A
   | cons : A → List A → List A;
 
+open List;
+
 filter : {A : Type} → (A → Bool) → List A → List A
   | f nil := nil
   | f (cons h hs) :=

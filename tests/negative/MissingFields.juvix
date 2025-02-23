@@ -1,15 +1,16 @@
 module MissingFields;
 
 type Unit := unit;
+open Unit;
 
 type Triple (A B C : Type) :=
-  mkTriple {
+  mk {
     fst : A;
     snd : B;
     thd : C
   };
 
 triple : Triple Unit Unit Unit :=
-  mkTriple@{
+  Triple.mk@{
     snd := unit;
   };

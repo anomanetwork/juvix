@@ -11,9 +11,11 @@ type R :=
     c : Nat;
   };
 
+open R using {mkR} public;
+
 instance
 RShowI : Show R :=
-  mkShow@{
+  Show.mk@{
     show (r : R) : String :=
       Show.show (R.a r)
         ++str " "
@@ -33,7 +35,4 @@ main : IO :=
     a := 6;
     b := 7;
     c := 8;
-  in printLn z
-    >>> printLn (z @R{a})
-    >>> printLn (z @R{c})
-    >>> printLn (z @R{a; b; c});
+  in printLn z >>> printLn z@R{a} >>> printLn z@R{c} >>> printLn z@R{a; b; c};

@@ -4,6 +4,8 @@ type List A :=
   | nil
   | cons A (List A);
 
+open List using {nil; cons} public;
+
 map {A B} (f : A → B) : List A → List B
   | nil := nil
   | (cons h t) := cons (f h) (map f t);

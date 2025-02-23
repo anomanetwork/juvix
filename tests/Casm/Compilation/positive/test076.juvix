@@ -6,8 +6,7 @@ import Stdlib.Cairo.Ec as Ec;
 
 main : Field :=
   let
-    pt : Ec.Point :=
-      Ec.mkPoint Ec.StarkCurve.GEN_X Ec.StarkCurve.GEN_Y;
+    pt : Ec.Point := Ec.Point.mk Ec.StarkCurve.GEN_X Ec.StarkCurve.GEN_Y;
     dt : Ec.Point := Ec.double pt;
     r : Ec.Point := Ec.addMul pt 9 dt;
   in Ec.Point.x r + Ec.Point.y r;

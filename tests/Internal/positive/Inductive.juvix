@@ -1,10 +1,11 @@
 module Inductive;
 
-type Unit :=
-  | unit : Unit;
+type Unit := | unit : Unit;
 
-type A (B : Type) :=
-  | a : A B;
+open Unit using {unit} public;
+
+type A (B : Type) := | a : A B;
+
+open A using {a} public;
 
 main : Type := A Unit;
-

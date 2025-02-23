@@ -32,6 +32,7 @@ You can pass a number to the `extract-module-statements` attribute to drop that 
 ```juvix extract-module-statements 1
 module Foo2;
   type T := t;
+  open T using {t} public;
   a : T := t;
 end;
 ```

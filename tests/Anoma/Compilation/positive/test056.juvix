@@ -9,20 +9,12 @@ mymap {A B} (f : A -> B) : List A -> List B
   | (x :: xs) := f x :: mymap f xs;
 
 {-# specialize: [2, 5], inline: false #-}
-myf
-  : {A B : Type}
-    -> A
-    -> (A -> A -> B)
-    -> A
-    -> B
-    -> Bool
-    -> B
+myf : {A B : Type} -> A -> (A -> A -> B) -> A -> B -> Bool -> B
   | a0 f a b true := f a0 a
   | a0 f a b false := b;
 
 {-# inline: false #-}
-myf'
-  : {A B : Type} -> A -> (A -> A -> A -> B) -> A -> B -> B
+myf' : {A B : Type} -> A -> (A -> A -> A -> B) -> A -> B -> B
   | a0 f a b := myf a0 (f a0) a b true;
 
 sum : List Nat -> Nat
@@ -38,10 +30,19 @@ funa : {A : Type} -> (A -> A) -> A -> A
     in go 10;
 
 {-# specialize: true #-}
-type Additive A := mkAdditive {add : A -> A -> A};
+type Additive A :=
+  mkAdditive@{
+    add : A -> A -> A;
+  };
+
+open Additive using {mkAdditive} public;
 
 type Multiplicative A :=
-  mkMultiplicative {mul : A -> A -> A};
+  mkMultiplicative@{
+    mul : A -> A -> A;
+  };
+
+open Multiplicative using {mkMultiplicative} public;
 
 addNat : Additive Nat := mkAdditive (+);
 
@@ -49,20 +50,16 @@ addNat : Additive Nat := mkAdditive (+);
 mulNat : Multiplicative Nat := mkMultiplicative (*);
 
 {-# inline: false #-}
-fadd {A} (a : Additive A) (x y : A) : A :=
-  Additive.add a x y;
+fadd {A} (a : Additive A) (x y : A) : A := Additive.add a x y;
 
 {-# inline: false #-}
-fmul {A} (m : Multiplicative A) (x y : A) : A :=
-  Multiplicative.mul m x y;
+fmul {A} (m : Multiplicative A) (x y : A) : A := Multiplicative.mul m x y;
 
 main : Nat :=
-  sum (mymap λ {x := x + 3} (1 :: 2 :: 3 :: 4 :: nil))
+  sum (mymap λ{x := x + 3} (1 :: 2 :: 3 :: 4 :: nil))
     + sum
       (flatten
-        (mymap
-          (mymap λ {x := x + 2})
-          ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
+        (mymap (mymap λ{x := x + 2}) ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
     + myf 3 (*) 2 5 true
     + myf 1 (+) 2 0 false
     + myf' 7 (const (+)) 2 0

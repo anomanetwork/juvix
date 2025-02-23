@@ -2,10 +2,19 @@ module Traits;
 
 type Unit := unit;
 
+open Unit using {unit} public;
+
 type Box A := box A;
 
+open Box using {box} public;
+
 trait
-type T A := mkT {pp : A → A};
+type T A :=
+  mkT@{
+    pp : A → A;
+  };
+
+open T using {mkT} public;
 
 ppBox {A} {{T A}} : Box A → Box A
   | (box x) := box (T.pp x);
@@ -13,5 +22,5 @@ ppBox {A} {{T A}} : Box A → Box A
 instance
 boxT {A} {{T A}} : T (Box A) :=
   mkT@{
-    pp := ppBox
+    pp := ppBox;
   };

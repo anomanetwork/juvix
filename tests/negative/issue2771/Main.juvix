@@ -1,8 +1,10 @@
 module Main;
 
 type T := t;
+open T;
 
 type Box := mkBox {unbox : T};
+open Box using {mkBox};
 
 f (b : Box) : Box := case b of mkBox _ := mkBox t;
 

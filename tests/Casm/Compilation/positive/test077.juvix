@@ -4,39 +4,41 @@ module test077;
 import Stdlib.Prelude open;
 
 type Resource :=
-  mkResource {
+  mkResource@{
     fld0 : Field;
     fld1 : Field;
-    eph : Bool
+    eph : Bool;
   };
+
+open Resource using {mkResource} public;
 
 type Point :=
-  mkPoint {
+  mkPoint@{
     x : Field;
-    y : Field
+    y : Field;
   };
 
+open Point using {mkPoint} public;
+
 type ComplianceResult :=
-  mkResult {
+  mkResult@{
     cnt : Field;
     x : Field;
-    y : Field
+    y : Field;
   };
+
+open ComplianceResult using {mkResult} public;
 
 count : List (Pair Field Bool) -> Field
   | [] := 0
   | ((h, b) :: t) := ite b (h + count t) (count t);
 
-main
-  (input : Resource)
-  (path : List (Pair Field Bool))
-  : ComplianceResult :=
+main (input : Resource) (path : List (Pair Field Bool)) : ComplianceResult :=
   mkResult@{
     cnt := count path;
     x :=
       if
-        | Resource.eph input :=
-          Resource.fld0 input + Resource.fld1 input
+        | Resource.eph input := Resource.fld0 input + Resource.fld1 input
         | else := Resource.fld0 input;
-    y := Resource.fld1 input
+    y := Resource.fld1 input;
   };

@@ -3,3 +3,6 @@ module Data.Product;
 syntax fixity prod := binary;
 syntax operator × prod;
 type × (a : Type) (b : Type) := , : a → b → a × b;
+
+open × using {,} public;
+open × public;

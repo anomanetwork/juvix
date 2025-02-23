@@ -1,7 +1,7 @@
 module FunctionReturnConstructor;
 
-type Foo :=
-  | foo : Foo;
+type Foo := | foo : Foo;
+
+open Foo using {foo} public;
 
 main : Foo := foo;
-

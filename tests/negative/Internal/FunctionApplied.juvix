@@ -1,6 +1,7 @@
 module FunctionApplied;
 
 type T (A : Type) := c : A → T A;
+open T;
 
 f : {A : Type} → A → T A
   | {A} a := c {(A → A) A} a;

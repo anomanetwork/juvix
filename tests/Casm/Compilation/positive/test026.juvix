@@ -2,8 +2,11 @@
 module test026;
 
 import Stdlib.Prelude open;
+import Stdlib.Debug.Fail open;
 
 type Queue (A : Type) := queue : List A → List A → Queue A;
+
+open Queue using {queue} public;
 
 qfst : {A : Type} → Queue A → List A
   | (queue x _) := x;
@@ -12,7 +15,7 @@ qsnd : {A : Type} → Queue A → List A
   | (queue _ x) := x;
 
 front {{Partial}} : {A : Type} → Queue A → A
-  | q := phead (qfst q);
+  | q := head (failwith "front") (qfst q);
 
 pop_front : {A : Type} → Queue A → Queue A
   | {A} q :=
@@ -42,8 +45,7 @@ empty : {A : Type} → Queue A := queue nil nil;
 
 terminating
 g {{Partial}} : List Nat → Queue Nat → List Nat
-  | acc q :=
-    ite (is_empty q) acc (g (front q :: acc) (pop_front q));
+  | acc q := ite (is_empty q) acc (g (front q :: acc) (pop_front q));
 
 f {{Partial}} : Nat → Queue Nat → List Nat
   | zero q := g nil q
@@ -53,4 +55,4 @@ sum : List Nat → Nat
   | nil := 0
   | (h :: t) := h + sum t;
 
-main : Nat := sum (runPartial λ {{{_}} := f 100 empty});
+main : Nat := sum (runPartial λ{{{_}} := f 100 empty});

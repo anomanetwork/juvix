@@ -9,6 +9,8 @@ type Tree :=
   | node2 : Tree → Tree → Tree
   | node3 : Tree → Tree → Tree → Tree;
 
+open Tree using {leaf; node1; node2; node3} public;
+
 terminating
 gen : Nat → Tree
   | zero := leaf
@@ -16,15 +18,13 @@ gen : Nat → Tree
     if
       | mod n 3 == 0 := node1 (gen (sub n 1))
       | mod n 3 == 1 := node2 (gen (sub n 1)) (gen (sub n 1))
-      | else :=
-        node3 (gen (sub n 1)) (gen (sub n 1)) (gen (sub n 1));
+      | else := node3 (gen (sub n 1)) (gen (sub n 1)) (gen (sub n 1));
 
 preorder : Tree → IO
   | leaf := printNat 0
   | (node1 c) := printNat 1 >>> preorder c
   | (node2 l r) := printNat 2 >>> preorder l >>> preorder r
-  | (node3 l m r) :=
-    printNat 3 >>> preorder l >>> preorder m >>> preorder r;
+  | (node3 l m r) := printNat 3 >>> preorder l >>> preorder m >>> preorder r;
 
 main : IO :=
   preorder (gen 3)

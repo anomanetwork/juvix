@@ -2,6 +2,8 @@ module IdInType;
 
 type Unit := unit : Unit;
 
+open Unit using {unit} public;
+
 id : {a : Type} -> a -> a
   | a := a;
 

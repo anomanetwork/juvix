@@ -1,9 +1,11 @@
 module N;
 
 import M open;
-import Stdlib.Prelude open hiding {Unit};
+import Stdlib.Prelude open hiding {Unit; module Unit};
 
 test : {A : Type} -> A -> A
   | x := x;
 
 type Unit := unit : Unit;
+
+open Unit using {unit} public;

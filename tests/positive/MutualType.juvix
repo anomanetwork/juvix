@@ -2,7 +2,6 @@ module MutualType;
 
 syntax fixity cons := binary {assoc := right};
 
-syntax operator :: cons;
 --- Inductive list.
 type List (a : Type) :=
   | --- The empty list
@@ -10,9 +9,15 @@ type List (a : Type) :=
   | --- An element followed by a list
     :: : a → List a → List a;
 
+open List using {nil; ::} public;
+
+syntax operator :: cons;
+
 Forest : Type -> Type
 
   | A := List (Tree A);
 
 --- N-Ary tree.
 type Tree (A : Type) := node : A -> Forest A -> Tree A;
+
+open Tree using {node} public;

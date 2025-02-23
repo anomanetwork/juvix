@@ -2,9 +2,11 @@ module WrongCoercionArgument;
 
 trait
 type T1 A := mkT1 {pp : A -> A};
+open T1 using {mkT1};
 
 trait
 type T2 A := mkT2 {pp : A -> A};
+open T2 using {mkT2};
 
 coercion instance
 coe {A} {{T1 A}} {{T1 A}} : T2 A :=

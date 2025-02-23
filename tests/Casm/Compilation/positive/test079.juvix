@@ -18,6 +18,8 @@ type Resource :=
     rseed : Field;
   };
 
+open Resource using {mkResource} public;
+
 type LogicResult :=
   mkResult@{
     -- nullifier of input resource or commitment of output resource
@@ -39,6 +41,8 @@ type LogicResult :=
     pk_y : Field;
     nonce : Field;
   };
+
+open LogicResult using {mkResult} public;
 
 check_merkle (current_root : Field) : Pair Field Bool -> Field
   | (node, is_left) :=
@@ -73,11 +77,15 @@ type EncryptionResult :=
     nonce : Field;
   };
 
+open EncryptionResult using {mkEncryptionResult} public;
+
 type Cipher :=
   mkCipher@{
     cipher_text : List Field;
     cur_state : Field;
   };
+
+open Cipher using {mkCipher} public;
 
 update_poseidon_state
   (cur_msg secret_key_x : Field) (cipher : Cipher) : Cipher :=
@@ -115,7 +123,7 @@ encryption
 
   let
     -- Generate encryption key
-    pk := Ec.mkPoint pk_x pk_y;
+    pk := Ec.Point.mk pk_x pk_y;
     secret_key := Ec.mul sk pk;
 
     -- PLAINTEXT_NUM := 10;
@@ -135,7 +143,7 @@ encryption
     mac := Cipher.cur_state final_cipher;
 
     -- Generate sender's pk
-    generator := Ec.mkPoint Ec.StarkCurve.GEN_X Ec.StarkCurve.GEN_Y;
+    generator := Ec.Point.mk Ec.StarkCurve.GEN_X Ec.StarkCurve.GEN_Y;
     sender_pk := Ec.mul sk generator;
 
   in case Cipher.cipher_text final_cipher of

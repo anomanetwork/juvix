@@ -1,7 +1,7 @@
 module FunctionType;
 
-type A' :=
-  | a : A';
+type A' := | a : A';
+
+open A' using {a} public;
 
 main : Type := (A : Type) -> (B : Type) -> A -> B;
-

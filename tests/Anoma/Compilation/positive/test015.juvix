@@ -9,10 +9,7 @@ f : Nat → Nat → Nat
   | x :=
     let
       g (y : Nat) : Nat := x + y;
-    in ite
-      (x == 0)
-      (f 10)
-      (ite (x < 10) λ {y := g (f (sub x 1) y)} g);
+    in ite (x == 0) (f 10) (ite (x < 10) λ{y := g (f (sub x 1) y)} g);
 
 g (x : Nat) (h : Nat → Nat) : Nat := x + h x;
 

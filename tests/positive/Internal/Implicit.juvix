@@ -4,31 +4,23 @@ import Stdlib.Data.Fixity open;
 
 syntax operator << composition;
 
-<<
-  : {A : Type}
-    → {B : Type}
-    → {C : Type}
-    → (B → C)
-    → (A → B)
-    → A
-    → C
+<< : {A : Type} → {B : Type} → {C : Type} → (B → C) → (A → B) → A → C
   | f g x := f (g x);
 
 type Nat :=
   | zero : Nat
   | suc : Nat → Nat;
 
+open Nat using {zero; suc} public;
+
 syntax operator × functor;
-syntax operator , pair;
 type × (A : Type) (B : Type) := , : A → B → A × B;
 
-uncurry
-  : {A : Type}
-    → {B : Type}
-    → {C : Type}
-    → (A → B → C)
-    → A × B
-    → C
+open × using {,} public;
+
+syntax operator , pair;
+
+uncurry : {A : Type} → {B : Type} → {C : Type} → (A → B → C) → A × B → C
   | f (a, b) := f a b;
 
 fst : {A : Type} → {B : Type} → A × B → A
@@ -40,22 +32,10 @@ snd : {A : Type} → {B : Type} → A × B → B
 swap : {A : Type} → {B : Type} → A × B → B × A
   | (a, b) := b, a;
 
-first
-  : {A : Type}
-    → {B : Type}
-    → {A' : Type}
-    → (A → A')
-    → A × B
-    → A' × B
+first : {A : Type} → {B : Type} → {A' : Type} → (A → A') → A × B → A' × B
   | f (a, b) := f a, b;
 
-second
-  : {A : Type}
-    → {B : Type}
-    → {B' : Type}
-    → (B → B')
-    → A × B
-    → A × B'
+second : {A : Type} → {B : Type} → {B' : Type} → (B → B') → A × B → A × B'
   | f (a, b) := a, f b;
 
 both : {A : Type} → {B : Type} → (A → B) → A × A → B × B
@@ -65,14 +45,19 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
 ite : {A : Type} → Bool → A → A → A
   | true a _ := a
   | false _ b := b;
 
-syntax operator :: cons;
 type List (A : Type) :=
   | nil : List A
   | :: : A → List A → List A;
+
+open List using {nil; ::} public;
+
+syntax operator :: cons;
 
 upToTwo : _ := zero :: suc zero :: suc (suc zero) :: nil;
 
@@ -80,6 +65,8 @@ p1 : Nat → Nat → Nat × Nat
   | a b := a, b;
 
 type Proxy (A : Type) := proxy : Proxy A;
+
+open Proxy using {proxy} public;
 
 t2' : {A : Type} → Proxy A := proxy;
 
@@ -114,17 +101,14 @@ f : {A : Type} → {B : Type} → A → B → _
 pairEval : {A : Type} → {B : Type} → (A → B) × A → B
   | (f, x) := f x;
 
-pairEval'
-  : {A : Type} → {B : Type} → ({C : Type} → A → B) × A → B
+pairEval' : {A : Type} → {B : Type} → ({C : Type} → A → B) × A → B
   | (f, x) := f {Nat} x;
 
-foldr
-  : {A : Type} → {B : Type} → (A → B → B) → B → List A → B
+foldr : {A : Type} → {B : Type} → (A → B → B) → B → List A → B
   | _ z nil := z
   | f z (h :: hs) := f h (foldr f z hs);
 
-foldl
-  : {A : Type} → {B : Type} → (B → A → B) → B → List A → B
+foldl : {A : Type} → {B : Type} → (B → A → B) → B → List A → B
   | f z nil := z
   | f z (h :: hs) := foldl f (f z h) hs;
 
@@ -132,8 +116,6 @@ filter : {A : Type} → (A → Bool) → List A → List A
   | _ nil := nil
   | f (h :: hs) := ite (f h) (h :: filter f hs) (filter f hs);
 
-partition
-  : {A : Type} → (A → Bool) → List A → List A × List A
+partition : {A : Type} → (A → Bool) → List A → List A × List A
   | _ nil := nil, nil
-  | f (x :: xs) :=
-    ite (f x) first second ((::) x) (partition f xs);
+  | f (x :: xs) := ite (f x) first second ((::) x) (partition f xs);

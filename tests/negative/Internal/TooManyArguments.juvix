@@ -1,6 +1,7 @@
 module TooManyArguments;
 
 type T (A : Type) := c : A → T A;
+open T using {c};
 
 f : {A : Type} → A → T A
   | {A} a := c {A} a a {a};

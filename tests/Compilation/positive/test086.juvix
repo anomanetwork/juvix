@@ -14,19 +14,19 @@ type R :=
     y : Nat;
   };
 
+open R using {mkR} public;
+
 rr : R :=
   mkR@{
     x := 1;
     y := 2;
   };
-
-(px, py) : Pair Nat Nat := (1, 2);
+ (px, py) : Pair Nat Nat := 1, 2;
 
 g (r : R) : Nat :=
   let
-    mkR@{x := x; y} := r
+    mkR@{x := x; y} := r;
   in x + 2 * y;
-
-mkR@{x := rx; y := ry} : R := rr;
+ mkR@{x := rx; y := ry} : R := rr;
 
 main : Nat := f (px, py) + g rr + f (rx, ry);

@@ -6,7 +6,11 @@ type T A :=
     pp : A → A;
   };
 
+open T using {mkT} public;
+
 type Unit := unit;
+
+open Unit using {unit} public;
 
 instance
 unitI : T Unit := mkT λ{x := x};

@@ -2,13 +2,20 @@ module AliasRecordConstructor;
 
 type A := a;
 
-type T := mkT {field : A};
+open A using {a} public;
+
+type T :=
+  mkT@{
+    field : A;
+  };
+
+open T using {mkT} public;
 
 syntax alias mkT' := mkT;
 
 t : T :=
   mkT'@{
-    field := a
+    field := a;
   };
 
 t1 : T -> A
@@ -20,4 +27,7 @@ it : (A → A) → T → A
 
 syntax alias it' := it;
 
-t2 (t : T) : A := it' (a in t) a;
+t2 (t : T) : A :=
+  it' (a in t) {
+    a
+  };

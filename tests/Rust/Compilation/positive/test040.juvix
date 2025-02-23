@@ -5,11 +5,13 @@ import Stdlib.System.IO open;
 import Stdlib.Data.Bool open;
 import Stdlib.Data.Nat open;
 
-type Unit :=
-  | unit : Unit;
+type Unit := | unit : Unit;
 
-type Foo (A : Type) :=
-  | foo : Unit -> A -> Foo A;
+open Unit using {unit} public;
+
+type Foo (A : Type) := | foo : Unit -> A -> Foo A;
+
+open Foo using {foo} public;
 
 f : {A : Type} -> Foo A -> A
   | (foo unit a) := a;

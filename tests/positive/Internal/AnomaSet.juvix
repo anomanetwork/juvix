@@ -4,10 +4,14 @@ type Bool :=
   | false
   | true;
 
+open Bool using {false; true} public;
+
 builtin list
 type List a :=
   | nil
   | cons a (List a);
+
+open List using {nil; cons} public;
 
 Logic : Type := Instance -> Bool;
 
@@ -22,5 +26,9 @@ type Resource :=
     logic : Logic;
   };
 
+open Resource using {mkResource} public;
+
 positive
 type Instance := mkInstance@{};
+
+open Instance using {mkInstance} public;

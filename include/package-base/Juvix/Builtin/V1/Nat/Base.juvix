@@ -8,6 +8,8 @@ type Nat :=
   | zero
   | suc Nat;
 
+open Nat using {zero; suc} public;
+
 syntax operator + additive;
 
 --- Addition for ;Nat;s.

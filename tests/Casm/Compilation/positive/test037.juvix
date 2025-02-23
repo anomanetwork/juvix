@@ -20,4 +20,4 @@ f (l : List ((Nat → Nat) → Nat → Nat)) : Nat :=
       y)
     7;
 
-main : Nat := f (λ {| x y := x y + 2} :: nil);
+main : Nat := f (λ{| x y := x y + 2} :: nil);

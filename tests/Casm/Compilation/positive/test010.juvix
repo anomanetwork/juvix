@@ -7,16 +7,15 @@ main : Nat :=
   let
     x : Nat := 1;
   in let
-    x1 :
-      Nat :=
-        x
-          + let
-            x2 : Nat := 2;
-          in x2;
-  in let
-    x3 : Nat := x1 * x1;
-  in let
-    y : Nat := x3 + 2;
-  in let
-    z : Nat := x3 + y;
-  in x + y + z;
+       x1 : Nat :=
+         x
+           + let
+               x2 : Nat := 2;
+             in x2;
+     in let
+          x3 : Nat := x1 * x1;
+        in let
+             y : Nat := x3 + 2;
+           in let
+                z : Nat := x3 + y;
+              in x + y + z;

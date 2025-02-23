@@ -4,13 +4,11 @@ import Stdlib.Prelude open;
 
 map' : {A : Type} → {B : Type} → (A → B) → List A → List B
   | f :=
-    \ {
-      nil := nil
+    \{
+      | nil := nil
       | (h :: t) := f h :: map' f t
     };
 
 lst : List Nat := zero :: suc zero :: nil;
 
-main : IO :=
-  printNatLn (foldr (+) zero (map' ((+) (suc zero)) lst));
-
+main : IO := printNatLn (foldr (+) zero (map' ((+) (suc zero)) lst));

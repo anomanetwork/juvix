@@ -12,7 +12,10 @@ mymap : {A B : Type} → (A → B) → List A → List B
   | f (x :: xs) := f x :: mymap f xs;
 
 sum : List Nat → Nat
-  | xs := myfor (acc := 0) (x in xs) {acc + x};
+  | xs :=
+    myfor (acc := 0) (x in xs) {
+      acc + x
+    };
 
 sum' : List Nat → Nat
   | xs := myfor λ{acc x := acc + x} 0 xs;
@@ -21,18 +24,44 @@ lst : List Nat := 1 :: 2 :: 3 :: 4 :: 5 :: nil;
 
 syntax iterator myfor2 {init := 1; range := 2};
 myfor2 : {A B C : Type} → (A → B → C → A) → A → List B → List C → A
-  | f acc xs ys := myfor (acc' := acc) (x in xs) myfor (acc'' := acc') (y in ys) f acc'' x y;
+  | f acc xs ys :=
+    myfor (acc' := acc) (x in xs) {
+      myfor (acc'' := acc') (y in ys) {
+        f acc'' x y
+      }
+    };
 
 syntax iterator myzip2 {init := 2; range := 2};
-myzip2 : {A A' B C : Type} → (A → A' → B → C → Pair A A') → A → A' → List B → List C → Pair A A'
-  | f a b xs ys := myfor (acc, acc' := a, b) (x, y in zip xs ys) f acc acc' x y;
+myzip2
+  : {A A' B C : Type}
+    → (A → A' → B → C → Pair A A')
+    → A
+    → A'
+    → List B
+    → List C
+    → Pair A A'
+  | f a b xs ys :=
+    myfor (acc, acc' := a, b) (x, y in zip xs ys) {
+      f acc acc' x y
+    };
 
 main : Nat :=
   sum lst
     + sum' lst
-    + fst (myfor (a, b := 0, 0) (x in lst) b + x, a)
-    + (myfor2 (acc := 0) (x in lst; y in 1 :: 2 :: nil)
-        acc + x + y)
-    + fst (myzip2 (a := 0; b := 0) (x in lst; y in reverse lst) a + x * y, b + y)
-    + myfor (a := 0) (x, y in mymap (x in lst) {x, x + 1})
-        a + x * y;
+    + fst
+      (myfor (a, b := 0, 0) (x in lst) {
+        b + x, a
+      })
+    + (myfor2 (acc := 0) (x in lst; y in 1 :: 2 :: nil) {
+      acc + x + y
+    })
+    + fst
+      (myzip2 (a := 0; b := 0) (x in lst; y in reverse lst) {
+        a + x * y, b + y
+      })
+    + myfor (a := 0)
+    (x, y in mymap (x in lst) {
+      x, x + 1
+    }) {
+      a + x * y
+    };

@@ -2,6 +2,10 @@ module Bug;
 
 type A := mkA : A;
 
+open A using {mkA} public;
+
 aliasA : Type := A;
 
 type C := mkC : aliasA -> C;
+
+open C using {mkC} public;

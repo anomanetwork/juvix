@@ -3,7 +3,6 @@ module test068;
 
 import Stdlib.Data.Nat open;
 
-f {a : Nat := 2} {b : Nat := 3} {c : Nat := 5} : Nat :=
-  a * b * c;
+f {a : Nat := 2} {b : Nat := 3} {c : Nat := 5} : Nat := a * b * c;
 
 main : Nat := f;

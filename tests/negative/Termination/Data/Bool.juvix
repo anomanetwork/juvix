@@ -6,6 +6,8 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
 syntax operator || logical;
 
 || : Bool → Bool → Bool

@@ -5,7 +5,12 @@ import Stdlib.Prelude open;
 import Stdlib.Debug.Trace open;
 
 trait
-type T A := mkT@{toNat : A -> Nat};
+type T A :=
+  mkT@{
+    toNat : A -> Nat;
+  };
+
+open T using {mkT} public;
 
 instance
 tNatI : T Nat := mkT id;
@@ -15,7 +20,7 @@ tBoolI : T Bool :=
   mkT@{
     toNat : Bool -> Nat
       | true := 1
-      | false := 0
+      | false := 0;
   };
 
 instance
@@ -23,13 +28,13 @@ tMaybeI {A} {{T A}} : T (Maybe A) :=
   mkT@{
     toNat {A} {{T A}} : Maybe A -> Nat
       | nothing := 0
-      | (just ma) := T.toNat ma
+      | (just ma) := T.toNat ma;
   };
 
 instance
 tUnitFunI {A} {{T A}} : T (Unit -> A) :=
   mkT@{
-    toNat {A} {{T A}} (f : Unit -> A) : Nat := T.toNat (f unit)
+    toNat {A} {{T A}} (f : Unit -> A) : Nat := T.toNat (f unit);
   };
 
 instance
@@ -38,7 +43,7 @@ tListI {A} {{T A}} : T (List A) :=
     toNat {A} {{T A}} (xs : List A) : Nat :=
       for (acc := 0) (x in xs) {
         acc + T.toNat {A} x
-      }
+      };
   };
 
 g : {A : Type} → {{T A}} → Nat := 5;

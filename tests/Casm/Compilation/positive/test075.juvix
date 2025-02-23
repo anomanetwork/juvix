@@ -6,5 +6,4 @@ import Stdlib.Cairo.Poseidon open;
 
 poseidonHash2' (x y : Field) : Field := poseidonHash2 x y;
 
-main : Field :=
-  poseidonHash2' 7 10 + poseidonHashList [3; 5; 7];
+main : Field := poseidonHash2' 7 10 + poseidonHashList [3; 5; 7];

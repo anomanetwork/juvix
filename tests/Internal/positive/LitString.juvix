@@ -3,4 +3,3 @@ module LitString;
 import Stdlib.Prelude open;
 
 main : String := "hello";
-

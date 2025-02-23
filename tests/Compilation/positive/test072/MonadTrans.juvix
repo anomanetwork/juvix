@@ -4,8 +4,8 @@ import Monad open;
 
 trait
 type MonadTrans (T : (Type -> Type) -> Type -> Type) :=
-  mkMonadTrans {lift : {A : Type}
-    -> {M : Type -> Type}
-    -> {{Monad M}}
-    -> M A
-    -> T M A};
+  mkMonadTrans@{
+    lift : {A : Type} -> {M : Type -> Type} -> {{Monad M}} -> M A -> T M A;
+  };
+
+open MonadTrans using {mkMonadTrans} public;

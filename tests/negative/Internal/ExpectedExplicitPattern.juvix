@@ -1,6 +1,7 @@
 module ExpectedExplicitPattern;
 
 type T (A : Type) := c : A → T A;
+open T;
 
 f : {A : Type} → T A → A
   | {_} {c a} := a;

@@ -4,5 +4,7 @@ type Maybe A :=
   | just A
   | nothing;
 
+open Maybe;
+
 instance
 inst {A} : Maybe A := nothing;

@@ -4,7 +4,9 @@ module test089;
 import Stdlib.Prelude open;
 
 g (lst : List Nat) : Nat :=
-  for (acc := 0) (x in lst) {acc + x + x * x + 176};
+  for (acc := 0) (x in lst) {
+    acc + x + x * x + 176
+  };
 
 f (lst : List Nat) : Bool :=
   all (x in lst) {

@@ -12,6 +12,10 @@ type Bool :=
   | true : Bool
   | false : Bool;
 
+open Bool using {true; false} public;
+
+open Bool public;
+
 main : Bool :=
   let
     z : Bool := false;

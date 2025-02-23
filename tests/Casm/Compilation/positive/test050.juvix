@@ -4,8 +4,8 @@ module test050;
 import Stdlib.Prelude open;
 
 f : Int -> Int
-  | (negSuc zero) := ofNat 0
-  | (negSuc m@(suc n)) := ofNat n + ofNat m
-  | (ofNat n) := neg (ofNat n - ofNat 7);
+  | (Int.negSuc zero) := fromNat 0
+  | (Int.negSuc m@(suc n)) := fromNat n + fromNat m
+  | (Int.ofNat n) := Int.neg (fromNat n - fromNat 7);
 
 main : Int := f -10 - f 1 + f -1;

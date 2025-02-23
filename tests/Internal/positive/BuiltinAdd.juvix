@@ -7,4 +7,3 @@ n : Nat := suc (suc zero);
 m : Nat := suc zero;
 
 main : Nat := m + n;
-

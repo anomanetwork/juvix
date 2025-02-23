@@ -18,7 +18,10 @@ myf' : {A B : Type} -> A -> (A -> A -> A -> B) -> A -> B -> B
   | a0 f a b := myf a0 (f a0) a b true;
 
 sum : List Nat -> Nat
-  | xs := for (acc := 0) (x in xs) {x + acc};
+  | xs :=
+    for (acc := 0) (x in xs) {
+      x + acc
+    };
 
 funa : {A : Type} -> (A -> A) -> A -> A
   | {A} f a :=
@@ -30,9 +33,19 @@ funa : {A : Type} -> (A -> A) -> A -> A
     in go 10;
 
 {-# specialize: true #-}
-type Additive A := mkAdditive@{add : A -> A -> A};
+type Additive A :=
+  mkAdditive@{
+    add : A -> A -> A;
+  };
 
-type Multiplicative A := mkMultiplicative@{mul : A -> A -> A};
+open Additive using {mkAdditive} public;
+
+type Multiplicative A :=
+  mkMultiplicative@{
+    mul : A -> A -> A;
+  };
+
+open Multiplicative using {mkMultiplicative} public;
 
 addNat : Additive Nat := mkAdditive (+);
 
@@ -53,9 +66,12 @@ myfilter {A} (f : A → Bool) : List A → List A
 main : Nat :=
   sum (myfilter (const false) [])
     + sum (mymap λ{x := x + 3} (1 :: 2 :: 3 :: 4 :: nil))
-    + sum (flatten (mymap (mymap λ{x := x + 2}) ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
+    + sum
+      (flatten
+        (mymap (mymap λ{x := x + 2}) ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
     + sum (map λ{x := x + 3} (1 :: 2 :: 3 :: 4 :: nil))
-    + sum (flatten (map (map λ{x := x + 2}) ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
+    + sum
+      (flatten (map (map λ{x := x + 2}) ((1 :: nil) :: (2 :: 3 :: nil) :: nil)))
     + myf 3 (*) 2 5 true
     + myf 1 (+) 2 0 false
     + myf' 7 (const (+)) 2 0
